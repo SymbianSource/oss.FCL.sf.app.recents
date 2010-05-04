@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE SystemDefinition SYSTEM "sysdef_1_5_0.dtd" [
+  <!ENTITY layer_real_source_path "sf/app/recents" >
+]>
+
+<SystemDefinition name="recents" schema="1.5.0">
+  <systemModel>
+    <layer name="app_layer">
+    
+      <module name="recents">
+        <unit unitID="recents" bldFile="&layer_real_source_path;" name="recents" mrp="" proFile="recents.pro"/>
+      </module>
+      
+    </layer>
+      
+          
+  </systemModel>
+</SystemDefinition>
