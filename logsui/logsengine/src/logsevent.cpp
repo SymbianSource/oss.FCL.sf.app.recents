@@ -50,7 +50,9 @@ LogsEvent::LogsEvent()
     mIndex(0),
     mIsInView(false),
     mEventState(EventAdded),
-    mIsLocallySeen(false)
+    mIsLocallySeen(false),
+    mIsPrivate(false),
+    mIsUnknown(false)
 {
 }
 
@@ -82,6 +84,8 @@ LogsEvent::LogsEvent( const LogsEvent& event )
     mIsInView = event.mIsInView;
     mEventState = event.mEventState;
     mIsLocallySeen = event.mIsLocallySeen;
+    mIsPrivate = event.mIsPrivate;
+    mIsUnknown = event.mIsUnknown;
 }
 
 // ----------------------------------------------------------------------------
@@ -175,6 +179,7 @@ void LogsEvent::setRemoteParty( const QString& remoteParty )
 bool LogsEvent::validate()
 {
     return ( !mNumber.isEmpty() || !mRemoteParty.isEmpty() || 
+            ( mRemoteParty.isEmpty() && ( mIsPrivate || mIsUnknown )) ||
            ( mLogsEventData && !mLogsEventData->remoteUrl().isEmpty() ) );
 }
 
@@ -634,7 +639,28 @@ void LogsEvent::markedAsSeenLocally(bool markedAsSeen)
 //
 bool LogsEvent::isSeenLocally() const
 {
-    return ( mIsLocallySeen || mIsRead );
+   return ( mIsLocallySeen || mIsRead );
+}          
+    
+bool LogsEvent::isRemotePartyPrivate() const
+{
+   return mIsPrivate;
+}          
+
+bool LogsEvent::isRemotePartyUnknown() const
+{
+    return mIsUnknown;
+}
+
+void LogsEvent::setRemotePartyPrivate(bool markedAsPrivate)
+{
+    mIsPrivate = markedAsPrivate;
+}
+
+
+void LogsEvent::setRemotePartyUnknown(bool markedAsUnknown)
+{
+    mIsUnknown = markedAsUnknown;
 }
 
 // End of file

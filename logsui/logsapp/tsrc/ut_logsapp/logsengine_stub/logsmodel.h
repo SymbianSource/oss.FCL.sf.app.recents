@@ -23,6 +23,7 @@
 #include <QStringList>
 
 class LogsMatchesModel;
+class LogsConfigurationParams;
 
 /**
  * 
@@ -31,6 +32,8 @@ class LogsModel : public LogsAbstractModel
 {
 public:
 
+    friend class UT_LogsRecentCallsView;
+    
     enum ClearType {
                 TypeLogsClearAll = 0,
                 TypeLogsClearReceived,
@@ -54,6 +57,7 @@ public: // The exported API
     bool markEventsSeen(LogsModel::ClearType cleartype);
     int refreshData();
     int compressData();
+	int updateConfiguration(LogsConfigurationParams& params);
 
 public: // From QAbstractItemModel
     

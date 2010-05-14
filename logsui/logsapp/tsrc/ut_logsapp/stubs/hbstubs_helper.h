@@ -27,6 +27,7 @@ class HbStubHelper
         static void reset();
         static int widgetActionsCount();
         static bool menuShown();
+        static bool dialogShown();
         static bool singleShotTimerActive();
         static bool quitCalled();
         static void setGestureState(int state);

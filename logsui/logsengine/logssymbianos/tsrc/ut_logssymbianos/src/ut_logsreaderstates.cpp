@@ -28,6 +28,7 @@
 _LIT( KTestInDirection, "Incoming" );
 _LIT( KTestOutDirection, "Outgoing" );
 _LIT( KTestMissedDirection, "Missed call" );
+_LIT( KTestUnknown, "Unknown" );
 
 void UT_LogsReaderStates::initTestCase()
 {
@@ -35,7 +36,8 @@ void UT_LogsReaderStates::initTestCase()
     mLogClient = CLogClient::NewL( *((RFs*)&rfsDummy) );
     mStrings.iInDirection = DESC_TO_QSTRING( KTestInDirection() );
     mStrings.iOutDirection = DESC_TO_QSTRING( KTestOutDirection() );
-    mStrings.iMissedDirection = DESC_TO_QSTRING( KTestMissedDirection() );  
+    mStrings.iMissedDirection = DESC_TO_QSTRING( KTestMissedDirection() ); 
+    mStrings.iUnKnownRemote = DESC_TO_QSTRING( KTestUnknown() ); 
 }
 
 void UT_LogsReaderStates::cleanupTestCase()
@@ -136,6 +138,7 @@ void UT_LogsReaderStates::testStateBase()
     QVERIFY( index == 2 );
     
     // Invalid event discarded
+    logEvent->SetRemoteParty( _L("") );
     logEvent->SetNumber( _L("") );
     logEvent->SetId( 102 );
     logsEvent = new LogsEvent;
@@ -151,18 +154,61 @@ void UT_LogsReaderStates::testStateBase()
     QVERIFY( mEvents.count() == 3 );
     QVERIFY( index == 1 );
     
+    logEvent->SetRemoteParty( _L("Private") );
+    logEvent->SetNumber( _L("") );
+    logEvent->SetId( 106 );
+    logsEvent = new LogsEvent;
+    index = 0;
+    QVERIFY( state.updateAndInsertEventL( *logEvent, logsEvent, index ) );
+    QVERIFY( mEvents.count() == 4 );
+    QVERIFY( index == 1 );
+    QVERIFY( mEvents.at(0)->isRemotePartyPrivate() );
+    
+    logEvent->SetRemoteParty( _L("Private") );
+    logEvent->SetNumber( _L("123") );
+    logEvent->SetId( 107 );
+    logsEvent = new LogsEvent;
+    index = 0;
+    QVERIFY( state.updateAndInsertEventL( *logEvent, logsEvent, index ) );
+    QVERIFY( mEvents.count() == 5 );
+    QVERIFY( index == 1 );
+    QVERIFY( mEvents.at(0)->isRemotePartyPrivate() );
+    
+    
+    logEvent->SetRemoteParty( _L("Unknown") );
+    logEvent->SetNumber( _L("123") );
+    logEvent->SetId( 108 );
+    logsEvent = new LogsEvent;
+    index = 0;
+    QVERIFY( state.updateAndInsertEventL( *logEvent, logsEvent, index ) );
+    QVERIFY( mEvents.count() == 6 );
+    QVERIFY( index == 1 );
+    QVERIFY( !mEvents.at(0)->isRemotePartyUnknown() );
+    
+    
+    logEvent->SetRemoteParty( _L("Unknown") );
+    logEvent->SetNumber( _L("") );
+    logEvent->SetId( 109 );
+    logsEvent = new LogsEvent;
+    index = 0;
+    QVERIFY( state.updateAndInsertEventL( *logEvent, logsEvent, index ) );
+    QVERIFY( mEvents.count() == 7 );
+    QVERIFY( index == 1 );
+    QVERIFY( mEvents.at(0)->isRemotePartyUnknown() );
+    
+    
     state.resetEvents();
     QVERIFY( !mEvents.at(0)->isInView() );
     QVERIFY( !mEvents.at(1)->isInView() );
     
     LogsEvent* event = state.takeMatchingEvent(*logEvent);
     QVERIFY( event );
-    QVERIFY( mEvents.count() == 2 );
+    QVERIFY( mEvents.count() == 6 );
     delete event;
     logEvent->SetId( 200 );
     LogsEvent* event2 = state.takeMatchingEvent(*logEvent);
     QVERIFY( !event2 );
-    QVERIFY( mEvents.count() == 2 );
+    QVERIFY( mEvents.count() == 6 );
 
     CleanupStack::PopAndDestroy( logEvent );    
         

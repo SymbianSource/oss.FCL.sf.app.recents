@@ -62,6 +62,7 @@ private: //testing purpose data
     static QString mLastCallName; //last called exported function name
     
     friend class UT_LogsDetailsView;
+    friend class UT_LogsBaseView;
 };
 
 #endif //LOGSDETAILSMODEL_H

@@ -30,6 +30,7 @@
 #include "ut_logseventdata.h"
 #include "ut_logsthumbnailmanager.h"
 #include "ut_logscommondata.h"
+#include "ut_logsconfigurationparams.h"
 #include "testresultxmlparser.h"
 
 
@@ -128,7 +129,17 @@ int main(int argc, char *argv[])
     args_logsCommonData << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsCommonData, args_logsCommonData);
     
+    parser.parseAndPrintResults(resultFileName,true);
+    
+    UT_LogsConfigurationParams ut_logsConfigurationParams;
+    resultFileName = "c:/ut_logs_logsConfigurationParams.xml";
+    QStringList args_logsConfigurationParams( "ut_logsConfigurationParams");
+    args_logsConfigurationParams << "-xml" << "-o" << resultFileName;
+    QTest::qExec(&ut_logsConfigurationParams, args_logsConfigurationParams);
+    
     parser.parseAndPrintResults(resultFileName,true); 
+    
+     
 
     if (promptOnExit) {
         printf("Press any key...\n");

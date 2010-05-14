@@ -46,11 +46,12 @@ private slots:
 private slots: //test methods
      
     void testConstructor();
-    void testPredictiveSearchQuery();
-    void testResultAt();
     void testInsertEntry();
     void testDeleteEntry();
     void testGetEntry();
+    //with latin 12 keys
+    void testPredictiveSearchQuery_latin12k();
+    void testResultAt_latin12k();
     
 private:
  

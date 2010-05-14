@@ -31,7 +31,7 @@ bool LogsCall::isCallToNumberCalled()
     return logsCallToNumberCalled;
 }
 
-QString LogsCall::lastCalledFuntion()
+QString LogsCall::lastCalledFunction()
 {
     return logsLastCalledFunction;
 }

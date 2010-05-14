@@ -1,0 +1,417 @@
+/*
+* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description:
+*
+*/
+
+#include <QListIterator>
+#include <QStringList>
+#include <QVector>
+
+#include "logscntentry.h"
+#include "logspredictivetranslator.h"
+#include "logslogger.h"
+
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::richText()
+// -----------------------------------------------------------------------------
+//
+QString LogsCntText::richText( QString startTag, 
+                               QString endTag ) const
+{
+    QString str = text();
+    if ( str.length() > 0 && highlights() > 0 ) {
+        str.insert( highlights() , endTag );
+        str.insert( 0, startTag );
+    }
+
+    return str;
+    
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::LogsCntEntry()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntry::LogsCntEntry( LogsCntEntryHandle& handle, 
+                            quint32 cid )
+    : mType( EntryTypeHistory ), mCid( cid ), 
+      mCached( true ),mHandle(&handle)
+{
+    LogsCntText empty;
+    mFirstName.append( empty );
+    mLastName.append( empty );
+    mAvatarPath = "";
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::LogsCntEntry()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntry::LogsCntEntry( quint32 cid )
+    : mType( EntryTypeContact ), mCid( cid ), 
+      mCached( false ),mHandle(0)
+{
+    LogsCntText empty;
+    mFirstName.append( empty );
+    mLastName.append( empty );
+    mAvatarPath = "";
+}
+
+// -----------------------------------------------------------------------------
+// copy LogsCntEntry::LogsCntEntry()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntry::LogsCntEntry( const LogsCntEntry& entry )
+    : mType(entry.mType),
+      mCid(entry.mCid),
+      mFirstName(entry.mFirstName),
+      mLastName(entry.mLastName),
+      mCached(entry.mCached),
+      mHandle(entry.mHandle),
+      mPhoneNumber(entry.mPhoneNumber),
+      mAvatarPath(entry.mAvatarPath)
+{
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::~LogsCntEntry()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntry::~LogsCntEntry()
+{
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::firstName()
+// -----------------------------------------------------------------------------
+//
+const LogsCntTextList& LogsCntEntry::firstName() const 
+{
+    return mFirstName;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::lastName()
+// -----------------------------------------------------------------------------
+//
+const LogsCntTextList& LogsCntEntry::lastName() const
+{
+    return mLastName;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::avatarPath()
+// -----------------------------------------------------------------------------
+//
+const QString& LogsCntEntry::avatarPath() const
+{
+    return mAvatarPath;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::phoneNumber()
+// -----------------------------------------------------------------------------
+//
+const LogsCntText& LogsCntEntry::phoneNumber() const
+{
+    return mPhoneNumber;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::speedDial()
+// -----------------------------------------------------------------------------
+//
+const QString& LogsCntEntry::speedDial() const
+{
+    return mSpeedDial;
+}
+
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::contactId()
+// -----------------------------------------------------------------------------
+//
+quint32 LogsCntEntry::contactId() const
+{
+    return mCid;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::handle()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntryHandle* LogsCntEntry::handle() const
+{
+    return mHandle;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setFirstName()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setFirstName( const QString& name ) 
+{
+    mCached=true;
+    mFirstName.clear();
+    doSetText( name, mFirstName );
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setLastName()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setLastName( const QString& name ) 
+{
+    mCached=true;
+    mLastName.clear();
+    doSetText( name, mLastName );
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setAvatarPath()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setAvatarPath( const QString& avatarpath ) 
+{
+    mCached=true;
+    mAvatarPath.clear();
+    mAvatarPath = avatarpath;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setPhoneNumber()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setPhoneNumber( const QString& number )
+{
+    LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+    
+    mCached=true;
+    mPhoneNumber.mText = number;
+    mPhoneNumber.mTranslatedText = translator->translate( mPhoneNumber.mText );
+    
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::doSetText()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::doSetText( const QString& text, LogsCntTextList& textlist ) 
+{
+    LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+    
+    QListIterator<QString> iter( translator->nameTokens( text ) );
+
+    while( iter.hasNext() ) {
+        LogsCntText txt;
+        txt.mText = iter.next();
+        txt.mTranslatedText = translator->translate( txt.mText );
+        textlist.append( txt );
+    }
+    if ( textlist.count() == 0 ) {
+        textlist.append( LogsCntText() );
+    }
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::resetHighlights()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::resetHighlights( LogsCntTextList& nameArray )
+{
+    QMutableListIterator<LogsCntText> names( nameArray ); 
+    while( names.hasNext() ) {
+        names.next().mHighlights = 0;
+    }
+    
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setHighlights()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setHighlights( const QString& pattern )
+{
+    resetHighlights( mFirstName );
+    resetHighlights( mLastName );
+    
+    mPhoneNumber.mHighlights =
+              mPhoneNumber.mTranslatedText.startsWith( pattern ) &&
+              mPhoneNumber.mTranslatedText.length() >= pattern.length() ?
+            pattern.length(): 0;
+    
+    doSetHighlights( pattern, mFirstName );
+    doSetHighlights( pattern, mLastName );
+    
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::doSetHighlights()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::doSetHighlights( const QString& pattern, 
+                                    LogsCntTextList& nameArray )
+{
+    
+    LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+    QMutableListIterator<LogsCntText> names( nameArray ); 
+    bool hasSeparators = translator->hasPatternSeparators( pattern );
+    
+    //simple
+    while( names.hasNext() ) {
+        LogsCntText& nameItem = names.next();
+        nameItem.mHighlights = 
+                translator->startsWith( nameItem.mText, pattern, false );
+    }
+    
+    //complex
+    QListIterator<QString> patternArray( translator->patternTokens( pattern ) );
+    while( hasSeparators && patternArray.hasNext() ) {
+        QString patternItem = patternArray.next();
+        names.toFront();
+        while( names.hasNext() ) {
+            LogsCntText& nameItem = names.next();
+            int matchSize = translator->startsWith( nameItem.mText, 
+                                                    patternItem, !hasSeparators );
+            nameItem.mHighlights = matchSize > nameItem.mHighlights ?
+                                   matchSize : nameItem.mHighlights; 
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::setSpeedDial()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::setSpeedDial( const QString& number )
+{
+    mSpeedDial = number;
+}
+
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::match()
+// -----------------------------------------------------------------------------
+//
+bool LogsCntEntry::match( const QString& pattern ) const
+{
+    bool match = false;
+    LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+    
+    //direct match with phone number is enough
+    match = ( type() == EntryTypeHistory && 
+              mPhoneNumber.mTranslatedText.startsWith( pattern ) ) ||
+            doSimpleMatch( pattern );
+    
+    match = !match && translator->hasPatternSeparators( pattern ) ? 
+            doComplexMatch( translator->patternTokens( pattern) ) : match;
+    
+    return match;
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::doSimpleMatch()
+// -----------------------------------------------------------------------------
+//
+bool LogsCntEntry::doSimpleMatch( const QString& pattern ) const
+{
+    LogsCntTextList nameArray = mFirstName + mLastName; //with empties
+    QListIterator<LogsCntText> names( nameArray ); 
+    int matchCount = 0;
+
+    while( names.hasNext() && !matchCount ) {
+        matchCount = (int)names.next().mTranslatedText.startsWith( pattern );
+    }
+
+    return matchCount > 0;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::doComplexMatch()
+// -----------------------------------------------------------------------------
+//
+bool LogsCntEntry::doComplexMatch( QStringList patternArray ) const
+{
+    const bool zero = false;
+
+    LogsCntTextList nameArray = mFirstName + mLastName; //with empties
+
+    int targetMatchCount = patternArray.count();
+    int namesCount = nameArray.count();
+
+    //if pattern has more tokens than name(s), it is a missmatch
+    if ( namesCount < targetMatchCount ) {
+        return false;
+    }
+
+    QListIterator<LogsCntText> names( nameArray ); 
+    QListIterator<QString> patterns( patternArray );
+    QVector<bool> matchVector(targetMatchCount, zero );
+    int currentPattern = 0;
+    int matchCount = 0;
+    bool match = false;
+    
+    while( names.hasNext() && matchCount < targetMatchCount ) {
+        LogsCntText name = names.next();
+        currentPattern = 0;
+        patterns.toFront();
+        match = false;
+        while ( !name.mText.isEmpty() && 
+                 patterns.hasNext() && !match ) {
+            QString pattern = patterns.next();
+            //unique match check
+            if ( !matchVector.at( currentPattern ) ) {
+                match = matchVector[ currentPattern ] 
+                      = name.mTranslatedText.startsWith( pattern );
+                matchCount = match ? matchCount+1 : matchCount;
+            }
+            currentPattern++;
+        }
+    }
+    return matchCount >= targetMatchCount;
+
+    }
+    
+    
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::isCached()
+// -----------------------------------------------------------------------------
+//
+bool LogsCntEntry::isCached() const
+{
+    return mCached;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::type()
+// -----------------------------------------------------------------------------
+//
+LogsCntEntry::EntryType LogsCntEntry::type() const
+{
+    return mType;
+}
+
+
+

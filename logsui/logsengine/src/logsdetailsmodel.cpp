@@ -242,6 +242,10 @@ QString LogsDetailsModel::getCallerId(const LogsEvent& event) const
 QString LogsDetailsModel::getHeaderData(const LogsEvent& event) const
 {
     QString headerdata(event.remoteParty());
+    if ( event.isRemotePartyPrivate() ){
+        headerdata = hbTrId("txt_dial_dblist_call_id_val_privat_number");
+    }
+    
     if ( headerdata.length() == 0 && event.number().length() > 0 ){
         headerdata = event.number();
     }
@@ -307,27 +311,16 @@ bool LogsDetailsModel::isOutgoingCall() const
 //
 // -----------------------------------------------------------------------------
 //
-QString LogsDetailsModel::getHeaderValue(QString value,bool isRemote) const
+QString LogsDetailsModel::getHeaderValue(QString /*value*/,bool isRemote) const
 {
     QString headervalue("");
-    if (isAddress(value)){
-        if ((isOutgoingCall() && isRemote)|| (!isOutgoingCall() && !isRemote)){
+    if ((isOutgoingCall() && isRemote)|| (!isOutgoingCall() && !isRemote)){
             headervalue = hbTrId("txt_dial_dblist_callee_id");
-        }
-        else{
-            headervalue = hbTrId("txt_dialer_ui_dblist_call_id");
-        }
-    } 
-    else {
-        if ((isOutgoingCall() && isRemote)|| (!isOutgoingCall() && !isRemote)) {
-            headervalue = hbTrId("txt_dial_dblist_callee_id");
-        }
-        else {
-            headervalue = hbTrId("txt_dialer_ui_dblist_call_id");
-        }
     }
-    
-    return headervalue;
+    else{
+         headervalue = hbTrId("txt_dialer_ui_dblist_call_id");
+    }
+   return headervalue;
 }
 
 // -----------------------------------------------------------------------------

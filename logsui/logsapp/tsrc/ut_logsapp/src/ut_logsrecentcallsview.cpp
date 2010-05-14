@@ -149,7 +149,7 @@ void UT_LogsRecentCallsView::testActivated()
     view->activated(false, QVariant(LogsServices::ViewAll));
     QVERIFY( view->mFilter->filterType() == LogsFilter::All );  
     VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
-    QVERIFY( view->mDialpad->editor().text().isEmpty() );
+    QVERIFY( !view->mDialpad->editor().text().isEmpty() );
     QVERIFY( view->mListView->layoutName() == logsListLandscapeLayout );
     QVERIFY( view->mLayoutSectionName == logsViewDefaultSection );
     QVERIFY( !view->mResetted );
@@ -272,31 +272,59 @@ void UT_LogsRecentCallsView::testInitiateCallback()
     // Call cannot be constructed in model
     QModelIndex filterIndex;
     mRecentCallsView->initiateCallback(filterIndex);
-    QVERIFY( LogsCall::lastCalledFuntion().isEmpty() );
+    QVERIFY( LogsCall::lastCalledFunction().isEmpty() );
 
     // Call can be constructed in model
     filterIndex = makeValidFilterIndex(*mRecentCallsView);
     mRecentCallsView->initiateCallback(filterIndex);
-    QVERIFY( LogsCall::lastCalledFuntion() == QString("initiateCallback") );
+    QVERIFY( LogsCall::lastCalledFunction() == QString("initiateCallback") );
 }
 
 void UT_LogsRecentCallsView::testCallKeyPressed()
-{    LogsRecentCallsView* view = mRepository->recentCallsView();
+{    
+    LogsRecentCallsView* view = mRepository->recentCallsView();
     
     // Not ready for calling
+    LogsCall::resetTestData();
     view->callKeyPressed();
+    QVERIFY( LogsCall::lastCalledFunction() != "initiateCallback" );
     
     // No any item where to call
+    LogsCall::resetTestData();
     view->activated( false, QVariant(LogsServices::ViewAll) );
     view->callKeyPressed();
+    QVERIFY( LogsCall::lastCalledFunction() != "initiateCallback" );
     
-    // Calling possible
+    // Calling possible to list item
+    LogsCall::resetTestData();
     mRepository->model()->mTextData.append("testdata");
     mRepository->model()->mTextData.append("testdata2");
     view->mListView->setCurrentIndex( 
         mRepository->model()->index( 1, 0 ), QItemSelectionModel::Select );
     view->callKeyPressed();
     QVERIFY( view->mListView->currentIndex().row() == 0 );
+    QVERIFY( LogsCall::lastCalledFunction() == "initiateCallback" );
+    
+    // Dialpad open but no input, call to first item in list
+    LogsCall::resetTestData();
+    view->mDialpad->mIsOpen = true;
+    view->callKeyPressed();
+    QVERIFY( LogsCall::lastCalledFunction() == "initiateCallback" );
+    
+    // Dialpad open and text in input, call to number in input field
+    LogsCall::resetTestData();
+    QString dial("12345");
+    view->mDialpad->editor().setText( dial );
+    view->callKeyPressed();
+    QVERIFY( LogsCall::isCallToNumberCalled() );
+    QVERIFY( LogsCall::lastCalledFunction() != "initiateCallback" );
+    
+    // Dialpad closed but contains text, call to first item in the list
+    LogsCall::resetTestData();
+    view->mDialpad->mIsOpen = false;
+    view->callKeyPressed();
+    QVERIFY( !LogsCall::isCallToNumberCalled() );
+    QVERIFY( LogsCall::lastCalledFunction() == "initiateCallback" );
 }
 
 void UT_LogsRecentCallsView::testShowCallDetails()
@@ -664,16 +692,28 @@ void UT_LogsRecentCallsView::testUpdateMenu()
     QObject* obj = mRepository->findObject( logsRecentViewClearListMenuActionId );
     HbAction* action = qobject_cast<HbAction*>( obj );
     QVERIFY(action && action->isVisible());
+    HbAction* addToContactsAction = qobject_cast<HbAction*>( 
+            mRepository->findObject( logsCommonAddToContactsMenuActionId ) );
+    HbAction* contactsSearchAction = qobject_cast<HbAction*>( 
+                mRepository->findObject( logsRecentViewContactSearchMenuActionId ) );
+    QVERIFY(addToContactsAction && addToContactsAction->isVisible());
     delete view->mFilter;
     view->mFilter = 0;
     view->mFilter = new LogsFilter();
     view->updateMenu();
     QVERIFY(action && !action->isVisible());
+    QVERIFY(addToContactsAction && !addToContactsAction->isVisible());
+    QVERIFY(contactsSearchAction && !contactsSearchAction->isVisible());
     
-    //menu is in repository, non-empty model => "Clear list" is visible
+    //menu is in repository, non-empty model and dialpad open with content => 
+    // "Clear list", "Add to contacts", "Contact search on/off" visible
+    view->mDialpad->editor().setText("233141");
+    view->mDialpad->mIsOpen = true;
     makeValidFilterIndex(*view);
     view->updateMenu();
     QVERIFY(action && action->isVisible());
+    QVERIFY(addToContactsAction && addToContactsAction->isVisible());
+    QVERIFY(contactsSearchAction && contactsSearchAction->isVisible());
 }
 
 
@@ -696,16 +736,29 @@ void UT_LogsRecentCallsView::testUpdateWidgetsSizeAndLayout()
     QVERIFY( !mRecentCallsView->mListView );
     mRecentCallsView->updateWidgetsSizeAndLayout();
     
+
+    //listView exists, layout and size updated, also menu is updated
     HbListView list;
-    //listView exists, layout and size updated
-    mRecentCallsView->mViewManager.mainWindow().setOrientation( Qt::Vertical );
-    mRecentCallsView->mDialpad->closeDialpad();
-    mRecentCallsView->mListView = &list;
-    mRecentCallsView->mListView->setLayoutName("dummy");
-    mRecentCallsView->mLayoutSectionName = "dummy";
-    mRecentCallsView->updateWidgetsSizeAndLayout();
-    QVERIFY( mRecentCallsView->mListView->layoutName() == logsListDefaultLayout );
-    QVERIFY( mRecentCallsView->mLayoutSectionName == logsViewDefaultSection );
+    LogsRecentCallsView* view = mRepository->recentCallsView();
+    view->mViewManager.mainWindow().setOrientation( Qt::Vertical );
+    view->mDialpad->closeDialpad();
+    view->mListView = &list;
+    view->mListView->setLayoutName("dummy");
+    view->mLayoutSectionName = "dummy";
+    view->updateWidgetsSizeAndLayout();
+    QVERIFY( view->mListView->layoutName() == logsListDefaultLayout );
+    QVERIFY( view->mLayoutSectionName == logsViewDefaultSection );
+    QVERIFY( view->mListView->layoutName() == logsListDefaultLayout );
+    QObject* obj = mRepository->findObject( logsCommonMessageMenuActionId );
+    HbAction* action = qobject_cast<HbAction*>( obj );
+    QVERIFY(action && !action->isVisible());
+       
+    // When dialpad is opened and has input, menu content is different
+    view->mDialpad->openDialpad();
+    QString hello("hello");
+    view->mDialpad->editor().setText( hello );
+    view->updateWidgetsSizeAndLayout();
+    QVERIFY(action && action->isVisible());
 }
 
 void UT_LogsRecentCallsView::testDialpadClosed()
@@ -719,31 +772,36 @@ void UT_LogsRecentCallsView::testDialpadClosed()
     QString hello("hello");
     mRecentCallsView->mDialpad->editor().setText( hello );
     mRecentCallsView->dialpadClosed();
-    QVERIFY( mRecentCallsView->mDialpad->editor().text().isEmpty()  );
+    QVERIFY( !mRecentCallsView->mDialpad->editor().text().isEmpty()  );
     QVERIFY( mRecentCallsView->mLayoutSectionName == logsViewDefaultSection );
 }
 
 void UT_LogsRecentCallsView::testClearList()
 {
-
-    //check that without filter list is not cleared
-    mRecentCallsView->mModel->mIsCleared = false;
-    HbMessageBox().setText(tr("Ok"));
+    // No filter, nothing happens
+    HbStubHelper::reset();
+    QVERIFY( !HbStubHelper::dialogShown() );
     mRecentCallsView->clearList();
-    QVERIFY( !mRecentCallsView->mModel->mIsCleared );
+    QVERIFY( !HbStubHelper::dialogShown() );
 
+    // Filter exists, confirmation dialog is shown
     mRecentCallsView->mFilter = new LogsFilter( LogsFilter::Missed );
-       
-    //simulate "Ok" button press of messagebox
-    HbMessageBox().setText(tr("Ok"));
     mRecentCallsView->clearList();
-    QVERIFY( mRecentCallsView->mModel->mIsCleared );
+    QVERIFY( HbStubHelper::dialogShown() );
 
-    //simulate "Cancel" button press of messagebox
+}
+
+void UT_LogsRecentCallsView::testClearListOkAnswer()
+{
+    // No filter ,list is not cleared
     mRecentCallsView->mModel->mIsCleared = false;
-    HbMessageBox().setText(tr("Cancel"));
-    mRecentCallsView->clearList();
+    mRecentCallsView->clearListOkAnswer();
     QVERIFY( !mRecentCallsView->mModel->mIsCleared );
+    
+    // Filter exists, list is cleared
+    mRecentCallsView->mFilter = new LogsFilter( LogsFilter::Missed );
+    mRecentCallsView->clearListOkAnswer();
+    QVERIFY( mRecentCallsView->mModel->mIsCleared );
 }
 
 void UT_LogsRecentCallsView::testIsExitAllowed()
@@ -770,4 +828,79 @@ void UT_LogsRecentCallsView::testIsExitAllowed()
     QVERIFY( !mRecentCallsView->mMarkingMissedAsSeen );
     QVERIFY( spy.count() == 1 );
     QVERIFY( mRecentCallsView->isExitAllowed() );
+}
+
+void UT_LogsRecentCallsView::testContactSearch()
+{
+    int status = mRecentCallsView->mModel->predictiveSearchStatus();
+    QVERIFY( status == 1 );
+    LogsRecentCallsView* view = mRepository->recentCallsView();
+    view->mDialpad->mIsOpen = true;
+    view->mDialpad->editor().setText( "12344" );
+    view->updateMenu();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 1 );
+    QObject* obj = mRepository->findObject( logsRecentViewContactSearchMenuActionId );
+    HbAction* action = qobject_cast<HbAction*>( obj );
+    QVERIFY(action && action->isVisible());
+    QVERIFY(action->text()== hbTrId("txt_dialer_ui_opt_contact_search_off"));     
+    
+    //set contact search off            
+    view->toggleContactSearch();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 2 );
+    obj = mRepository->findObject( logsRecentViewContactSearchMenuActionId );
+    action = qobject_cast<HbAction*>( obj );
+    QVERIFY(action && action->isVisible());
+    QVERIFY(action->text()== hbTrId("txt_dialer_ui_opt_contact_search_on"));  
+    
+    //set contact search on
+    view->toggleContactSearch();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 1 );
+    
+    //set contact search permanently off
+    view->mModel->mPredectiveSearchStatus = 0;
+    view->toggleContactSearch();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 0 );
+    view->updateMenu();
+    obj = mRepository->findObject( logsRecentViewContactSearchMenuActionId );
+    action = qobject_cast<HbAction*>( obj );
+    QVERIFY(action && !action->isVisible());
+    
+    view->mModel->mPredectiveSearchStatus = 2;
+    //set contact search on
+    view->toggleContactSearch();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 1 );
+    
+}
+
+void UT_LogsRecentCallsView::testDialpadOpened()
+{
+    mRepository->recentCallsView();
+    mRecentCallsView->activated( false, QVariant(LogsServices::ViewAll) );
+        
+    // If contact search is disabled, opening dialpad containing input
+    // does not cause going to matches view
+    mViewManager->reset();
+    mRecentCallsView->mDialpad->mIsOpen = true;
+    mRecentCallsView->mModel->setPredictiveSearch(false);
+    mRecentCallsView->mDialpad->editor().setText( QString("hello") );
+    mRecentCallsView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    
+    // If contact search is enabled, opening dialpad containing input
+    // causes going to matches view
+    mRecentCallsView->mModel->setPredictiveSearch(true);
+    mRecentCallsView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsMatchesViewId );
+    
+    // Nothing in input field, doe not cause transition to matches view
+    // causes going to matches view
+    mViewManager->reset();
+    mRecentCallsView->mDialpad->editor().setText( "" );
+    mRecentCallsView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
 }

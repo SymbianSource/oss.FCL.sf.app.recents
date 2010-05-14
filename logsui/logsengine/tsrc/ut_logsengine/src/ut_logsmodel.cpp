@@ -24,9 +24,12 @@
 #include "logseventdata.h"
 #include "logsdbconnector.h"
 #include "logsdbconnector_stub_helper.h"
+#include "logscommondata.h"
+#include "logsconfigurationparams.h"
 
 #include <hbicon.h>
 #include <QtTest/QtTest>
+#include <hbfontspec.h>
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -58,6 +61,7 @@ void UT_LogsModel::cleanupTestCase()
 void UT_LogsModel::init()
 {
     mModel = new LogsModel();
+    LogsCommonData::getInstance().currentConfiguration().setListItemTextWidth(360); 
 }
 
 void UT_LogsModel::cleanup()
@@ -158,12 +162,18 @@ void UT_LogsModel::testData()
 
 void UT_LogsModel::testDataAdded()
 {
+    QList<int> addedIndexes;
+    QSignalSpy spy(mModel, SIGNAL(rowsInserted(const QModelIndex &, int, int)));
+    
+    // Empty list
+    mModel->dataAdded(addedIndexes);
+    QVERIFY( spy.count() == 0 );
+        
     // One event added
     LogsEvent* event = new LogsEvent();
-    mModel->mEvents.append(event);
-    QList<int> addedIndexes;
+    mModel->mEvents.append(event); 
     addedIndexes.append( 0 );
-    QSignalSpy spy(mModel, SIGNAL(rowsInserted(const QModelIndex &, int, int)));
+
     mModel->dataAdded(addedIndexes);
     QVERIFY( spy.count() == 1 );
     
@@ -195,11 +205,19 @@ void UT_LogsModel::testDataAdded()
 
 void UT_LogsModel::testDataUpdated()
 {
+    QList<int> updatedIndexes;
+    QSignalSpy spy(mModel, SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &)));
+    
+    // Empty list
+    mModel->dataUpdated(updatedIndexes);
+    QVERIFY( spy.count() == 0 );
+    
+    // Something updated
     LogsEvent* event = new LogsEvent();
     mModel->mEvents.append(event);
-    QList<int> updatedIndexes;
+
     updatedIndexes.append( 0 );
-    QSignalSpy spy(mModel, SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &)));
+
     mModel->dataUpdated(updatedIndexes);
     QVERIFY( spy.count() == 1 );
 }
@@ -207,8 +225,11 @@ void UT_LogsModel::testDataUpdated()
 void UT_LogsModel::testDataRemoved()
 {
     QList<int> removedIndexes;
-    removedIndexes.append( 0 );
     QSignalSpy spy(mModel, SIGNAL(rowsRemoved(const QModelIndex &, int, int)));
+    mModel->dataRemoved(removedIndexes);
+    QVERIFY( spy.count() == 0 );
+    
+    removedIndexes.append( 0 ); 
     mModel->dataRemoved(removedIndexes);
     QVERIFY( spy.count() == 1 );
 }
@@ -382,9 +403,10 @@ void UT_LogsModel::testIconName()
 
 void UT_LogsModel::testGetCallerId()
 {
+    //add private and unknown
     // No name or number
     LogsEvent event;
-    QVERIFY( mModel->getCallerId(event) == QString("No number") );
+    QVERIFY( mModel->getCallerId(event) == QString("") );
 
     // No name
     QString num("+12345555");
@@ -416,6 +438,28 @@ void UT_LogsModel::testGetCallerId()
     // Duplicates for already read event
     event.setIsRead(true);
     QVERIFY( mModel->getCallerId(event) == "test@1.2.3.4" );
+}
+
+void UT_LogsModel::testSqueezedString()
+{
+    QFontMetricsF fontMetrics(HbFontSpec(HbFontSpec::Primary).font());
+    qreal maxwidth =  LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
+    QString baseString = "4124";
+    QString secondaryString = "(3)";
+    qreal stringWidth = fontMetrics.width(baseString+secondaryString);
+    
+    //test with string that fits
+    QVERIFY (mModel->SqueezedString(baseString,secondaryString,stringWidth + 10) == "4124(3)"); 
+    
+    //test with string that needs to be cutted
+    QString squeezed = mModel->SqueezedString(baseString,secondaryString,stringWidth - 10);
+    QVERIFY (squeezed.endsWith("...(3)")); 
+    
+    //test with empty basestring
+    QVERIFY (mModel->SqueezedString("",secondaryString,stringWidth) == "(3)"); 
+    
+    //test with empty secondarystring
+    QVERIFY (mModel->SqueezedString(baseString,"",stringWidth) == "4124"); 
 }
 
 void UT_LogsModel::testClearList()
@@ -495,4 +539,33 @@ void UT_LogsModel::testSetPredictiveSearch()
     LogsDbConnectorStubHelper::setPredictiveSearch(2);
     QVERIFY( mModel->setPredictiveSearch(true) == 0 );
     QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "setPredictiveSearch" );
+}
+
+void UT_LogsModel::testUpdateConfiguration()
+{   
+    QSignalSpy spy(mModel, SIGNAL(modelReset()));
+    
+    // No previous config, reset not signaled
+    LogsConfigurationParams params;
+    params.setListItemTextWidth(200);
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 0 );
+    
+    // Previous config but no change, reset not signaled
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 0 );
+    
+    // Config changed but no unseen events, reset not signaled
+    params.setListItemTextWidth(400);
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 0 );
+    
+    // Config changed and unseen events, reset signaled
+    LOGS_TEST_CREATE_EVENT(event, 1, LogsEvent::EventAdded );
+    event->setDirection(LogsEvent::DirMissed);
+    event->setDuplicates(10);
+    params.setListItemTextWidth(300);
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 1 );
+        
 }

@@ -35,6 +35,7 @@ class LogsContact;
 class LogsMatchesModel : public LogsAbstractModel 
 {
     //Q_OBJECT
+    friend class UT_LogsMatchesView;
     
 public:
     
@@ -44,11 +45,7 @@ public: // The exported API
   
     ~LogsMatchesModel();
     void logsMatches( const QString& pattern );
-    
-    /**
-     * Factory method for creating a new contact object. Transfers ownership.
-     */
-    LogsContact* createContact(const QString& number);
+
         
 public: // From QAbstractItemModel
     

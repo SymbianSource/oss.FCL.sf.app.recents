@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
     qDebug() << "LogsServicesTester entry";
     LogsServices::LogsView viewIndex = LogsServices::ViewAll;
     bool showDialpad = false;
+    QString number;
     for ( int i = 0; i< argc; i++ ){
         qDebug() << "Arg" << ( i + 1 ) << argv[i];
         QString argStr( argv[i] );
@@ -36,6 +37,9 @@ int main(int argc, char *argv[])
         if ( argStr == QString("-dialpad") ){
             showDialpad = true;
         }
+        if ( argStr == QString("-num") ){
+            number = "223456677";
+        }
     }
     
     HbApplication app(argc, argv);
@@ -43,7 +47,7 @@ int main(int argc, char *argv[])
     mainWindow.show();
     
     qDebug() << "LogsServicesTester start logs";    
-    LogsServices::start( viewIndex, showDialpad );
+    LogsServices::start( viewIndex, showDialpad, number );
     
     int ret = app.exec();
     qDebug() << "LogsServicesTester exit";

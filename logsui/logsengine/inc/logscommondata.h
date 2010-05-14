@@ -20,6 +20,7 @@
 
 #include <qmobilityglobal.h>
 #include "logsevent.h"
+#include "logsconfigurationparams.h"
 
 QTM_BEGIN_NAMESPACE
 class QContactManager;
@@ -57,14 +58,18 @@ class LogsCommonData
         int maxReadSize() const;
         LogsEvent::LogsDirection maxReadSizeDirection() const;
         
+        int updateConfiguration(const LogsConfigurationParams& params);
+        LogsConfigurationParams& currentConfiguration();
     private:
         
         QContactManager* mContactManager;
         int mMaxReadSize;
         LogsEvent::LogsDirection mMaxReadSizeDir;
+        LogsConfigurationParams mConfiguration;
     
     private:
         friend class UT_LogsCommonData;
+        friend class UT_LogsModel;
         
 };
 

@@ -58,6 +58,7 @@ private slots: //test methods
     void testOpenDialpad();
     void testSetDialpadPostion();
     void testDialpadClosed();
+    void testDialpadOpened();
     void testDialpadEditorTextChanged();
     void testChangeFilter();
     void testOpenContactsApp();
@@ -79,6 +80,11 @@ private slots: //test methods
     void testHandleOrientationChanged();
     void testHandleExit();
     void testIsExitAllowed();
+    void testAddToContacts();
+    void testSendMessageToCurrentNum();
+    void testDeleteEvent();
+    void testDeleteEventOkAnswer();
+    void testAskConfirmation();
     
 private:
  

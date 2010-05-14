@@ -81,23 +81,10 @@ QVariant LogsMatchesModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
 void LogsMatchesModel::logsMatches( const QString& pattern )
 {
     Q_UNUSED(pattern);
     mLastCall = QString("logsMatches");
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-LogsContact* LogsMatchesModel::createContact(const QString& number)
-{
-    return new LogsContact(number);
 }
 
 // -----------------------------------------------------------------------------

@@ -116,7 +116,7 @@ void LogsEffectHandler::fadeAnimationChanged(QAbstractAnimation *currentAnimatio
         emit dissappearByFadingComplete();
     }
 }
-    
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -127,6 +127,7 @@ void LogsEffectHandler::startDissappearAppearByFadingEffect(QObject& effectTarge
                       1.0, 0.0, logsEffectDissappearDurationInMs);
     initOpacityEffect(*mItemAppearByFadingAnimation, &effectTarget, 
                       0.0, 1.0, logsEffectAppearDurationInMs);
+    mFadeGroup->stop(); 
     mFadeGroup->start();
 }
 
@@ -158,6 +159,7 @@ void LogsEffectHandler::doStartDissappearAppearByMovingEffect(
     initAppearByMovingEffect(
             static_cast<QPropertyAnimation&>(*group.animationAt(logsAppearByMovingIndex)), 
             &effectTarget, !dissappearToLeft, origX);
+    group.stop(); 
     group.start();
 }
 

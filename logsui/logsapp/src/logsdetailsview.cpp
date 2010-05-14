@@ -14,7 +14,6 @@
 * Description:
 *
 */
-//USER
 #include "logsdetailsview.h"
 #include "logsdetailsmodel.h"
 #include "logscall.h"
@@ -31,6 +30,8 @@
 #include <hbgroupbox.h>
 #include <hbmessagebox.h>
 #include <hblabel.h>
+#include <dialpad.h>
+#include <hblineedit.h>
 Q_DECLARE_METATYPE(LogsDetailsModel*)
 
 
@@ -118,7 +119,7 @@ void LogsDetailsView::deactivated()
 void LogsDetailsView::callKeyPressed()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::callKeyPressed()" );
-    if ( mCall ){
+    if ( !tryCallToDialpadNumber() && mCall ){
         mCall->initiateCallback();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::callKeyPressed()" );
@@ -131,7 +132,7 @@ void LogsDetailsView::callKeyPressed()
 void LogsDetailsView::initiateVoiceCall()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::initiateVoiceCall()" );
-    if ( mCall ){
+    if ( !tryCallToDialpadNumber() && mCall ){
         mCall->call(LogsCall::TypeLogsVoiceCall);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::initiateVoiceCall()" );
@@ -144,7 +145,7 @@ void LogsDetailsView::initiateVoiceCall()
 void LogsDetailsView::initiateVideoCall()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::initiateVideoCall()" );
-    if ( mCall ){
+    if ( !tryCallToDialpadNumber(LogsCall::TypeLogsVideoCall) && mCall ){
         mCall->call(LogsCall::TypeLogsVideoCall);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::initiateVideoCall()" );
@@ -154,18 +155,13 @@ void LogsDetailsView::initiateVideoCall()
 // 
 // -----------------------------------------------------------------------------
 //
-void LogsDetailsView::addToContacts()
+void LogsDetailsView::sendMessage()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::addToContacts()" );
-    if ( mContact ){
-        // Use async connection to ensure that model can handle
-        // contact operation completion before view
-        QObject::connect(mContact, SIGNAL(saveCompleted(bool)),
-                         this, SLOT(contactActionCompleted(bool)), 
-                         Qt::QueuedConnection);
-        this->saveContact();
+    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::sendMessage()" );
+    if ( !tryMessageToDialpadNumber() && mMessage ){
+        mMessage->sendMessage();
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::addToContacts()" );
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::sendMessage()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -206,43 +202,26 @@ void LogsDetailsView::contactActionCompleted(bool modified)
 }
 
 // -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-void LogsDetailsView::deleteEvent()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::deleteEvent()" );
-    if ( mDetailsModel ) {
-        if ( askConfirmation( hbTrId("txt_dialer_ui_title_delete_event"),
-                    hbTrId("txt_dialer_info_call_event_will_be_removed_from"))){
-            mDetailsModel->clearEvent();
-            handleBackSoftkey();       
-        }
-    }
-    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::deleteEvent()" );
-}
-
-// -----------------------------------------------------------------------------
-// LogsDetailsView::copyNumberToClipboard()
-// -----------------------------------------------------------------------------
-//
-void LogsDetailsView::copyNumberToClipboard()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::copyNumberToClipboard()" );
-    if ( mDetailsModel ) {
-        mDetailsModel->getNumberToClipboard();
-        handleBackSoftkey();    
-    }
-    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::copyNumberToClipboard()" );
-}
-
-// -----------------------------------------------------------------------------
 // LogsDetailsView::handleBackSoftkey
 // -----------------------------------------------------------------------------
 //
 void LogsDetailsView::handleBackSoftkey()
 {
     mViewManager.activatePreviousView();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsDetailsView::deleteEventOkAnswer()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::deleteEventOkAnswer()" );
+    if (mDetailsModel) {
+        mDetailsModel->clearEvent();
+        handleBackSoftkey(); 
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::deleteEventOkAnswer()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -311,7 +290,7 @@ void LogsDetailsView::updateMenu()
     HbAction* messageAction = qobject_cast<HbAction*>( 
             mRepository.findObject( logsCommonMessageMenuActionId ) );
     HbAction* addToContactsAction = qobject_cast<HbAction*>( 
-            mRepository.findObject( logsDetailsAddToContactsMenuActionId ) );
+            mRepository.findObject( logsCommonAddToContactsMenuActionId ) );
     HbAction* openContactAction = qobject_cast<HbAction*>( 
             mRepository.findObject( logsDetailsOpenContactMenuActionId ) );
     
@@ -330,7 +309,13 @@ void LogsDetailsView::updateMenu()
     
     bool contactCanBeAdded(false);
     bool contactCanBeOpened(false);
-    if (mContact){
+    if ( isDialpadInput() ){
+        // Contact addition will be done using input field number
+        contactCanBeAdded = true;
+        // No need for voice call option in options menu as voice dialling
+        // to dialpad num is possible from green button
+        voiceCallAvailable = false;
+    } else if (mContact){
         if (mContact->allowedRequestType() == LogsContact::TypeLogsContactSave){
             contactCanBeAdded = true;
         }
@@ -350,6 +335,20 @@ void LogsDetailsView::updateMenu()
 }
 
 // -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsDetailsView::dialpadEditorTextChanged()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::dialpadEditorTextChanged()" );
+    if ( !tryMatchesViewTransition() ) {
+        updateMenu();
+        updateCallButton();  
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::dialpadEditorTextChanged()" );
+}
+
+// -----------------------------------------------------------------------------
 // LogsDetailsView::updateWidgetsSizeAndLayout
 // -----------------------------------------------------------------------------
 //
@@ -357,6 +356,7 @@ void LogsDetailsView::updateWidgetsSizeAndLayout()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::updateWidgetsSizeAndLayout()" );
     if ( mListView ) {
+        updateMenu();
         updateListLayoutName(*mListView, true);
         updateListSize();
     }

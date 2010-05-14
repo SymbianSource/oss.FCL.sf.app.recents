@@ -20,6 +20,7 @@
 #include <hbview.h>
 #include <logsservices.h>
 #include "logsdefs.h"
+#include "logscall.h"
 
 class LogsComponentRepository;
 class LogsAbstractViewManager;
@@ -33,6 +34,7 @@ class HbMenu;
 class QSignalMapper;
 class HbLabel;
 class HbListView;
+class LogsAbstractModel;
 
 /**
  * 
@@ -63,6 +65,7 @@ public:
 public slots:
     
     virtual void handleExit();
+    virtual void callKeyPressed();
     void closeEmptyMenu();
     
 signals:
@@ -77,6 +80,7 @@ protected slots:
     virtual void dialpadEditorTextChanged();
     virtual void updateEmptyListWidgetsVisibility();
     virtual void updateWidgetsSizeAndLayout();
+    virtual void contactActionCompleted(bool modified);
     
     //slots bellow are used in *.docml
     void showFilterMenu();
@@ -84,6 +88,8 @@ protected slots:
     void openContactsApp();
     void notSupported();
     void changeFilter(HbAction* action);
+    void addToContacts();
+    void saveNumberInDialpadToContacts();
     
     //other slots
     void showListItemMenu(HbAbstractViewItem* item, const QPointF& coords);    
@@ -93,7 +99,12 @@ protected slots:
     void saveContact();
     void updateEmptyListLabelVisibility();
     void showCallDetails();
+    
     void deleteEvent();
+    virtual void deleteEventOkAnswer();
+    
+    void videoCallToCurrentNum();
+    void sendMessageToCurrentNum();
 
     void handleOrientationChanged();
     
@@ -132,6 +143,10 @@ protected:
     
     virtual QAbstractItemModel* model() const;
     
+    virtual LogsAbstractModel* logsModel() const;
+    
+    virtual HbListView* listView() const;
+    
     virtual void populateListItemMenu(HbMenu& menu);
     
     /**
@@ -143,17 +158,31 @@ protected:
      * Update call button state.
      */
     virtual void updateCallButton();
+    
+    /**
+     * Make call if dialpad is opened and contains inputted number.
+     * @return true if call was made
+     */
+    bool tryCallToDialpadNumber(
+        LogsCall::CallType callType = LogsCall::TypeLogsVoiceCall);
+    bool tryMessageToDialpadNumber();
 	
     void activateEmptyListIndicator(QAbstractItemModel* model);
     void deactivateEmptyListIndicator(QAbstractItemModel* model);
     
     void addViewSwitchingEffects();
     void toggleActionAvailability( HbAction* action, bool available );
-    /*
-     * 
-     */
-    bool askConfirmation( QString heading , QString text );
-	
+
+    void askConfirmation( QString heading , QString text, QObject* receiver,
+            const char* okSlot = 0, const char* cancelSlot = 0 );
+
+    void updateContactSearchAction();
+    bool isContactSearchEnabled() const;
+    bool isContactSearchPermanentlyDisabled() const;
+    void updateDialpadCallAndMessagingActions();
+    bool tryMatchesViewTransition();
+    bool isDialpadInput() const;
+    
 protected:
     
     LogsAppViewId mViewId;

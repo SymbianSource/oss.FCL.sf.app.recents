@@ -28,7 +28,8 @@
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
-bool logsMenuShown = false;
+bool testMenuShown = false;
+bool testDialogShown = false;
 HbMainWindow* testWindow = 0;
 HbView* testView = 0;
 int testViewCount = 0;
@@ -43,10 +44,11 @@ bool testIsWidgetRaised = false;
 void HbStubHelper::reset()
 {
     actionCount = 0;
-    logsMenuShown = false;
+    testMenuShown = false;
     testSingleShotTimer = false;
     testQuitCalled = false;
     testIsWidgetRaised = false;
+    testDialogShown = false;
 }
 
 
@@ -58,8 +60,14 @@ int HbStubHelper::widgetActionsCount()
 
 bool HbStubHelper::menuShown()
 {
-    return logsMenuShown;
+    return testMenuShown;
 }
+
+bool HbStubHelper::dialogShown()
+{
+    return testDialogShown;
+}
+
 
 bool HbStubHelper::singleShotTimerActive()
 {
@@ -139,21 +147,25 @@ void QCoreApplication::quit()
 //
 // -----------------------------------------------------------------------------
 //
-HbAction *HbMenu::exec(const QPointF &pos, HbAction *action )
+void HbMenu::open(QObject *receiver, const char *member)
 {
-   Q_UNUSED(action)
-   Q_UNUSED(pos)
-   logsMenuShown = true;
-   return 0;
+   Q_UNUSED(receiver)
+   Q_UNUSED(member)   
+   testMenuShown = true;
 }
 
-HbAction *HbMenu::exec(HbAction *action)
+void HbDialog::open(QObject *receiver, const char *member)
 {
-    Q_UNUSED(action)
-    logsMenuShown = true;
-    return 0;
+   Q_UNUSED(receiver)
+   Q_UNUSED(member)
+   testDialogShown = true;
 }
 
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void QGraphicsWidget::addAction(QAction *action)
 {
     Q_UNUSED(action)
@@ -191,26 +203,6 @@ Qt::Orientation HbMainWindow::orientation() const
 QRectF HbMainWindow::layoutRect() const
 {
     return QRectF(0, 0, 100,100);
-}
-
-HbAction* HbMainWindow::softKeyAction(Hb::SoftKeyId key) const
-{
-    Q_UNUSED(key)
-    return testSoftkeyAction;
-}
-
-void HbMainWindow::addSoftKeyAction(Hb::SoftKeyId key, HbAction *action)
-{
-    Q_UNUSED(key)
-    Q_UNUSED(action)
-    testSoftkeyAction = action;
-}
-
-void HbMainWindow::removeSoftKeyAction(Hb::SoftKeyId key, HbAction *action)
-{
-    Q_UNUSED(key)
-    Q_UNUSED(action)
-    testSoftkeyAction = 0;
 }
 
 HbView *HbMainWindow::addView(QGraphicsWidget *widget)

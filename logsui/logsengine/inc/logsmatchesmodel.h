@@ -48,41 +48,22 @@ public: // The exported API
   
     LOGSENGINE_EXPORT ~LogsMatchesModel();
     LOGSENGINE_EXPORT void logsMatches(const QString& pattern);
-    
-    /**
-     * Factory method for creating a new contact object. Transfers ownership.
-     */
-    LOGSENGINE_EXPORT LogsContact* createContact(const QString& number);
-    
-    /**
-     * Returns cenrep key status of predictive search feature. 
-     * @return 0 - feature is permanently off and can't be turned on,
-     *         1 - feature is on
-     *         2 - feature is temporarily off and can be turned on 
-     *         negative value indicates some error in fetching the key
-     */
-    LOGSENGINE_EXPORT int predictiveSearchStatus();
-    
-    /**
-     * Allows to modify cenrep key value of predictive search features. 
-     * However, this function can't be used if feature is set permanently off 
-     * (see predictiveSearchStatus())
-     * @param enabled, specify whether cenrep key will be set to 1 or 2
-     * @ return 0 if cenrep key value modified succesfully,
-     *          -1 in case of some error
-     */
-    LOGSENGINE_EXPORT int setPredictiveSearch(bool enabled);
         
 public: // From QAbstractItemModel
     
     virtual int rowCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
- 
-public: // From LogsAbstractModel
+
+protected slots:
+
+    virtual void contactSavingCompleted(bool modified);
+    
+protected: // From LogsAbstractModel
     
     virtual QVariant createCall(const LogsModelItemContainer& item) const;
     virtual QVariant createMessage(const LogsModelItemContainer& item) const;
     virtual QVariant createContact(const LogsModelItemContainer& item) const;
+    virtual int doSetPredictiveSearch(bool enabled);
    
     
 private slots:
@@ -120,7 +101,6 @@ private: //data
     QString mCurrentSearchPattern;
     QString mPrevSearchPattern;
     LogsThumbIconManager   *mIconManager;
-    bool mSearchEnabled;
     int mResultCount;
     
 private:

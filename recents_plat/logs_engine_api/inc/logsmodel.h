@@ -24,6 +24,7 @@
 class LogsEvent;
 class LogsDbConnector;
 class LogsMatchesModel;
+class LogsConfigurationParams;
 
 /**
  * Model for log events.
@@ -104,25 +105,13 @@ public: // The exported API
      * @return 0 if compressed
      */
     LOGSENGINE_EXPORT int compressData();
-    
+ 
     /**
-     * Returns cenrep key status of predictive search feature. 
-     * @return 0 - feature is permanently off and can't be turned on,
-     *         1 - feature is on
-     *         2 - feature is temporarily off and can be turned on 
-     *         negative value indicates some error in fetching the key
+     * Configuration.
+     * @param configuration parameters
+     * @return 0 if configured succesfully
      */
-    LOGSENGINE_EXPORT int predictiveSearchStatus();
-    
-    /**
-     * Allows to modify cenrep key value of predictive search features. 
-     * However, this function can't be used if feature is set permanently off 
-     * (see predictiveSearchStatus())
-     * @param enabled, specify whether cenrep key will be set to 1 or 2
-     * @ return 0 if cenrep key value modified succesfully,
-     *          -1 in case of some error
-     */
-    LOGSENGINE_EXPORT int setPredictiveSearch(bool enabled);    
+    LOGSENGINE_EXPORT int updateConfiguration(LogsConfigurationParams& params);
 
 public: // From QAbstractItemModel
     
@@ -160,6 +149,7 @@ public slots:
     void dataAdded(QList<int> addedIndexes);   
     void dataUpdated(QList<int> updatedIndexes);
     void dataRemoved(QList<int> removedIndexes);
+    void resetModel();
 
 private:
     
@@ -170,6 +160,7 @@ private:
      */
     QList< QList<int> > findSequentialIndexes(const QList<int>& indexes); 
     QString getCallerId(const LogsEvent& event) const;
+    QString SqueezedString(QString basestring, QString secondarystring, qreal maxwidth) const;
     void initIcons();
     bool matchEventWithClearType(const LogsEvent& event, LogsModel::ClearType clearType);
     

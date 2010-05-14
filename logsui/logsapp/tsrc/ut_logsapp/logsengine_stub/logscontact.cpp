@@ -20,6 +20,7 @@
 #include "logscontact.h"
 //SYSTEM
 
+static LogsContact::RequestType logstTestRequestType = LogsContact::TypeLogsContactSave;
 
 // -----------------------------------------------------------------------------
 //
@@ -51,7 +52,7 @@ LogsContact::~LogsContact()
 //
 LogsContact::RequestType LogsContact::allowedRequestType()
 {
-    return LogsContact::TypeLogsContactSave;
+    return logstTestRequestType;
 }    
 
 // ----------------------------------------------------------------------------
@@ -79,4 +80,13 @@ bool LogsContact::addNew()
 bool LogsContact::updateExisting()
 {
     return false;
+}
+
+void LogsContact::setNextRequestType(LogsContact::RequestType type)
+{
+    logstTestRequestType = type;
+}
+void LogsContact::reset()
+{
+    logstTestRequestType = LogsContact::TypeLogsContactSave;
 }

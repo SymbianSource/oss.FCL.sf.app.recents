@@ -18,6 +18,7 @@
 //USER
 #include "logscommondata.h"
 #include "logslogger.h"
+#include "logsconfigurationparams.h"
 
 //SYSTEM
 #include <qcontactmanager.h>
@@ -110,5 +111,23 @@ LogsEvent::LogsDirection LogsCommonData::maxReadSizeDirection() const
     return mMaxReadSizeDir;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsCommonData::updateConfiguration(const LogsConfigurationParams& params)
+{
+    mConfiguration = params;
+    return 0;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+LogsConfigurationParams& LogsCommonData::currentConfiguration()
+{
+    return mConfiguration;
+}
 // End of file
 

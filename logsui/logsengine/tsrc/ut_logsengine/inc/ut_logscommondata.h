@@ -45,6 +45,7 @@ private slots: //test methods
     void testGetInstance();
     void testGetContactManager();
     void testFreeCommonData();
+    void testCurrentConfiguration();
     
 private:
 

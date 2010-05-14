@@ -35,18 +35,32 @@ DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
 HEADERS += inc/ut_logscntfinder.h
-HEADERS += ../../inc/logscntfinder.h
 HEADERS += inc/ut_logspredictivetranslator.h
-HEADERS += ../../inc/logspredictivetranslator.h
+HEADERS += inc/ut_logspredictive12keytranslator.h
+HEADERS += inc/ut_logspredictivelatin12keytranslator.h
+HEADERS += inc/ut_logspredictivethai12keytranslator.h
 HEADERS += inc/ut_logscntentry.h
+HEADERS += ../../inc/logscntfinder.h
+HEADERS += ../../inc/logscntentry.h
+HEADERS += ../../inc/logspredictivetranslator.h
+HEADERS += ../../inc/logspredictive12keytranslator.h
+HEADERS += ../../inc/logspredictivelatin12keytranslator.h
+HEADERS += ../../inc/logspredictivethai12keytranslator.h
 HEADERS += ../stubs/qtcontacts_stubs.h
 
 SOURCES += src/main.cpp
 SOURCES += src/ut_logscntfinder.cpp 
 SOURCES += src/ut_logspredictivetranslator.cpp
+SOURCES += src/ut_logspredictive12keytranslator.cpp
+SOURCES += src/ut_logspredictivelatin12keytranslator.cpp
+SOURCES += src/ut_logspredictivethai12keytranslator.cpp
 SOURCES += src/ut_logscntentry.cpp
 SOURCES += ../../src/logscntfinder.cpp
+SOURCES += ../../src/logscntentry.cpp
 SOURCES += ../../src/logspredictivetranslator.cpp
+SOURCES += ../../src/logspredictive12keytranslator.cpp
+SOURCES += ../../src/logspredictivelatin12keytranslator.cpp
+SOURCES += ../../src/logspredictivethai12keytranslator.cpp
 SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
 SOURCES += ../stubs/qtcontacts_stubs.cpp
 

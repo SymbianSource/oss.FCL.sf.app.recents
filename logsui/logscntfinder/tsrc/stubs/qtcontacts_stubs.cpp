@@ -80,6 +80,7 @@ void ContactQueryResults::set( int count, QString fn, QString ln )
 void ContactQueryResults::reset()
 {
     mDB.clear();
+    mQuery.clear();
 }
 
 
@@ -203,8 +204,11 @@ void QContactDetailFilter::setMatchFlags(QContactFilter::MatchFlags /*flags*/)
 {
 
 }
-void QContactDetailFilter::setValue(const QVariant& /*value*/)
+void QContactDetailFilter::setValue(const QVariant& value )
 {
+    ContactQueryResults* resultSet = ContactQueryResults::instance();
+    resultSet->filterValueSet( value.toString() );
+    
 }
 
 QVariant QContactDetailFilter::value() const

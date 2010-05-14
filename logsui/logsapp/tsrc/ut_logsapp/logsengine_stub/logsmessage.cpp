@@ -21,6 +21,7 @@
 //SYSTEM
 
 bool logsTestMessageSent = false;
+bool defaultMessageSent = false;
 
 // -----------------------------------------------------------------------------
 //
@@ -54,6 +55,7 @@ bool LogsMessage::isMessagingAllowed()
 //
 bool LogsMessage::sendMessage()
 {
+    defaultMessageSent = true;
     return false;
 
 }
@@ -79,7 +81,13 @@ bool LogsMessage::isMessageSent()
 void LogsMessage::resetTestData()
 {
     logsTestMessageSent = false;
+    defaultMessageSent = false;
 }
-    
+
+bool LogsMessage::isDefaultMessageSent()
+{
+    return defaultMessageSent;
+}
+
 // End of file
 

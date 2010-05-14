@@ -16,6 +16,7 @@
 */
 #include "ut_logscommondata.h"
 #include "logscommondata.h"
+#include "logsconfigurationparams.h"
 
 #include <QtTest/QtTest>
 
@@ -55,4 +56,11 @@ void UT_LogsCommonData::testFreeCommonData()
     LogsCommonData::freeCommonData();
 }
 
-
+void UT_LogsCommonData::testCurrentConfiguration()
+{
+    LogsConfigurationParams params;
+    params.setListItemTextWidth(400);
+    LogsCommonData::getInstance().updateConfiguration(params);
+    LogsConfigurationParams& test = LogsCommonData::getInstance().currentConfiguration();
+    QVERIFY( test.listItemTextWidth() == 400 );
+}

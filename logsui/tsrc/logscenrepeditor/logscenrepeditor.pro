@@ -31,6 +31,6 @@ SOURCES   += src/logscenrepeditorview.cpp
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0xE8316BDD
-    TARGET.CAPABILITY = CAP_APPLICATION AllFiles
+    TARGET.CAPABILITY = CAP_APPLICATION
     LIBS += -lcentralrepository   
 }

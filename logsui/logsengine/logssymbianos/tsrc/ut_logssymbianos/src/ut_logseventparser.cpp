@@ -19,8 +19,11 @@
 #include "logsevent.h"
 #include "logseventdata.h"
 #include <logcli.h>
+#include <LogsApiConsts.h>
 
 #include <QtTest/QtTest>
+
+_LIT( KTestUnknown, "Unknown" );
 
 void UT_LogsEventParser::initTestCase()
 {
@@ -34,6 +37,7 @@ void UT_LogsEventParser::cleanupTestCase()
 
 void UT_LogsEventParser::init()
 {
+    mStrings.iUnKnownRemote = DESC_TO_QSTRING( KTestUnknown() ); 
     mEvent = new LogsEvent();
 }
 
@@ -103,6 +107,32 @@ void UT_LogsEventParser::testInitializeEventL()
     // If log id is same but no data has change, event state is "not updated"
     event.initializeEventL(*logEvent, mStrings);
     QVERIFY( event.eventState() == LogsEvent::EventNotUpdated );
+    
+    LogsEvent unknowEvent;
+    logEvent->SetRemoteParty( KTestUnknown );
+    logEvent->SetNumber( _L("") );
+    unknowEvent.initializeEventL(*logEvent, mStrings);
+    QVERIFY( unknowEvent.isRemotePartyUnknown() );
+    QVERIFY( unknowEvent.number().isEmpty() );
+    logEvent->SetNumber( _L("1234") );
+    unknowEvent.initializeEventL(*logEvent, mStrings);
+    QVERIFY( !unknowEvent.isRemotePartyUnknown() );
+    QVERIFY( !unknowEvent.number().isEmpty() );
+      
+    LogsEvent privateEvent;
+    logEvent->SetRemoteParty( KLogsPrivateText );
+    logEvent->SetNumber( _L("") );
+    privateEvent.initializeEventL(*logEvent, mStrings);
+    QVERIFY( privateEvent.isRemotePartyPrivate() );
+    QVERIFY( privateEvent.number().isEmpty() );
+    
+    LogsEvent payphoneEvent;
+    logEvent->SetRemoteParty( KLogsPayphoneText );
+    logEvent->SetNumber( _L("1112222") );
+    payphoneEvent.initializeEventL(*logEvent, mStrings);
+    QVERIFY( !payphoneEvent.isRemotePartyPrivate() );
+    QVERIFY( !payphoneEvent.isRemotePartyUnknown() );
+    QVERIFY( !payphoneEvent.number().isEmpty() );
     
     CleanupStack::PopAndDestroy( logEvent );
 }

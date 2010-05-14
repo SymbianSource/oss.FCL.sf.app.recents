@@ -34,6 +34,7 @@ class LogsModel;
 class LogsComponentRepository : public HbDocumentLoader   
 {   
     friend class UT_LogsComponentRepository;
+    friend class UT_LogsViewManager;
     
 public:    
 

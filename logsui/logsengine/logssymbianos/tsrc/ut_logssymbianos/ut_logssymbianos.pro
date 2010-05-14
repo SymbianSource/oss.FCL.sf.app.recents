@@ -55,6 +55,7 @@ HEADERS += ../../inc/logsforegroundwatcher.h
 HEADERS += ../../../../../recents_plat/logs_engine_api/inc/logsevent.h
 HEADERS += ../../../inc/logseventdata.h
 HEADERS += ../../../inc/logscommondata.h
+HEADERS += ../../../inc/logsconfigurationparams.h
 
 HEADERS += ../stubs/logclient_stubs_helper.h
 
@@ -76,6 +77,8 @@ SOURCES += ../../src/logsforegroundwatcher.cpp
 SOURCES += ../../../src/logsevent.cpp
 SOURCES += ../../../src/logseventdata.cpp
 SOURCES += ../../../src/logscommondata.cpp
+SOURCES += ../../../src/logsconfigurationparams.cpp
+
 SOURCES += ../../../../tsrc/qtestutils/src/testresultxmlparser.cpp
 SOURCES += ../stubs/logclient_stubs.cpp
 SOURCES += ../stubs/qtcontacts_stubs.cpp

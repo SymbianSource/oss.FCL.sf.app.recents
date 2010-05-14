@@ -41,9 +41,9 @@ int main(int argc, char *argv[])
     QTranslator commontranslator;
     bool returncode = false;
     LOGS_QDEBUG("logs [UI] loading common strings translator");
-    returncode = commontranslator.load( path + "common_" + lang + ".qm");
+    returncode = commontranslator.load( path + "common_" + lang);
     if (returncode==false) {
-    	LOGS_QDEBUG("logs [UI] unable to open file: " + path + "common_" + lang + ".qm");
+    	LOGS_QDEBUG("logs [UI] unable to open file: " + path + "common_" + lang);
     } else {
         app.installTranslator(&commontranslator);
     }
@@ -51,22 +51,15 @@ int main(int argc, char *argv[])
     //Load application-specific translator
     QTranslator translator;
     LOGS_QDEBUG("logs [UI] loading application strings translator");
-    LOGS_QDEBUG("logs [UI] translation filename dialer_" + lang + ".qm");
-    returncode = translator.load( path + "dialer_" + lang + ".qm");
+    LOGS_QDEBUG("logs [UI] translation filename dialer_" + lang);
+    returncode = translator.load( path + "dialer_" + lang);
     if (returncode==false) {
-    	LOGS_QDEBUG("logs [UI] .qm file not found from "+path);
-    	path = ":/";
-    	returncode = translator.load( path + "logs_default.qm");
-    	LOGS_QDEBUG("logs [UI]: fallback to default language file logs_default.qm");
-    }
-       
-    if (returncode==false) {
-    	LOGS_QDEBUG( "logs [UI] .qm file not found from  "+path);
+    	LOGS_QDEBUG( "logs [UI] .qm file not found from  " + path);
     } else {
-    	LOGS_QDEBUG( "logs [UI] .qm loaded successfully from "+path);
+    	LOGS_QDEBUG( "logs [UI] .qm loaded successfully from " + path);
+        app.installTranslator(&translator);    
     }
 
-    app.installTranslator(&translator);    
     HbStyleLoader::registerFilePath(":/logslayouts");
     
     // Create service handler asap so that services are published fast.

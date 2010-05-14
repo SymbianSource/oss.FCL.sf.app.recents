@@ -30,8 +30,6 @@ class HbKeymap;
 class LogsPredictiveTranslator : public QObject 
 {
 
-    Q_OBJECT
-
 public: 
 
     static LogsPredictiveTranslator* instance();
@@ -40,20 +38,27 @@ public:
     ~LogsPredictiveTranslator();
     
     const QString translate( const QString& name, int count = -1 ) const;
-    int startsWith( const QString& text, const QString& pattern, bool optimize = true ) const;
+    int startsWith( const QString& text, const QString& pattern, 
+                    bool optimize = true ) const;
     
+public: //abstracts
     
-private:
-
+    virtual QStringList nameTokens( const QString& name ) const = 0;
+    virtual QStringList patternTokens( const QString& pattern ) const = 0;
+    virtual int hasPatternSeparators( const QString& pattern ) const = 0;
+    virtual const QChar translateChar( const QChar character ) const = 0;
+    
+protected:
+    
     explicit LogsPredictiveTranslator();
-    const QChar translate( const QChar character ) const;
+
+protected:
     
+    const HbKeymap* mKeyMap;
 
 private:
     
     static LogsPredictiveTranslator* mInstance;
-    const HbKeymap* mKeyMap;
-    
     friend class UT_LogsPredictiveTranslator;
     
 };

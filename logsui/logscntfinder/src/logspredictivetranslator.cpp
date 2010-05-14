@@ -16,11 +16,13 @@
 */
 #include <QObject>
 #include <QLocale>
-#include <hbinputkeymapfactory.h>
-#include <hbinputkeymap.h>
+#include <QHash>
 #include <hbinputsettingproxy.h>
+#include <QStringList>
 
 #include "logspredictivetranslator.h"
+#include "logspredictivelatin12keytranslator.h"
+#include "logspredictivethai12keytranslator.h"
 #include "logslogger.h"
 
 LogsPredictiveTranslator* LogsPredictiveTranslator::mInstance = 0;
@@ -33,7 +35,16 @@ LogsPredictiveTranslator* LogsPredictiveTranslator::mInstance = 0;
 LogsPredictiveTranslator* LogsPredictiveTranslator::instance()
 {
     if ( !mInstance ) {
-        mInstance = new LogsPredictiveTranslator();
+        HbInputLanguage lang = 
+                HbInputSettingProxy::instance()->globalInputLanguage();
+        switch( lang.language() ) {
+            case QLocale::Thai:
+                mInstance = new LogsPredictiveThai12KeyTranslator();
+                break;
+            default:
+                mInstance = new LogsPredictiveLatin12KeyTranslator();
+                break;
+            }
     }
     return mInstance;
 }
@@ -57,11 +68,6 @@ LogsPredictiveTranslator::LogsPredictiveTranslator()
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::\
 LogsPredictiveTranslator()" )
-    HbInputLanguage lang = 
-            HbInputSettingProxy::instance()->globalInputLanguage();
-    mKeyMap = HbKeymapFactory::instance()->keymap( lang.language(), 
-                                                   lang.variant() );
-    
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 LogsPredictiveTranslator()" )
 }
@@ -76,29 +82,11 @@ LogsPredictiveTranslator::~LogsPredictiveTranslator()
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::\
 ~LogsPredictiveTranslator()" )
     mInstance = 0;
+    mKeyMap = 0;
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 ~LogsPredictiveTranslator()" )
     
 }
-
-// -----------------------------------------------------------------------------
-// LogsPredictiveTranslator::translate()
-// -----------------------------------------------------------------------------
-//
-const QChar LogsPredictiveTranslator::translate( const QChar character ) const
-{
-    const HbMappedKey* mappedKey = mKeyMap->keyForCharacter( HbKeyboardVirtual12Key, 
-                                     character );
-    if (!mappedKey) {
-        QString decomposed = character.decomposition();
-        if (decomposed.isEmpty()) {
-            return character;
-        }
-        return translate (decomposed.at(0));
-    }
-    return mappedKey->keycode;
-}
-
 
 // -----------------------------------------------------------------------------
 // LogsPredictiveTranslator::translate()
@@ -114,10 +102,13 @@ const QString LogsPredictiveTranslator::translate( const QString& name,
     QString result;
     const QChar* content = name.data();
     int index = 0;
-    while( index < name.length() && index < count ) {
-        result.insert( index++, translate( *content++ ) );
+    while( index < count ) {
+        QChar ch = translateChar( *content++ );
+        if ( !ch.isNull() ) {
+            result.append( ch );
+        }
+        index++;
     }
-    
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::translate()" )
     return result;
 }
@@ -141,7 +132,7 @@ int LogsPredictiveTranslator::startsWith( const QString& text,
             QString translatedText = translate( text, pattern.length() );
             matchCount = translatedText == pattern ? matchCount : 0; 
         } else {
-            matchCount = translate( *text.data() ) == *pattern.data() ? 
+            matchCount = translateChar( *text.data() ) == *pattern.data() ? 
                          matchCount : 0;
         }
     }

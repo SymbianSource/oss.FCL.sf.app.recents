@@ -58,12 +58,13 @@ private slots: //test methods
     void testInitiateVoiceCall();
     void testInitiateVideoCall();
     void testUpdateMenu();
-    void testDeleteEvent();
-    void testCopyNumberToClipboard();
+    void testDeleteEventOkAnswer();
     void testChangeFilter();
     void testContactActionCompleted();
     void testModel();
     void testUpdateWidgetsSizeAndLayout();
+    void testDialpadEditorTextChanged();
+    void testSendMessage();
     
 private:
  

@@ -128,9 +128,18 @@ void LogsViewManager::changeRecentView(LogsServices::LogsView view, bool showDia
 //
 void LogsViewManager::changeMatchesView(QString dialpadText)
 {
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::changeMatchesView()" );
     Dialpad* dialpad = mComponentsRepository->dialpad();
     dialpad->editor().setText(dialpadText);
-    doActivateView(LogsMatchesViewId, true, QVariant());
+    LogsModel* model = mComponentsRepository->model();
+    if ( model && model->predictiveSearchStatus() == logsContactSearchEnabled ){
+        LOGS_QDEBUG( "logs [UI]     contact search enabled, go to macthes view" );
+        doActivateView(LogsMatchesViewId, true, QVariant());
+    } else {
+        LOGS_QDEBUG( "logs [UI]     contact search disabled, go to recent view" );
+        doActivateView(LogsRecentViewId, true, QVariant());
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::changeMatchesView()" );
 }
 
 // -----------------------------------------------------------------------------

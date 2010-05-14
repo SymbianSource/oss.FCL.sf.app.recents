@@ -25,6 +25,7 @@ class LogsEvent;
 class LogsDbConnector;
 class LogsModelItemContainer;
 class HbIcon;
+class LogsContact;
 
 /**
  * Abstract logs model.
@@ -51,7 +52,32 @@ public:
 public:
     
     ~LogsAbstractModel();
+          
+    /**
+     * Factory method for creating a new contact object. Transfers ownership.
+     */
+    LOGSENGINE_EXPORT LogsContact* createContact(const QString& number);
     
+    /**
+     * Returns cenrep key status of predictive search feature. 
+     * @return 0 - feature is permanently off and can't be turned on,
+     *         1 - feature is on
+     *         2 - feature is temporarily off and can be turned on 
+     *         negative value indicates some error in fetching the key
+     */
+    LOGSENGINE_EXPORT int predictiveSearchStatus();
+    
+    /**
+     * Allows to modify cenrep key value of predictive search features. 
+     * However, this function can't be used if feature is set permanently off 
+     * (see predictiveSearchStatus())
+     * @param enabled, specify whether cenrep key will be set to 1 or 2
+     * @ return 0 if cenrep key value modified succesfully,
+     *          -1 in case of some error
+     */
+    LOGSENGINE_EXPORT int setPredictiveSearch(bool enabled);   
+    
+    LOGSENGINE_EXPORT bool isCommunicationPossible(const LogsEvent& event) const;
 public:
     
     static QString directionIconName(const LogsEvent& event);
@@ -65,7 +91,11 @@ public:
     void getDecorationData(const LogsEvent& event, QList<QVariant>& iconList) const;
     
     LogsDbConnector* dbConnector();
-    
+
+protected slots:
+
+    virtual void contactSavingCompleted(bool modified);
+
 protected:
 
     QVariant doGetData(int role, const LogsModelItemContainer& item) const;
@@ -73,7 +103,8 @@ protected:
     virtual QVariant createCall(const LogsModelItemContainer& item) const;
     virtual QVariant createMessage(const LogsModelItemContainer& item) const;
     virtual QVariant createContact(const LogsModelItemContainer& item) const;
-      
+    virtual int doSetPredictiveSearch(bool enabled);
+    
     explicit LogsAbstractModel();
     
 protected: //data 

@@ -14,19 +14,28 @@
 * Description:
 *
 */
+#include <hbinputsettingproxy.h>
+
 #include "ut_logscntentry.h"
-#include "logscntfinder.h"
+#include "logscntentry.h"
 #include "logspredictivetranslator.h"
 
 #include <QtTest/QtTest>
 
+#define PATTERN( pattern )\
+    LogsPredictiveTranslator::instance()->translate( QString( pattern ) )
+    
 
 void UT_LogsCntEntry::initTestCase()
 {
+    mOrigLang = HbInputSettingProxy::instance()->globalInputLanguage();
+    
 }
 
 void UT_LogsCntEntry::cleanupTestCase()
 {
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( mOrigLang );
+    
 }
 
 
@@ -40,6 +49,8 @@ void UT_LogsCntEntry::cleanup()
     delete mEntry;
     mEntry = 0;
     LogsPredictiveTranslator::deleteInstance();
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( mOrigLang );
+    
 }
 
 void UT_LogsCntEntry::testConstructor()
@@ -53,7 +64,7 @@ void UT_LogsCntEntry::testConstructor()
     QVERIFY( mEntry->avatarPath() == QString("") );
     QVERIFY( mEntry->handle() == 0 );
     QVERIFY( mEntry->speedDial() == QString("") );
-    
+        
     
     mEntry->setFirstName( QString( "foo" ));
     mEntry->setLastName( QString( "bar" ));
@@ -65,6 +76,7 @@ void UT_LogsCntEntry::testConstructor()
     QVERIFY( e->firstName()[0].text() == mEntry->firstName()[0].text() );
     QVERIFY( e->lastName()[0].text() == mEntry->lastName()[0].text() );
     QVERIFY( e->phoneNumber().text() == mEntry->phoneNumber().text() );
+    QVERIFY( e->phoneNumber().mTranslatedText == mEntry->phoneNumber().mTranslatedText );
     QVERIFY( e->mHandle == mEntry->mHandle );
     QVERIFY( e->speedDial() == mEntry->speedDial() );
     
@@ -129,17 +141,17 @@ void UT_LogsCntEntry::testSetName()
 
 }
 
-void UT_LogsCntEntry::testSetHighlights()
+void UT_LogsCntEntry::testSetHighlights_latin12k()
 {
-
-    mEntry->setHighlights( QString( "665" ) );
+    
+    mEntry->setHighlights( PATTERN("665") );
     QVERIFY( mEntry->firstName()[0].text() == QString("") );
     QVERIFY( mEntry->lastName()[0].text() == QString("") );
     
     mEntry->setFirstName( QString( "Nokia" ) );
     mEntry->setLastName( QString( "Test" ) );
     
-    mEntry->setHighlights( QString( "665" ) );
+    mEntry->setHighlights( PATTERN( "665" ) );
     QVERIFY( mEntry->firstName()[0].text() == QString( "Nokia" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 3 );
     QVERIFY( mEntry->lastName()[0].text() == QString( "Test" ) );
@@ -149,7 +161,7 @@ void UT_LogsCntEntry::testSetHighlights()
     mEntry->setFirstName( QString( "Jim" ) );
     mEntry->setLastName( QString( "Johnson" ) );
     
-    mEntry->setHighlights( QString( "5" ) );
+    mEntry->setHighlights( PATTERN( "5" ) );
     QVERIFY( mEntry->firstName()[0].text() == QString( "Jim" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1 );
     QVERIFY( mEntry->lastName()[0].text() == QString( "Johnson" ) );
@@ -158,7 +170,7 @@ void UT_LogsCntEntry::testSetHighlights()
     mEntry->setFirstName( QString( "Big Jim" ) );
     mEntry->setLastName( QString( "Johnson" ) );
     
-    mEntry->setHighlights( QString( "5" ) );
+    mEntry->setHighlights( PATTERN( "5" ) );
     QVERIFY( mEntry->firstName()[0].text() == QString( "Big" ) );
     QVERIFY( mEntry->firstName()[1].text() == QString( "Jim" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0 );
@@ -168,44 +180,44 @@ void UT_LogsCntEntry::testSetHighlights()
     
     mEntry->setFirstName( QString( "John" ) );
     mEntry->setLastName( QString( "Johnson" ) );
-    mEntry->setHighlights( QString( "5646" ) );
+    mEntry->setHighlights( PATTERN( "5646" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 4 );
     QVERIFY( mEntry->lastName()[0].highlights() == 4);
     
-    mEntry->setHighlights( QString( "56467" ) );
+    mEntry->setHighlights( PATTERN( "56467" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0 );
     QVERIFY( mEntry->lastName()[0].highlights() == 5);
     
-    mEntry->setHighlights( QString( "505" ) );
+    mEntry->setHighlights( PATTERN( "505" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
     
-    mEntry->setHighlights( QString( "506" ) );//entry is not a match
+    mEntry->setHighlights( PATTERN( "506" ) );//entry is not a match
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);//506 means 5 or 6 in higlighting
     
     mEntry->setFirstName( QString( "Big Jim Johnson" ) );
     mEntry->setLastName( QString( "" ) );
     
-    mEntry->setHighlights( QString( "205" ) );
+    mEntry->setHighlights( PATTERN( "205" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->firstName()[2].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
     
-    mEntry->setHighlights( QString( "20505" ) );
+    mEntry->setHighlights( PATTERN( "20505" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->firstName()[2].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
     
-    mEntry->setHighlights( QString( "50205" ) );
+    mEntry->setHighlights( PATTERN( "50205" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->firstName()[2].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
     
-    mEntry->setHighlights( QString( "50502" ) );
+    mEntry->setHighlights( PATTERN( "50502" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->firstName()[2].highlights() == 1);
@@ -214,114 +226,199 @@ void UT_LogsCntEntry::testSetHighlights()
     mEntry->setFirstName( QString( "Big John" ) );
     mEntry->setLastName( QString( "Johnson" ) );
     
-    mEntry->setHighlights( QString( "2056" ) );
+    mEntry->setHighlights( PATTERN( "2056" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 2);
     
-    mEntry->setHighlights( QString( "5602" ) );
+    mEntry->setHighlights( PATTERN( "5602" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 2);
     
-    mEntry->setHighlights( QString( "564602" ) );
+    mEntry->setHighlights( PATTERN( "564602" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 4);
     QVERIFY( mEntry->lastName()[0].highlights() == 4);
     
-    mEntry->setHighlights( QString( "5646702" ) );
+    mEntry->setHighlights( PATTERN( "5646702" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 0);
     QVERIFY( mEntry->lastName()[0].highlights() == 5);
     
-    mEntry->setHighlights( QString( "5646" ) );
+    mEntry->setHighlights( PATTERN( "5646" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 4);
     QVERIFY( mEntry->lastName()[0].highlights() == 4);
     
-    mEntry->setHighlights( QString( "50" ) );
+    mEntry->setHighlights( PATTERN( "50" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
     
-    mEntry->setHighlights( QString( "05" ) );
+    mEntry->setHighlights( PATTERN( "05" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 1);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
     
     mEntry->setFirstName( QString( "John 0John" ) );
     mEntry->setLastName( QString( "Malkovich" ) );
-    mEntry->setHighlights( QString( "05" ) );
+    mEntry->setHighlights( PATTERN( "05" ) );
     
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
 
-    mEntry->setHighlights( QString( "0506" ) );
+    mEntry->setHighlights( PATTERN( "0506" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
 
-    mEntry->setHighlights( QString( "506" ) );
+    mEntry->setHighlights( PATTERN( "506" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 0);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
     
-    mEntry->setHighlights( QString( "5060" ) );
+    mEntry->setHighlights( PATTERN( "5060" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 0);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
     
-    mEntry->setHighlights( QString( "05060" ) );
+    mEntry->setHighlights( PATTERN( "05060" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
     
-    mEntry->setHighlights( QString( "050506" ) );
+    mEntry->setHighlights( PATTERN( "050506" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 1);
     QVERIFY( mEntry->firstName()[1].highlights() == 2);
     QVERIFY( mEntry->lastName()[0].highlights() == 1);
     
     mEntry->setPhoneNumber( QString( "+1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "+1234567" ) );
-    mEntry->setHighlights( QString( "+12" ) );
+    mEntry->setHighlights( PATTERN( "+12" ) );
     QVERIFY( mEntry->phoneNumber().mHighlights == 3 );
     
     mEntry->setPhoneNumber( QString( "1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "1234567" ) );
-    mEntry->setHighlights( QString( "+12" ) );
+    mEntry->setHighlights( PATTERN( "+12" ) );
     QVERIFY( mEntry->phoneNumber().mHighlights == 0 );
     
-    mEntry->setHighlights( QString( "12" ) );
+    mEntry->setHighlights( PATTERN( "12" ) );
     QVERIFY( mEntry->phoneNumber().mHighlights == 2 );
 
     mEntry->setFirstName( QString( "Alice 028 Ming" ) );
-    mEntry->setHighlights( QString( "028" ) );
+    mEntry->setHighlights( PATTERN( "028" ) );
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 3);
     QVERIFY( mEntry->firstName()[2].highlights() == 0);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
 
+    mEntry->setFirstName( QString( "Alice +Ming" ) );
+    
+    mEntry->setHighlights( PATTERN( "+6" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "#6" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+
+    mEntry->setHighlights( PATTERN( "*6" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "16" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setFirstName( QString( "Alice M*ing" ) );
+    mEntry->setHighlights( PATTERN( "6+" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6*" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6#" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+
+    mEntry->setFirstName( QString( "Alice M-ing" ) );
+    mEntry->setHighlights( PATTERN( "6+" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6*" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6#" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+        
+    mEntry->setHighlights( PATTERN( "61" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setFirstName( QString( "Alice M#ing" ) );
+    mEntry->setHighlights( PATTERN( "6+" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6*" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6#" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+        
+    mEntry->setHighlights( PATTERN( "61" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
 }
 
 void UT_LogsCntEntry::testSetPhoneNumber()
 {
+    QString empty("");
+
     mEntry->setPhoneNumber( QString( "1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "1234567" ) );
-    QVERIFY( mEntry->phoneNumber().mTranslatedText == QString( "" ) );
+    QVERIFY( mEntry->phoneNumber().mTranslatedText != empty );
     QVERIFY( mEntry->phoneNumber().mHighlights == 0 );
 
     mEntry->setPhoneNumber( QString( "+1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "+1234567" ) );
+    QVERIFY( mEntry->phoneNumber().mTranslatedText != empty );
     
     mEntry->setPhoneNumber( QString( "#1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "#1234567" ) );
+    QVERIFY( mEntry->phoneNumber().mTranslatedText != empty );
 
     mEntry->setPhoneNumber( QString( "*1234567" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "*1234567" ) );
+    QVERIFY( mEntry->phoneNumber().mTranslatedText != empty );
 
     mEntry->setPhoneNumber( QString( "*12+345#67" ) );
     QVERIFY( mEntry->phoneNumber().text() == QString( "*12+345#67" ) );
+    QVERIFY( mEntry->phoneNumber().mTranslatedText != empty );
     
 }
 
@@ -339,11 +436,11 @@ void UT_LogsCntEntry::testSetAvatarPath()
     
 }
 
-void UT_LogsCntEntry::testRichText()
+void UT_LogsCntEntry::testRichText_latin12k()
 {
     
     mEntry->setFirstName( QString( "John" ) );
-    mEntry->setHighlights( QString( "5" ) );
+    mEntry->setHighlights( PATTERN( "5" ) );
     QVERIFY( mEntry->firstName()[0].richText() == QString( "<b><u>J</u></b>ohn" ) );
     QVERIFY( mEntry->firstName()[0].richText( QString("<u>"),QString("</u>")  ) 
                                                == QString( "<u>J</u>ohn" ) );
@@ -355,13 +452,13 @@ void UT_LogsCntEntry::testRichText()
     QVERIFY( mEntry->firstName()[0].richText() == QString( "" ) );
     
     mEntry->setPhoneNumber( QString( "1234567" ) );
-    mEntry->setHighlights( QString( "5" ) );
+    mEntry->setHighlights( PATTERN( "5" ) );
     
     QVERIFY( mEntry->phoneNumber().mHighlights == 0 );
     QVERIFY( mEntry->phoneNumber().text() == QString( "1234567" ) );
     QVERIFY( mEntry->phoneNumber().richText() == QString( "1234567" ) );
     
-    mEntry->setHighlights( QString( "1" ) );
+    mEntry->setHighlights( PATTERN( "1" ) );
     
     QVERIFY( mEntry->phoneNumber().mHighlights == 1 );
     QVERIFY( mEntry->phoneNumber().text() == QString( "1234567" ) );
@@ -369,25 +466,26 @@ void UT_LogsCntEntry::testRichText()
     
 }
 
-void UT_LogsCntEntry::testMatch()
+void UT_LogsCntEntry::testMatch_latin12k()
 {
+    
     mEntry->mType = LogsCntEntry::EntryTypeHistory;
     
     mEntry->setFirstName( QString( "John" ) );
-    QVERIFY( mEntry->match( QString( "5" ) ) );
-    QVERIFY( !mEntry->match( QString( "6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "6" ) ) );
     
     mEntry->setPhoneNumber( QString( "11111111111" ) );
     mEntry->setFirstName( QString( "John" ) );
     mEntry->setLastName( QString( "Malkovich" ) );
-    QVERIFY( mEntry->match( QString( "6" ) ) );
-    QVERIFY( mEntry->match( QString( "5" ) ) );
-    QVERIFY( !mEntry->match( QString( "2" ) ) );
-    QVERIFY( mEntry->match( QString( "56" ) ) );
-    QVERIFY( !mEntry->match( QString( "566" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "2" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "56" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "566" ) ) );
 
     mEntry->setPhoneNumber( QString( "5669876566" ) );
-    QVERIFY( mEntry->match( QString( "566" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "566" ) ) );
 
 // - zero cases -
     
@@ -395,93 +493,199 @@ void UT_LogsCntEntry::testMatch()
     mEntry->setFirstName( QString( "John" ) );
     mEntry->setLastName( QString( "Malkovich" ) );
     
-    QVERIFY( mEntry->match( QString( "202" ) ) );//match not John and match not Malkovich match phone
-    QVERIFY( !mEntry->match( QString( "507" ) ) );//match John and match not Malkovich
-    QVERIFY( !mEntry->match( QString( "206" ) ) );//match not John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "506" ) ) );//match John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "605" ) ) );//match John and macth Malkovich
-    QVERIFY( !mEntry->match( QString( "505" ) ) );//match John "two times"
-    QVERIFY( mEntry->match( QString( "60005" ) ) );//match John and match Malkovich
-    QVERIFY( !mEntry->match( QString( "6000500" ) ) );//match John and match Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "00" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "202" ) ) );//match not John and match not Malkovich match phone
+    QVERIFY( !mEntry->match( PATTERN( "507" ) ) );//match John and match not Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "206" ) ) );//match not John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );//match John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "605" ) ) );//match John and macth Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "505" ) ) );//match John "two times"
+    QVERIFY( mEntry->match( PATTERN( "60005" ) ) );//match John and match Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "6000500" ) ) );//match John and match Malkovich
     
     mEntry->setFirstName( QString( "John Malkovich" ) );
     mEntry->setLastName( QString( "" ) );
     
-    QVERIFY( mEntry->match( QString( "202" ) ) );//match not John and match not Malkovich match phone
-    QVERIFY( !mEntry->match( QString( "507" ) ) );//match John and match not Malkovich
-    QVERIFY( !mEntry->match( QString( "206" ) ) );//match not John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "506" ) ) );//match John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "605" ) ) );//match John and macth Malkovich
-    QVERIFY( !mEntry->match( QString( "505" ) ) );//match John "two times"
-    QVERIFY( mEntry->match( QString( "60005" ) ) );//match John and match Malkovich
-    QVERIFY( !mEntry->match( QString( "6000500" ) ) );//match John and match Malkovich
+    QVERIFY( mEntry->match( PATTERN( "202" ) ) );//match not John and match not Malkovich match phone
+    QVERIFY( !mEntry->match( PATTERN( "507" ) ) );//match John and match not Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "206" ) ) );//match not John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );//match John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "605" ) ) );//match John and macth Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "505" ) ) );//match John "two times"
+    QVERIFY( mEntry->match( PATTERN( "60005" ) ) );//match John and match Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "6000500" ) ) );//match John and match Malkovich
 
     mEntry->setFirstName( QString( "" ) );
     mEntry->setLastName( QString( "John Malkovich" ) );
     
-    QVERIFY( mEntry->match( QString( "202" ) ) );//match not John and match not Malkovich match phone
-    QVERIFY( !mEntry->match( QString( "507" ) ) );//match John and match not Malkovich
-    QVERIFY( !mEntry->match( QString( "206" ) ) );//match not John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "506" ) ) );//match John and macth Malkovich
-    QVERIFY( mEntry->match( QString( "605" ) ) );//match John and macth Malkovich
-    QVERIFY( !mEntry->match( QString( "505" ) ) );//match John "two times"
-    QVERIFY( mEntry->match( QString( "60005" ) ) );//match John and match Malkovich
-    QVERIFY( !mEntry->match( QString( "6000500" ) ) );//match John and match Malkovich
+    QVERIFY( mEntry->match( PATTERN( "202" ) ) );//match not John and match not Malkovich match phone
+    QVERIFY( !mEntry->match( PATTERN( "507" ) ) );//match John and match not Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "206" ) ) );//match not John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );//match John and macth Malkovich
+    QVERIFY( mEntry->match( PATTERN( "605" ) ) );//match John and macth Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "505" ) ) );//match John "two times"
+    QVERIFY( mEntry->match( PATTERN( "60005" ) ) );//match John and match Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "6000500" ) ) );//match John and match Malkovich
 
     mEntry->setFirstName( QString( "John Peter" ) );
     mEntry->setLastName( QString( "Malkovich" ) );
     
-    QVERIFY( mEntry->match( QString( "50607" ) ) );//match John and match Malkovich match Peter
-    QVERIFY( mEntry->match( QString( "506" ) ) );//match John and macth Malkovich match ignore Peter
-    QVERIFY( !mEntry->match( QString( "50608" ) ) );//match John and match Malkovich match not Peter
-    QVERIFY( !mEntry->match( QString( "5060702" ) ) );//match John and match Malkovich match Peter + no match extra
-    QVERIFY( !mEntry->match( QString( "5060706" ) ) );//match John and match Malkovich match Peter + macth extra 
+    QVERIFY( mEntry->match( PATTERN( "50607" ) ) );//match John and match Malkovich match Peter
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );//match John and macth Malkovich match ignore Peter
+    QVERIFY( !mEntry->match( PATTERN( "50608" ) ) );//match John and match Malkovich match not Peter
+    QVERIFY( !mEntry->match( PATTERN( "5060702" ) ) );//match John and match Malkovich match Peter + no match extra
+    QVERIFY( !mEntry->match( PATTERN( "5060706" ) ) );//match John and match Malkovich match Peter + macth extra 
     
     mEntry->setFirstName( QString( "John Kalkovich" ) );
     mEntry->setLastName( QString( "" ) );
     
-    QVERIFY( mEntry->match( QString( "505" ) ) );//match John and match Kalkovich
+    QVERIFY( mEntry->match( PATTERN( "505" ) ) );//match John and match Kalkovich
     
     mEntry->setFirstName( QString( "John John Malkovich" ) );
     mEntry->setLastName( QString( "" ) );
     
-    QVERIFY( mEntry->match( QString( "50605" ) ) );//match John and match Malkovich and match John
-    QVERIFY( mEntry->match( QString( "506" ) ) );//match Johns and macth Malkovich
-    QVERIFY( !mEntry->match( QString( "50608" ) ) );//match John and match Malkovich match not Peter
+    QVERIFY( mEntry->match( PATTERN( "50605" ) ) );//match John and match Malkovich and match John
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );//match Johns and macth Malkovich
+    QVERIFY( !mEntry->match( PATTERN( "50608" ) ) );//match John and match Malkovich match not Peter
     
     mEntry->setFirstName( QString( "John 0John Malkovich" ) );
     mEntry->setLastName( QString( "" ) );
     
-    QVERIFY( !mEntry->match( QString( "50605" ) ) );
-    QVERIFY( !mEntry->match( QString( "505" ) ) );
-    QVERIFY( mEntry->match( QString( "5" ) ) );
-    QVERIFY( mEntry->match( QString( "0" ) ) );
-    QVERIFY( mEntry->match( QString( "05" ) ) );
-    QVERIFY( mEntry->match( QString( "0505" ) ) );
-    QVERIFY( mEntry->match( QString( "0505" ) ) );
-    QVERIFY( mEntry->match( QString( "05005" ) ) );
-    QVERIFY( mEntry->match( QString( "6005" ) ) );
-    QVERIFY( !mEntry->match( QString( "05050" ) ) );
-    QVERIFY( !mEntry->match( QString( "00505" ) ) );
-    QVERIFY( !mEntry->match( QString( "005050" ) ) );
-    QVERIFY( mEntry->match( QString( "0506" ) ) );
-    QVERIFY( mEntry->match( QString( "050506" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "50605" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "505" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "0" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "05" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "0505" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "0505" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "05005" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "6005" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "05050" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "00505" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "005050" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "0506" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "050506" ) ) );
     
     mEntry->setPhoneNumber( QString( "+20298457698576" ) );
     mEntry->setFirstName( QString( "John" ) );
     mEntry->setLastName( QString( "Malkovich" ) );
     
-    QVERIFY( mEntry->match( QString( "+202" ) ) );
-    QVERIFY( !mEntry->match( QString( "#202" ) ) );
-    QVERIFY( !mEntry->match( QString( "*202" ) ) );
-    QVERIFY( !mEntry->match( QString( "202" ) ) );
-    QVERIFY( !mEntry->match( QString( "+202#98" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "+202" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "#202" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "*202" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "202" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "+202#98" ) ) );
     
-    QVERIFY( mEntry->match( QString( "50" ) ) );
-    QVERIFY( mEntry->match( QString( "05" ) ) );
-    QVERIFY( mEntry->match( QString( "506" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "50" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "05" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "506" ) ) );
     
+    mEntry->setFirstName( QString( "John" ) );
+    mEntry->setLastName( QString( "#Malkovich" ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "506" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "#6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "+6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "16" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "*6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "50#6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5016" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "50*6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "50+6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "+" ) ) );//phone
+    QVERIFY( mEntry->match( PATTERN( "*" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "#" ) ) );
+
+    mEntry->setFirstName( QString( "J*hn" ) );
+    mEntry->setLastName( QString( "#Malkovich" ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5*" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5+" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "51" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5#" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "50#" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5+0#6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5*0#6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "5*0#" ) ) );
+    
+    mEntry->setFirstName( QString( "J-hn" ) );
+    mEntry->setLastName( QString( "#Malkovich" ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5*" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5+" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "51" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5#" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "50#" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5+0#6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5*0#6" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "5*0#" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "510#" ) ) );
+
+    mEntry->setFirstName( QString("Alice 028") );
+    mEntry->setLastName( QString( "Ming" ) );
+    QVERIFY( mEntry->match( PATTERN( "02806" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "0280" ) ) );//not supported
+    
+    mEntry->mType = LogsCntEntry::EntryTypeContact;
+    QVERIFY( !mEntry->match( PATTERN( "+202" ) ) );
+    
+    mEntry->setFirstName( QString( "0J0hn" ) );
+    mEntry->setLastName( QString( "Malkovich" ) );
+    QVERIFY( mEntry->match( PATTERN( "000" ) ) );
     
 }
 
+void UT_LogsCntEntry::testMatch_thai12k()
+{
+    
+    LogsPredictiveTranslator::deleteInstance();
+    HbInputLanguage thai( QLocale::Thai );
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
+    
+    mEntry->mType = LogsCntEntry::EntryTypeHistory;
+    
+    mEntry->setFirstName( QString( "5643" ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "6" ) ) );
+    
+    mEntry->setLastName( QString( "6787" ) );
+    QVERIFY( mEntry->match( PATTERN( "5" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "05" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "*#*#*#*5*#*#*#**#*#" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "*#*#*****#6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "06" ) ) );
+    
+    QVERIFY( mEntry->match( PATTERN( "605" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "606" ) ) );
+    
+    QVERIFY( mEntry->match( PATTERN( "#*#*#6*#*#**0*#*#**5*****#" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "**#*#**#*#6*#*0*#*#*6*#**#****#" ) ) );
+    
+}
+
+
+void UT_LogsCntEntry::testSetHighlights_thai12k()
+{
+    LogsPredictiveTranslator::deleteInstance();
+    HbInputLanguage thai( QLocale::Thai );
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
+    
+    mEntry->mType = LogsCntEntry::EntryTypeHistory;
+    mEntry->setFirstName( QString( "5643 456456" ) );
+    mEntry->setLastName( QString( "6787" ) );
+    
+    mEntry->setHighlights( PATTERN( "****56#*#*#" ) );
+    QVERIFY( mEntry->firstName().length() == 1 );
+    QVERIFY( mEntry->lastName().length() == 1 );
+    QVERIFY( mEntry->firstName()[0].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "****56#*#*#06" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 1);
+    
+    
+}
 

@@ -59,6 +59,7 @@ void UT_LogsCntFinder::testConstructor()
     
     LogsCntFinder finder( *mFinder->mContactManager ); 
     QVERIFY( finder.mCurrentPredictivePattern == "" );
+    QVERIFY( finder.mCurrentInputPattern == "" );
     QVERIFY( finder.mResults.count() == 0 );
     QVERIFY( finder.mHistoryEvents.count() == 0 );
     QVERIFY( finder.mContactManager );
@@ -66,7 +67,7 @@ void UT_LogsCntFinder::testConstructor()
     
 }
 
-void UT_LogsCntFinder::testPredictiveSearchQuery()
+void UT_LogsCntFinder::testPredictiveSearchQuery_latin12k()
 {
     QSignalSpy queryReadySpy(mFinder, SIGNAL(queryReady() ) );
     QSignalSpy resultsAddedSpy(mCntResults, SIGNAL(resultsAdded() ) );
@@ -74,6 +75,7 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     int resultsCount = 0;
     LogsCntEntryHandle* handle1 = (LogsCntEntryHandle*)1;
     LogsCntEntryHandle* handle2 = (LogsCntEntryHandle*)2;
+    LogsCntEntryHandle* handle3 = (LogsCntEntryHandle*)3;
     
     LogsCntEntry* entry1 = new LogsCntEntry( *handle1,0 );
     entry1->setFirstName( QString("Tim Roth") );
@@ -89,6 +91,13 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     QVERIFY( mFinder->mHistoryEvents.count() == 2 );    
     QCOMPARE( mFinder->mCachedCounter, 0 );
 
+    LogsCntEntry* entry3 = new LogsCntEntry( *handle3,0 );
+    entry3->setFirstName( QString("Kaizu") );
+    entry3->setLastName( QString("Oistamo") );
+    mFinder->insertEntry( 1, entry3 );
+    QVERIFY( mFinder->mHistoryEvents.count() == 3 );    
+    QCOMPARE( mFinder->mCachedCounter, 0 );
+    
     mCntResults->set( 9 );//John1 Malkovich1 ...
     queryReadySpy.clear();
     resultsAddedSpy.clear();
@@ -97,21 +106,23 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     QCOMPARE( queryReadySpy.count(), 1 );
     QCOMPARE( resultsAddedSpy.count(), 1 );
     QVERIFY( mFinder->mCurrentPredictivePattern == QString("5") );
-    QCOMPARE( mFinder->resultsCount(), 1 + 9 );
+    QVERIFY( mFinder->mCurrentInputPattern == QString("5") );
+    QCOMPARE( mFinder->resultsCount(), 2 + 9 );
+    QVERIFY( mFinder->mResults[1]->isCached() );
     QVERIFY( mFinder->mResults[0]->isCached() );
     QVERIFY( mFinder->mResults[0]->handle() == handle2 );
     QVERIFY( mFinder->mResults[0]->firstName()[0].text() == QString("Kai") );
     QVERIFY( mFinder->mResults[0]->firstName()[0].highlights() == 1 );
     QVERIFY( mFinder->mResults[0]->avatarPath() == QString("c:\\data\\images\\logstest2.jpg") );
-    QVERIFY( !mFinder->mResults[1]->isCached() );
-    QVERIFY( mFinder->mResults[1]->handle() == 0 );
-    QVERIFY( mFinder->mResults[1]->contactId() == 1 );
-    QCOMPARE( mFinder->mCachedCounter, 1 );
-    
-    const LogsCntEntry* firstE = &mFinder->resultAt( 1 );
+    QVERIFY( !mFinder->mResults[2]->isCached() );
+    QVERIFY( mFinder->mResults[2]->handle() == 0 );
+    QVERIFY( mFinder->mResults[2]->contactId() == 1 );
     QCOMPARE( mFinder->mCachedCounter, 2 );
-    QVERIFY( mFinder->mResults[1]->firstName()[0].text() == QString("John1") );
-    QVERIFY( mFinder->mResults[1]->firstName()[0].highlights() == 1 );
+    
+    const LogsCntEntry* firstE = &mFinder->resultAt( 2 );
+    QCOMPARE( mFinder->mCachedCounter, 3 );
+    QVERIFY( mFinder->mResults[2]->firstName()[0].text() == QString("John1") );
+    QVERIFY( mFinder->mResults[2]->firstName()[0].highlights() == 1 );
 
     
     mCntResults->set( 9 );//John1 Malkovich1 ...
@@ -170,14 +181,14 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     mFinder->predictiveSearchQuery( QString("5") );
     QCOMPARE( queryReadySpy.count(), 1 );
     QCOMPARE( resultsAddedSpy.count(), 1 );
-    QCOMPARE( mFinder->resultsCount(), 1 + 9 );
+    QCOMPARE( mFinder->resultsCount(), 2 + 9 );
     QVERIFY( mFinder->mResults[0]->isCached() );
     QVERIFY( mFinder->mResults[0]->handle() == handle2 );
     QVERIFY( mFinder->mResults[0]->firstName()[0].text() == QString("Kai") );
     QVERIFY( mFinder->mResults[0]->firstName()[0].highlights() == 1 );
-    QVERIFY( !mFinder->mResults[1]->isCached() );
-    QVERIFY( mFinder->mResults[1]->contactId() == 1 );
-    QCOMPARE( mFinder->mCachedCounter, 1 );
+    QVERIFY( !mFinder->mResults[2]->isCached() );
+    QVERIFY( mFinder->mResults[2]->contactId() == 1 );
+    QCOMPARE( mFinder->mCachedCounter, 2 );
     
     CACHE_ALL_RESULTS();
     QCOMPARE( mFinder->mCachedCounter, mFinder->resultsCount() );
@@ -202,17 +213,17 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     mFinder->predictiveSearchQuery( QString("5") );
     QCOMPARE( queryReadySpy.count(), 1 );
     QCOMPARE( resultsAddedSpy.count(), 1 );
-    QCOMPARE( mFinder->resultsCount(), 1 + 9 );
+    QCOMPARE( mFinder->resultsCount(), 2 + 9 );
     QVERIFY( mFinder->mResults[0]->isCached() );
     QVERIFY( mFinder->mResults[0]->handle() == handle2 );
     QVERIFY( mFinder->mResults[0]->firstName()[0].text() == QString("Kai") );
     QVERIFY( mFinder->mResults[0]->firstName()[0].highlights() == 1 );
     //althoug had to go to db, contact ids were reused from prev seacrh
-    QVERIFY( mFinder->mResults[1]->isCached() );
-    QVERIFY( mFinder->mResults[1]->handle() == 0 );
-    QVERIFY( mFinder->mResults[1]->firstName()[0].text() == QString("John1") );
-    QVERIFY( mFinder->mResults[1]->firstName()[0].highlights() == 1 );
-    QCOMPARE( mFinder->mCachedCounter, 10 );
+    QVERIFY( mFinder->mResults[2]->isCached() );
+    QVERIFY( mFinder->mResults[2]->handle() == 0 );
+    QVERIFY( mFinder->mResults[2]->firstName()[0].text() == QString("John1") );
+    QVERIFY( mFinder->mResults[2]->firstName()[0].highlights() == 1 );
+    QCOMPARE( mFinder->mCachedCounter, 11 );
     
     //refresh
     mCntResults->set( 9 );
@@ -222,7 +233,7 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     mFinder->predictiveSearchQuery( mFinder->mCurrentPredictivePattern );
     QCOMPARE( queryReadySpy.count(), 1 );
     QCOMPARE( resultsAddedSpy.count(), 1 );
-    QCOMPARE( mFinder->resultsCount(), 1 + 9 );
+    QCOMPARE( mFinder->resultsCount(), 2 + 9 );
 
     //reset
     mCntResults->set( 9 );
@@ -314,10 +325,128 @@ void UT_LogsCntFinder::testPredictiveSearchQuery()
     QCOMPARE( resultsAddedSpy.count(), 1 );
     QCOMPARE( mFinder->resultsCount(), 1 );
     
+// --
+    
+    qDeleteAll( mFinder->mHistoryEvents );
+    mFinder->mHistoryEvents.clear();
+    mFinder->predictiveSearchQuery( QString("") );
+    
+    entry1 = new LogsCntEntry( *handle1,0 );
+    entry1->setFirstName( QString("+Tim #Roth") );
+    mFinder->insertEntry( 0, entry1 );
+    QCOMPARE( mFinder->mHistoryEvents.count(), 1 );
+    
+    mCntResults->reset();
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("+80#7") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 1 );
+    QVERIFY( mFinder->mResults[0]->firstName()[0].text() == QString("+Tim") );
+    QVERIFY( mFinder->mResults[0]->firstName()[0].highlights() == 2 );
+    QVERIFY( mFinder->mResults[0]->firstName()[1].text() == QString("#Roth") );
+    QVERIFY( mFinder->mResults[0]->firstName()[1].highlights() == 2 );
+    QCOMPARE( mFinder->mCurrentInputPattern, QString("+80#7") );
+    QCOMPARE( mFinder->mCurrentPredictivePattern, QString("*80#7") );
+    QCOMPARE( mCntResults->query(), QString("+80#7") );
+
+// --
+    
+    qDeleteAll( mFinder->mHistoryEvents );
+    mFinder->mHistoryEvents.clear();
+    mFinder->predictiveSearchQuery( QString("") );
+    
+    entry1 = new LogsCntEntry( *handle1,0 );
+    entry1->setFirstName( QString("James Bond") );
+    entry1->setPhoneNumber( QString("0401234566") );
+    mFinder->insertEntry( 0, entry1 );
+    QCOMPARE( mFinder->mHistoryEvents.count(), 1 );
+    
+    entry2 = new LogsCntEntry( *handle2,0 );
+    entry2->setFirstName( QString("Mika Häkkinen") );
+    entry2->setPhoneNumber( QString("0401234999") );
+    mFinder->insertEntry( 0, entry2 );
+    QCOMPARE( mFinder->mHistoryEvents.count(), 2 );
+    
+    mCntResults->reset();
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("0") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 2 );
+    
+    mCntResults->reset();
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("00") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 0 );
+    
+    mCntResults->reset();
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("000") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 0 );
+    
+// --
+        
+    qDeleteAll( mFinder->mHistoryEvents );
+    mFinder->mHistoryEvents.clear();
+    mFinder->predictiveSearchQuery( QString("") );
+    
+    mCntResults->set( 1, QString("Alice 028"), QString("Ming") );
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("0") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 1 );
+    CACHE_ALL_RESULTS();
+    
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("00") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 1 );
+    CACHE_ALL_RESULTS();
+    
+    mCntResults->set( 1, QString("James"), QString("Bond") );
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("005") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 1 );
+    CACHE_ALL_RESULTS();
+    
+    mCntResults->set( 1, QString("Alice 028"), QString("Ming") );
+    queryReadySpy.clear();
+    resultsAddedSpy.clear();
+    
+    mFinder->predictiveSearchQuery( QString("00") );
+    QCOMPARE( queryReadySpy.count(), 1 );
+    QCOMPARE( resultsAddedSpy.count(), 1 );
+    QCOMPARE( mFinder->resultsCount(), 1 );
+    CACHE_ALL_RESULTS();
+    
+    
     
 }
 
-void UT_LogsCntFinder::testResultAt()
+void UT_LogsCntFinder::testResultAt_latin12k()
 {
     mCntResults->set( 9 , QString( "first"), QString( "last") );
     

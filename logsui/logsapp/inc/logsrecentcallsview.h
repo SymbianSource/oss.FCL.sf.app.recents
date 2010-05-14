@@ -57,7 +57,6 @@ public: // From LogsBaseView
 public slots:
     
     void handleExit();
-    void callKeyPressed();
     void markingCompleted(int err);
     
 protected slots: // from LogsBaseView 
@@ -68,11 +67,12 @@ protected slots: // from LogsBaseView
     void changeFilter(HbAction* action);
     virtual void updateEmptyListWidgetsVisibility();
     virtual void updateWidgetsSizeAndLayout();
-
     
 private slots:
 
     void clearList();
+    void clearListOkAnswer();
+    void toggleContactSearch();
     void updateView(LogsServices::LogsView view);
     void leftFlick();
     void rightFlick();
@@ -85,6 +85,8 @@ private: // from LogsBaseView
     
     virtual void initView();
     virtual QAbstractItemModel* model() const;
+    virtual LogsAbstractModel* logsModel() const;
+    virtual HbListView* listView() const;
     virtual void updateCallButton();
     
 private:

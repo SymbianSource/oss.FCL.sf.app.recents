@@ -43,12 +43,13 @@ const char logsPageIndicatorId[] = "logs_page_indicator";
 //action ids
 const char logsCommonVideoCallMenuActionId[] = "logs_act_video_call";
 const char logsCommonMessageMenuActionId[] = "logs_act_create_message";
+const char logsCommonAddToContactsMenuActionId[] = "logs_act_add_to_contacts";
 
 const char logsDetailsViewVoiceCallMenuActionId[] = "logs_act_voice_call";
 const char logsDetailsViewInternetCallMenuActionId[] = "logs_act_internet_call";
-const char logsDetailsAddToContactsMenuActionId[] = "logs_act_add_to_contacts";
 const char logsDetailsOpenContactMenuActionId[] = "logs_act_open_contact";
 const char logsRecentViewClearListMenuActionId[] = "logs_act_clear_list";
+const char logsRecentViewContactSearchMenuActionId[] = "logs_act_contact_search";
 
 const char logsShowFilterReceivedMenuActionId[] = "logs_act_received";
 const char logsShowFilterDialledMenuActionId[] = "logs_act_dialled";
@@ -74,5 +75,9 @@ enum LogsAppViewId {
     LogsDetailsViewId,
     LogsMatchesViewId
 };
+
+const int logsContactSearchPermanentlyDisabled = 0;
+const int logsContactSearchEnabled = 1;
+const int logsContactSearchDisabled = 2;
 
 #endif // LOGSDEFS_H

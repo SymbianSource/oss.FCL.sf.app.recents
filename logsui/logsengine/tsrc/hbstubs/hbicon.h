@@ -35,7 +35,8 @@ public:
     
 public: // Data added for the unit testing stub
     QString mName;  
-    QIcon* mTestIcon;
+    
+    static QIcon* defaultIcon();
 };
 
 Q_DECLARE_METATYPE(HbIcon)

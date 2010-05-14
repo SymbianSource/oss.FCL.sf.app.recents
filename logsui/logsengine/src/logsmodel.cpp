@@ -29,6 +29,9 @@
 #include "logscommondata.h"
 #include <hbicon.h>
 #include <QStringList>
+#include <QtGui>
+#include <hbfontspec.h>
+#include <hbinstance.h>
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -56,6 +59,8 @@ LogsModel::LogsModel(LogsModelType modelType, bool resourceControl) :
             this, SLOT( dataUpdated(QList<int>) ));
     connect( mDbConnector, SIGNAL( dataRemoved(QList<int>) ), 
             this, SLOT( dataRemoved(QList<int>) ));
+    connect( hbInstance->theme(), SIGNAL ( changeFinished() ),
+            this, SLOT ( resetModel()));
     mDbConnector->init();
     mDbConnector->start();
     
@@ -151,20 +156,31 @@ int LogsModel::compressData()
 //
 // -----------------------------------------------------------------------------
 //
-int LogsModel::predictiveSearchStatus()
+int LogsModel::updateConfiguration(LogsConfigurationParams& params)
 {
-    return mDbConnector->predictiveSearchStatus();
+    LOGS_QDEBUG( "logs [ENG] -> LogsModel::updateConfiguration()" )
+    int currWidth = 
+        LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
+    int newWidth = params.listItemTextWidth();
+    LOGS_QDEBUG_3( "logs [ENG]    Curr and new width", currWidth, newWidth )   
+    int retVal = LogsCommonData::getInstance().updateConfiguration(params);
+    
+    // Do model reset if list item width has changed as we need to ensure 
+    // missed call's duplicate info visibility
+    bool unseenExists = false;
+    for ( int i = 0; i < mEvents.count() && !unseenExists; i++ ){
+        LogsEvent* event = mEvents.at(i);
+        if ( event->duplicates() > 0 && !event->isSeenLocally() ){
+            unseenExists = true;
+        }
+    }
+    if ( unseenExists && currWidth > 0 && currWidth != newWidth ){
+        LOGS_QDEBUG( "logs [ENG]    Do model reset" )
+        resetModel();
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsModel::updateConfiguration()" )
+    return retVal;
 }
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-int LogsModel::setPredictiveSearch(bool enabled)
-{
-    return mDbConnector->setPredictiveSearch(enabled);
-}
-
 
 // -----------------------------------------------------------------------------
 // From QAbstractListModel
@@ -282,7 +298,7 @@ QList< QList<int> > LogsModel::findSequentialIndexes(const QList<int>& indexes)
 {
     QList< QList<int> > sequences;
     QList<int> currSequence;
-    int prevIndex = indexes.at(0) - 1;
+    int prevIndex = indexes.count() > 0 ? ( indexes.at(0) - 1 ) : -1;
     for ( int i = 0; i < indexes.count(); i++ ){
         int currIndex = indexes.at(i);
         if ( prevIndex+1 != currIndex ){
@@ -319,17 +335,58 @@ QString LogsModel::getCallerId(const LogsEvent& event) const
         callerId = event.logsEventData()->remoteUrl();
     }
     if ( callerId.length() == 0 ){
-        callerId = tr("No number");
+        if ( event.isRemotePartyPrivate() ){
+            callerId = hbTrId("txt_dial_dblist_call_id_val_privat_number");
+        }
+        else if ( event.isRemotePartyUnknown() ){
+            callerId = hbTrId("txt_dial_dblist_call_id_val_unknown_number");
+        }
+        
     }
     int duplicates = event.duplicates();
     if ( duplicates > 0 && !event.isSeenLocally() ){
-        callerId.append( "(" );
-        callerId.append( QString::number(duplicates + 1) );
-        callerId.append( ")");
+        QString callerIdBaseString = callerId;
+        QString callerIdDupString = "(" + QString::number(duplicates + 1) + ")";
+        int width = LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
+        callerId =  SqueezedString(callerIdBaseString,callerIdDupString,width);
     }
     return callerId;
 }
 
+// -----------------------------------------------------------------------------
+// basestring: string to be cutted if not fited to maxwidth
+// secondarystring: string to show fully in the end of basestring
+// maxwidth: maximum width (in pixels) available for basestring + secondarystring
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsModel::SqueezedString(
+    QString basestring, QString secondarystring, qreal maxwidth) const
+{
+    QFontMetricsF fontMetrics(HbFontSpec(HbFontSpec::Primary).font());
+    QString fullString = basestring + secondarystring;
+    qreal totalwidth = 0;
+    int x = 0;
+    if (fontMetrics.width(fullString) > maxwidth){
+    		maxwidth = maxwidth - fontMetrics.width(tr("...")+secondarystring);
+        for (x = 0; (x < basestring.count()) && (totalwidth < maxwidth); x++){
+            totalwidth  = totalwidth + fontMetrics.width(basestring[x]);
+        }
+        if ( ( totalwidth > maxwidth ) && ( x>0 ) ) x--;
+        return basestring.left(x) + tr("...") + secondarystring;
+    } else {
+        return fullString;  
+    }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsModel::resetModel()
+{
+   this->reset();
+}
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------

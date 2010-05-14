@@ -22,6 +22,17 @@
 
 
 QString mUTClipboard;
+static QIcon* logsTestIcon = 0;
+
+QIcon* HbIcon::defaultIcon()
+{
+    return logsTestIcon;
+}
+
+#define ENSURE_DEFAULT_ICON \
+if ( !logsTestIcon ){ \
+    logsTestIcon = new QIcon(); \
+}
 
 // -----------------------------------------------------------------------------
 // HbIcon::HbIcon
@@ -30,7 +41,7 @@ QString mUTClipboard;
 HbIcon::HbIcon()
 {   
     mName = QString();
-    mTestIcon = new QIcon;
+    ENSURE_DEFAULT_ICON
 }
 
 // -----------------------------------------------------------------------------
@@ -40,7 +51,7 @@ HbIcon::HbIcon()
 HbIcon::HbIcon(const QString &iconName)
 {
     mName = iconName;
-    mTestIcon = new QIcon;
+    ENSURE_DEFAULT_ICON
 }
 
 // -----------------------------------------------------------------------------
@@ -50,7 +61,7 @@ HbIcon::HbIcon(const QString &iconName)
 HbIcon::HbIcon(const QIcon &icon)
 {
     mName = "c:\\data\\images\\designer.png";
-    mTestIcon = new QIcon;
+    ENSURE_DEFAULT_ICON
 }
 
 // -----------------------------------------------------------------------------
@@ -60,7 +71,7 @@ HbIcon::HbIcon(const QIcon &icon)
 HbIcon::HbIcon(const HbIcon &icon)
 {
     mName = "c:\\data\\images\\designer.png";
-    mTestIcon = new QIcon;
+    ENSURE_DEFAULT_ICON
 }
 
 // -----------------------------------------------------------------------------
@@ -69,7 +80,6 @@ HbIcon::HbIcon(const HbIcon &icon)
 //
 HbIcon::~HbIcon()
 {
-    delete mTestIcon;
 }
 
 // -----------------------------------------------------------------------------
@@ -87,7 +97,7 @@ bool HbIcon::isNull() const
 //
 QIcon &HbIcon::qicon() const
 {
-    return *mTestIcon;
+    return *logsTestIcon;
 }
 
 // -----------------------------------------------------------------------------

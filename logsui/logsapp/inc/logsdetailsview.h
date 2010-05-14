@@ -52,20 +52,20 @@ private slots:
     
     void initiateVoiceCall();
     void initiateVideoCall();
-    void addToContacts();
+    void sendMessage();
     void openContact();
-    void contactActionCompleted(bool modified);
-    void deleteEvent();//overrides base class implementation
-    void copyNumberToClipboard();
     
     //from LogsBaseView
     virtual void handleBackSoftkey();
+    virtual void deleteEventOkAnswer();
     
 private: // from LogsBaseView
     
     virtual void initView();
     virtual QAbstractItemModel* model() const;
+    virtual void dialpadEditorTextChanged();
     virtual void updateWidgetsSizeAndLayout();
+    virtual void contactActionCompleted(bool modified);
     
 private:
     

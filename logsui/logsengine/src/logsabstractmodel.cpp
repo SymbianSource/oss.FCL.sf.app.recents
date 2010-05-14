@@ -58,6 +58,57 @@ LogsAbstractModel::~LogsAbstractModel()
 //
 // -----------------------------------------------------------------------------
 //
+LogsContact* LogsAbstractModel::createContact(const QString& number)
+{
+    LogsContact* contact = new LogsContact(number, *mDbConnector);
+    connect( contact, SIGNAL(saveCompleted(bool)), this, SLOT(contactSavingCompleted(bool)) );
+    return contact;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::predictiveSearchStatus()
+{
+    if ( !mDbConnector ){
+        return -1;
+    }
+    return mDbConnector->predictiveSearchStatus();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::setPredictiveSearch(bool enabled)
+{
+    return doSetPredictiveSearch(enabled);
+}
+
+
+// -----------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------
+//
+bool LogsAbstractModel::isCommunicationPossible(const LogsEvent& event) const
+{
+return ( !event.isRemotePartyPrivate() && !event.isRemotePartyUnknown() );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsAbstractModel::contactSavingCompleted(bool modified)
+{
+    Q_UNUSED(modified);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 QVariant LogsAbstractModel::doGetData(int role, const LogsModelItemContainer& item) const
 {
     if ( role == RoleFullEvent ) {
@@ -85,7 +136,7 @@ QVariant LogsAbstractModel::createCall(const LogsModelItemContainer& item) const
         return QVariant();
     }
     LogsCall* logscall = new LogsCall(*event);
-    if (!logscall->isAllowedCallType()) {
+    if (!logscall->isAllowedCallType() || !isCommunicationPossible(*event)) {
         delete logscall;
         logscall = 0;
     }
@@ -105,7 +156,7 @@ QVariant LogsAbstractModel::createMessage(const LogsModelItemContainer& item) co
         return QVariant();
     }
     LogsMessage* logsMessage = new LogsMessage(*event);
-    if (!logsMessage->isMessagingAllowed()) {
+    if (!logsMessage->isMessagingAllowed() || !isCommunicationPossible(*event)) {
         delete logsMessage;
         logsMessage = 0;
     }
@@ -126,12 +177,23 @@ QVariant LogsAbstractModel::createContact(const LogsModelItemContainer& item) co
     }
     Q_ASSERT(mDbConnector);
     LogsContact* logsContact = new LogsContact(*event, *mDbConnector);
-    if ( !logsContact->isContactRequestAllowed() ) {
+    if ( !logsContact->isContactRequestAllowed() || !isCommunicationPossible(*event) ) {
         delete logsContact;
         logsContact = 0;
     }
     QVariant var = qVariantFromValue(logsContact);
     return var;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::doSetPredictiveSearch(bool enabled){
+    if ( !mDbConnector ){
+        return -1;
+    }
+    return mDbConnector->setPredictiveSearch(enabled);
 }
 
 // -----------------------------------------------------------------------------

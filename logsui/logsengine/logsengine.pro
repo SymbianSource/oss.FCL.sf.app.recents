@@ -45,6 +45,7 @@ HEADERS += inc/logsmessage.h
 HEADERS += inc/logseventdata.h
 HEADERS += inc/logsthumbnailmanager.h
 HEADERS += inc/logscommondata.h
+HEADERS += inc/logsconfigurationparams.h
 HEADERS += logssymbianos/inc/logsdbconnector.h
 HEADERS += logssymbianos/inc/logsreader.h
 HEADERS += logssymbianos/inc/logsreaderstates.h
@@ -66,6 +67,7 @@ SOURCES += src/logseventdata.cpp
 SOURCES += src/logscustomfilter.cpp
 SOURCES += src/logsthumbnailmanager.cpp
 SOURCES += src/logscommondata.cpp
+SOURCES += src/logsconfigurationparams.cpp
 SOURCES += logssymbianos/src/logsdbconnector.cpp
 SOURCES += logssymbianos/src/logsreader.cpp
 SOURCES += logssymbianos/src/logsreaderstates.cpp
@@ -85,7 +87,7 @@ symbian: {
 
     TARGET.CAPABILITY = CAP_GENERAL_DLL
     TARGET.EPOCALLOWDLLDATA = 1
-    LIBS += -lflogger -llogcli -llogwrap -lefsrv -lxqservice  -lqtcontacts -llogscntfinder -lthumbnailmanagerqt -lcentralrepository
+    LIBS += -lflogger -llogcli -llogwrap -lefsrv -lxqservice -lxqserviceutil -lqtcontacts -llogscntfinder -lthumbnailmanagerqt -lcentralrepository
     
     defFiles = "$${LITERAL_HASH}ifdef WINS" \
         "DEFFILE bwins/logsengine.def" \

@@ -265,7 +265,7 @@ void LogsReader::cancelCurrentRequestL()
             LOGS_QDEBUG( "logs [ENG] reading is in progress, cancelling" )
             Cancel();
         } else if (mCurrentStateMachine == &mModifyingStates) {
-            LOGS_QDEBUG( "logs [ENG] <- LogsReader::removeEvent(), modifying is in progress, can't cancel" )
+            LOGS_QDEBUG( "logs [ENG] <- LogsReader::cancelCurrentRequestL(), modifying is in progress, can't cancel" )
             User::Leave(KErrInUse);
         }
     }

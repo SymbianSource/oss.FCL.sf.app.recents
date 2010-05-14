@@ -18,6 +18,7 @@
 #define UT_LOGSCNTENTRY_H
 
 #include <QObject>
+#include <hbinputlanguage.h>
 
 class LogsCntEntry;
 
@@ -46,17 +47,23 @@ private slots: //test methods
      
     void testConstructor();
     void testSetName();
-    void testSetHighlights();
-    void testSetAvatarPath();
-    void testRichText();
     void testSetPhoneNumber();
+    void testSetAvatarPath();
     void testSetSpeedDial();
-    void testMatch();
+    //with latin 12 keys
+    void testSetHighlights_latin12k();
+    void testRichText_latin12k();
+    void testMatch_latin12k();
+    //with thai 12 keys
+    void testMatch_thai12k();
+    void testSetHighlights_thai12k();
     
     
 private:
  
     LogsCntEntry* mEntry;
+    HbInputLanguage mOrigLang; 
+    
 };
 
 

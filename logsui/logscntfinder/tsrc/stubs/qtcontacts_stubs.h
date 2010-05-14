@@ -39,6 +39,8 @@ public:
     const QString& lastNameAt( int index ) const;
     int contacts() const;
     inline void allResultsAdded() {emit resultsAdded();}
+    inline void filterValueSet( const QString& value ) { mQuery = value;}
+    inline const QString& query() { return mQuery; }
     
 signals:
     
@@ -53,7 +55,7 @@ private:
     
     static ContactQueryResults* mInstance;
     QStringList mDB;
-    
+    QString mQuery;
     
 };
 

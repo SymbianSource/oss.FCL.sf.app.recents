@@ -103,6 +103,7 @@ bool LogsModel::markEventsSeen(LogsModel::ClearType /*cleartype*/)
 int LogsModel::refreshData()
 {
     mRefreshCalled = true;
+    return 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -112,6 +113,7 @@ int LogsModel::refreshData()
 int LogsModel::compressData()
 {
     mCompressCalled = true;
+    return 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -194,4 +196,14 @@ bool LogsModel::isMatchesModelCreated()
 void LogsModel::setMatchesModelCreated(bool isCreated)
 {
 		mMatchesModelCreated = isCreated;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsModel::updateConfiguration
+// -----------------------------------------------------------------------------
+//
+int LogsModel::updateConfiguration(LogsConfigurationParams& /*params*/)
+{
+    return 0;
 }

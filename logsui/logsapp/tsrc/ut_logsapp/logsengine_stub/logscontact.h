@@ -80,7 +80,9 @@ signals:
         
 public: //stub data 
     
-    //LogsEvent& mEvent;
+    static void setNextRequestType(LogsContact::RequestType type);
+    static void reset();
+    
     QString mNumber;
     
 };

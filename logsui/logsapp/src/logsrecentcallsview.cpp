@@ -27,6 +27,7 @@
 #include "logseffecthandler.h"
 #include "logsmatchesmodel.h"
 #include "logspageindicator.h"
+#include "logsconfigurationparams.h"
 
 //SYSTEM
 #include <hbview.h>
@@ -112,8 +113,6 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
         updateView( view );
     }
     activateEmptyListIndicator(mFilter);
-    
-    mDialpad->editor().setText(QString());
     
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mCurrentView));
     
@@ -210,20 +209,21 @@ QAbstractItemModel* LogsRecentCallsView::model() const
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::callKeyPressed
+//
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::callKeyPressed()
+LogsAbstractModel* LogsRecentCallsView::logsModel() const
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::callKeyPressed()" ); 
-    // Call to topmost item in current list
-    if ( mListView && mFilter && mFilter->hasIndex(0,0) ) {
-        QModelIndex topIndex = mFilter->index(0,0);
-        mListView->scrollTo( topIndex );
-        mListView->setCurrentIndex( topIndex, QItemSelectionModel::Select );
-        initiateCallback(topIndex);
-    }  
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::callKeyPressed()" );
+    return mModel;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+HbListView* LogsRecentCallsView::listView() const
+{
+    return mListView;
 }
 
 // -----------------------------------------------------------------------------
@@ -266,12 +266,13 @@ void LogsRecentCallsView::openDialpad()
 void LogsRecentCallsView::dialpadEditorTextChanged()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::dialpadEditorTextChanged()" );
-    if ( mDialpad->editor().text().length() > 0 ) {
+    if ( mDialpad->editor().text().length() > 0 && isContactSearchEnabled() ) {
         QVariant arg = qVariantFromValue( mMatchesModel );
         if ( mViewManager.activateView( LogsMatchesViewId, true, arg ) ){
             mMatchesModel = 0; // Ownership was given to matches view
         }
     } else {
+        updateMenu();
         updateCallButton();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::dialpadEditorTextChanged()" );
@@ -285,12 +286,50 @@ void LogsRecentCallsView::clearList()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearList()->" );
     if ( mFilter ) {
-        if ( askConfirmation( hbTrId("txt_dialer_ui_title_clear_list"),
-                    hbTrId("txt_dialer_ui_info_all_call_events_will_be_remo"))){
-            mModel->clearList( mFilter->clearType() );     
-        }
+        askConfirmation(hbTrId("txt_dialer_ui_title_clear_list"),
+                hbTrId("txt_dialer_ui_info_all_call_events_will_be_remo"),
+                this,
+                SLOT(clearListOkAnswer()));
+
     }
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearList()<-" );
+}
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::clearListOkAnswer
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::clearListOkAnswer()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearListOkAnswer()" );
+    if (mFilter) {
+        mModel->clearList( mFilter->clearType() );
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::clearListAnswer()" );
+}
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::toggleContactSearch
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::toggleContactSearch()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::toggleContactSearch()" );
+    
+    if ( isContactSearchPermanentlyDisabled() ){
+        LOGS_QDEBUG( "logs [UI]     permanently disabled" );
+    } else if ( isContactSearchEnabled() ){
+        mModel->setPredictiveSearch( false );  
+        updateMenu();
+    } else {
+        mModel->setPredictiveSearch( true );  
+        updateMenu();
+        if ( isDialpadInput() ){
+           LogsRecentCallsView::dialpadEditorTextChanged();
+        }
+    }
+ 
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::toggleContactSearch()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -634,6 +673,14 @@ void LogsRecentCallsView::updateMenu()
         bool visible( model()->rowCount() > 0 );
         action->setVisible( visible );
     }
+    
+    HbAction* addToContactsAction = qobject_cast<HbAction*>( 
+        mRepository.findObject( logsCommonAddToContactsMenuActionId ) );
+    toggleActionAvailability(addToContactsAction, isDialpadInput());
+    
+    updateDialpadCallAndMessagingActions();
+    updateContactSearchAction();
+    
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateMenu()" );
 }
 
@@ -656,8 +703,20 @@ void LogsRecentCallsView::updateWidgetsSizeAndLayout()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::updateWidgetsSizeAndLayout()" );
     if ( mListView ) {
+        updateMenu();
         updateListLayoutName(*mListView);
         updateListSize();
+        HbDeviceProfile deviceProf;
+        LogsConfigurationParams param;
+        QString testString = mListView->layoutName();
+        //note: ListItemTextWidth values are currently hardcoded and 
+        //they are taken from hblistviewitem.css "text-1" field
+        if (mListView->layoutName() == logsListLandscapeDialpadLayout) {
+            param.setListItemTextWidth( 38 * deviceProf.unitValue() );
+        } else {
+            param.setListItemTextWidth( 40 * deviceProf.unitValue() );
+        }
+        mModel->updateConfiguration(param);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateWidgetsSizeAndLayout()" );
 }

@@ -61,7 +61,7 @@ SOURCES += ../logsengine/logssymbianos/src/logsforegroundwatcher.cpp
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0x101F4CD5
-    TARGET.CAPABILITY = CAP_APPLICATION AllFiles
+    TARGET.CAPABILITY = CAP_APPLICATION
     LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad
     
 }

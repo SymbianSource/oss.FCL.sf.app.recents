@@ -18,7 +18,6 @@
 #define LOGSMATCHESVIEW_H
 
 #include "logsbaseview.h"
-#include "logscall.h"
 
 class HbListView;
 class HbAction;
@@ -44,13 +43,6 @@ public: // From LogsBaseView
     
     virtual void activated(bool showDialer, QVariant args);
     virtual void deactivated();
- 
-public slots:
-    
-    void callKeyPressed();
-    void saveNumberInDialpadToContacts();
-    void videoCallToCurrentNum();
-    void sendMessageToCurrentNum();
     
 protected slots: //from LogsBaseView
 
@@ -60,18 +52,21 @@ protected slots: //from LogsBaseView
     virtual void dialpadClosed();
     virtual void updateWidgetsSizeAndLayout();
     virtual void updateEmptyListWidgetsVisibility();
+	
+private slots:
+	void toggleContactSearch();
 
 private: //from LogsBaseView
     
     virtual void initView();
     virtual QAbstractItemModel* model() const;
+    virtual HbListView* listView() const;
     
 private:
     
     void initListWidget();
     void updateModel(LogsMatchesModel* model);
     void updateMenu();
-    void callToCurrentNum( LogsCall::CallType callType );
     void updateAddContactButton();
     
 private:

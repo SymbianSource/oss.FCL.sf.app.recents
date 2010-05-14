@@ -263,6 +263,18 @@ public:
          */
         bool isSeenLocally() const;
         
+        bool isRemotePartyPrivate() const;
+        bool isRemotePartyUnknown() const;
+        
+        /**
+        * Set remote party status as private of the event.
+        */
+        void setRemotePartyPrivate(bool markedAsPrivate);
+        
+        /**
+        * Set remote party status as unknown of the event.
+        */
+        void setRemotePartyUnknown(bool markedAsUnknown);
         
     private:                               
 
@@ -315,6 +327,8 @@ public:
 	      bool mIsInView;
 	      LogsEventState mEventState;
 	      bool mIsLocallySeen;
+	      bool mIsPrivate;
+	      bool mIsUnknown;
 	    
     private:
         

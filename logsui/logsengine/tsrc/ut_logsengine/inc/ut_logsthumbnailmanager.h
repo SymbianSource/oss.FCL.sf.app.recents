@@ -43,7 +43,7 @@ private slots: //test methods
 private:
 	
     LogsThumbIconManager* mIconMgr; // SUT 
-    QIcon mIcon;
+    QIcon* mIcon;
   
 };
 

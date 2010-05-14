@@ -23,6 +23,7 @@
 #include "logscall.h"
 #include "logsmessage.h"
 #include "logsdefs.h"
+#include "logscontact.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
@@ -198,38 +199,44 @@ void UT_LogsDetailsView::testUpdateMenu()
     QVERIFY( voiceCallAction->isVisible() );
     QVERIFY( videoCallAction->isVisible() );
     QVERIFY( messageAction->isVisible() );
+    
+    // Input in dialpad, add to contacts visible and voice call invisible
+    LogsContact::setNextRequestType(LogsContact::TypeLogsContactOpen);
+    mDetailsView->mDialpad->mIsOpen = true;
+    mDetailsView->mDialpad->editor().setText( QString("3443535") );
+    mDetailsView->updateMenu();
+    HbAction* addToContactsAction = qobject_cast<HbAction*>( 
+            mRepository->findObject( logsCommonAddToContactsMenuActionId ) );
+    HbAction* openContactAction = qobject_cast<HbAction*>( 
+            mRepository->findObject( logsDetailsOpenContactMenuActionId ) );
+    QVERIFY( addToContactsAction->isVisible() );
+    QVERIFY( !openContactAction->isVisible() );
+    QVERIFY( !voiceCallAction->isVisible() );
+    
+    // No input in dialpad, open contact visible and voice call visible
+    mDetailsView->mDialpad->mIsOpen = false;
+    mDetailsView->updateMenu();
+    QVERIFY( !addToContactsAction->isVisible() );
+    QVERIFY( openContactAction->isVisible() );
+    QVERIFY( voiceCallAction->isVisible() );
+    LogsContact::reset();
 }
 
-void UT_LogsDetailsView::testDeleteEvent()
+void UT_LogsDetailsView::testDeleteEventOkAnswer()
 {
     // No model, nothing happens
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
     QVERIFY( !mDetailsView->mDetailsModel );
-    mDetailsView->deleteEvent();
+    mDetailsView->deleteEventOkAnswer();
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
 
     // Model exists, call to delete event made and view is closed
     mViewManager->reset();
     LogsDetailsModel* model = new LogsDetailsModel();
     mDetailsView->mDetailsModel = model;
-    //simulate "Cancel" button press of messagebox
-    HbMessageBox().setText(tr("Cancel"));
-    mDetailsView->deleteEvent();
-    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
-   
-    //simulate "Ok" button press of messagebox
-    HbMessageBox().setText(tr("Ok"));
-    mDetailsView->deleteEvent();
-    QVERIFY( LogsDetailsModel::mLastCallName == QString("clearEvent") );
+    mDetailsView->deleteEventOkAnswer();
+    QVERIFY( LogsDetailsModel::mLastCallName == QLatin1String("clearEvent") );
     QVERIFY( mViewManager->mPreviousActivated );
-}
-
-void UT_LogsDetailsView::testCopyNumberToClipboard()
-{
-    LogsDetailsModel* model = new LogsDetailsModel();
-    mDetailsView->mDetailsModel = model;
-    mDetailsView->copyNumberToClipboard();
-    QVERIFY( LogsDetailsModel::mLastCallName == QString("getNumberToClipboard") );
 }
 
 void UT_LogsDetailsView::testChangeFilter()
@@ -286,4 +293,49 @@ void UT_LogsDetailsView::testUpdateWidgetsSizeAndLayout()
     mDetailsView->updateWidgetsSizeAndLayout();
     QVERIFY( mDetailsView->mListView->layoutName() == logsListDefaultLayout );
     QVERIFY( mDetailsView->mLayoutSectionName == logsViewLandscapeDialpadSection );
+}
+
+void UT_LogsDetailsView::testDialpadEditorTextChanged()
+{   
+    //text editor is one character long
+    LogsDetailsModel* model = new LogsDetailsModel();
+    mDetailsView->mDetailsModel = model;
+    mDetailsView->mDetailsModel->setPredictiveSearch(true);
+    mDetailsView->mDialpad->editor().setText( QString("h") );
+    mDetailsView->dialpadEditorTextChanged();
+    QVERIFY( mViewManager->mViewId == LogsMatchesViewId );
+    
+    mViewManager->reset();
+    mDetailsView->mDialpad->mIsCallButtonEnabled = true;
+    mDetailsView->mDialpad->editor().setText( QString("") );
+    mDetailsView->dialpadEditorTextChanged();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    QVERIFY( !mDetailsView->mDialpad->mIsCallButtonEnabled );
+    
+    // View does not change if contact search is off
+    mViewManager->reset();
+    mDetailsView->mDialpad->editor().setText( QString("2") );
+    mDetailsView->mDetailsModel->setPredictiveSearch(false);
+    mDetailsView->dialpadEditorTextChanged();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    QVERIFY( mDetailsView->mDialpad->mIsCallButtonEnabled );
+}
+
+void UT_LogsDetailsView::testSendMessage()
+{
+    // No input, message sent using orig message
+    LogsMessage::resetTestData();
+    LogsMessage* message = new LogsMessage;
+    mDetailsView->mMessage = message;
+    mDetailsView->sendMessage();
+    QVERIFY( LogsMessage::isDefaultMessageSent() );
+    QVERIFY( !LogsMessage::isMessageSent() );
+    
+    // Message sent using input field num
+    LogsMessage::resetTestData();
+    mDetailsView->mDialpad->mIsOpen = true;
+    mDetailsView->mDialpad->editor().setText( QString("3443535") );
+    mDetailsView->sendMessage();
+    QVERIFY( !LogsMessage::isDefaultMessageSent() );
+    QVERIFY( LogsMessage::isMessageSent() );
 }

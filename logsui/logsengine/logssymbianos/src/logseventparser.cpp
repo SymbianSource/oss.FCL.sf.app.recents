@@ -42,15 +42,32 @@ void LogsEventParser::parseL(
     //Set remote party information
     QString newRemoteParty = 
         QString::fromUtf16( source.RemoteParty().Ptr(), source.RemoteParty().Length() );
+    
+    bool remotePartyUnknown( newRemoteParty == strings.iUnKnownRemote );
+    bool remotePartyPrivate( false );
+    bool remotePartyPayphone( false );
+    if ( !remotePartyUnknown ){
+        remotePartyPrivate = ( source.RemoteParty() == KLogsPrivateText );
+    }
+    if ( !remotePartyUnknown && !remotePartyPrivate ){
+        remotePartyPayphone = ( source.RemoteParty() == KLogsPayphoneText );
+    }
+    
     if ( !isUnknownRemoteParty(dest, newRemoteParty) && 
-         newRemoteParty != strings.iUnKnownRemote &&
-         source.RemoteParty() != KLogsPrivateText && 
-         source.RemoteParty() != KLogsPayphoneText ){
+         !remotePartyUnknown && !remotePartyPrivate && !remotePartyPayphone ){
         dest.setRemoteParty( newRemoteParty );
     }
-        
-    dataChanged |= dest.setNumber( 
-        QString::fromUtf16( source.Number().Ptr(), source.Number().Length() ) );
+    
+    if ( remotePartyPrivate ){
+        dest.setRemotePartyPrivate(true);
+    } else {
+        dest.setRemotePartyPrivate(false);
+        dataChanged |= dest.setNumber( 
+              QString::fromUtf16( source.Number().Ptr(), source.Number().Length() ) );
+    }
+    
+    //remoteparty unknown and no number -> unknown
+    dest.setRemotePartyUnknown(remotePartyUnknown && dest.number().isEmpty());
     
     // Set direction
     QString sourceDirection = 

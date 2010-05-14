@@ -7,7 +7,6 @@
     <qresource prefix="/" >
         <file alias="view_show.fxml">resources/logs_view_fade_in_scale.fxml</file>
         <file alias="view_hide.fxml">resources/logs_view_fade_out.fxml</file>
-        <file alias="logs_default">resources/logs_default.qm</file>
     </qresource>
     <qresource prefix="/logslayouts" >
         <file alias="hblistviewitem.css">resources/hblistviewitem.css</file>

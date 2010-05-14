@@ -25,6 +25,7 @@
 #include "logscontact.h"
 #include "hbstubs_helper.h"
 #include "logsrecentcallsview.h"
+#include "logsdetailsmodel.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
@@ -54,6 +55,7 @@ void UT_LogsBaseView::init()
 {
     mRepository = new LogsComponentRepository( *mViewManager );
     mBaseView = new LogsBaseView( LogsRecentViewId, *mRepository, *mViewManager );
+    HbStubHelper::reset();
 }
 
 void UT_LogsBaseView::cleanup()
@@ -155,23 +157,38 @@ void  UT_LogsBaseView::testDialpadClosed()
 {
     mBaseView->mDialpad->editor().setText( QString("hello") );
     mBaseView->dialpadClosed();
-    QVERIFY( mBaseView->mDialpad->editor().text().isEmpty() );
+    QVERIFY( !mBaseView->mDialpad->editor().text().isEmpty() );
 }
 
+void  UT_LogsBaseView::testDialpadOpened()
+{
+    // Base view impl never goes to matches view as logsModel is null
+    //
+    
+    mBaseView->mRepository.model()->setPredictiveSearch(false);
+    mBaseView->mDialpad->editor().setText( QString("hello") );
+    mBaseView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    
+    mBaseView->mRepository.model()->setPredictiveSearch(true);
+    mBaseView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+
+    mViewManager->reset();
+    mBaseView->mDialpad->editor().setText( "" );
+    mBaseView->dialpadOpened();
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+}
 
 void  UT_LogsBaseView::testDialpadEditorTextChanged()
-{   
-    //text editor is one character long
-    mBaseView->mDialpad->editor().setText( QString("h") );
-    mBaseView->dialpadEditorTextChanged();
-    QVERIFY( mViewManager->mViewId == LogsMatchesViewId );
-    
+{      
+    // View does not change if contact search is off
     mViewManager->reset();
-    mBaseView->mDialpad->mIsCallButtonEnabled = true;
-    mBaseView->mDialpad->editor().setText( QString("") );
+    mBaseView->mDialpad->editor().setText( QString("2") );
+    mBaseView->mRepository.model()->setPredictiveSearch(false);
     mBaseView->dialpadEditorTextChanged();
     QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
-    QVERIFY( !mBaseView->mDialpad->mIsCallButtonEnabled );
+    QVERIFY( mBaseView->mDialpad->mIsCallButtonEnabled );
 }
 
 void  UT_LogsBaseView::testChangeFilter()
@@ -203,7 +220,7 @@ void UT_LogsBaseView::testInitiateCallback()
     //call can't be created
     QVERIFY( !mBaseView->mCall );
     mBaseView->initiateCallback(QModelIndex());
-    QVERIFY( LogsCall::lastCalledFuntion().isEmpty() );
+    QVERIFY( LogsCall::lastCalledFunction().isEmpty() );
     
     //call can be created should be tested in derived class    
 }
@@ -214,12 +231,12 @@ void UT_LogsBaseView::testInitiateCall()
     //no call
     QVERIFY( !mBaseView->mCall );
     mBaseView->initiateCall(LogsCall::TypeLogsVoiceCall);
-    QVERIFY( LogsCall::lastCalledFuntion().isEmpty() );
+    QVERIFY( LogsCall::lastCalledFunction().isEmpty() );
     
     //call exists
     mBaseView->mCall = new LogsCall();
     mBaseView->initiateCall(LogsCall::TypeLogsVideoCall);
-    QVERIFY( LogsCall::lastCalledFuntion() == QString("call") );
+    QVERIFY( LogsCall::lastCalledFunction() == QString("call") );
     QVERIFY( mBaseView->mCall->mTestLastCallType == LogsCall::TypeLogsVideoCall );
 }
 
@@ -431,4 +448,87 @@ void UT_LogsBaseView::testHandleExit()
 void UT_LogsBaseView::testIsExitAllowed()
 {
     QVERIFY( mBaseView->isExitAllowed() );
+}
+
+void UT_LogsBaseView::testAddToContacts()
+{
+    // Has dialpad input, contact is saved with that num
+    mBaseView->mDialpad->mIsOpen = true;
+    mBaseView->mDialpad->mLineEdit->setText("3344");
+    mBaseView->addToContacts();
+    QVERIFY( mBaseView->mContact->mNumber == "3344" );
+    
+    // No dialpad input, contact saved using list item if such exists
+    mBaseView->mDialpad->mIsOpen = false;
+    mBaseView->mContact->mNumber = "1234";
+    mBaseView->addToContacts();
+    QVERIFY( mBaseView->mContact->mNumber == "1234" );
+    
+    // No contact at all
+    delete mBaseView->mContact;
+    mBaseView->mContact = 0;
+    mBaseView->addToContacts();
+    QVERIFY( !mBaseView->mContact );
+}
+
+void UT_LogsBaseView::testSendMessageToCurrentNum()
+{
+    // No input
+    LogsMessage::resetTestData();
+    mBaseView->mDialpad->mIsOpen = false;
+    mBaseView->mDialpad->mLineEdit->setText("");
+    mBaseView->sendMessageToCurrentNum();
+    QVERIFY( !LogsMessage::isMessageSent() );
+    
+    // Input
+    mBaseView->mDialpad->mIsOpen = true;
+    mBaseView->mDialpad->mLineEdit->setText("4546626262");
+    mBaseView->sendMessageToCurrentNum();
+    QVERIFY( LogsMessage::isMessageSent() );
+}
+
+void UT_LogsBaseView::testDeleteEvent()
+{
+    // No model, nothing happens
+    QVERIFY( !HbStubHelper::dialogShown() );
+    QVERIFY( !mBaseView->mDetailsModel );
+    mBaseView->deleteEvent();
+    QVERIFY( !HbStubHelper::dialogShown() );
+
+    // Model exists, confirmation dialog is shown
+    mViewManager->reset();
+    LogsDetailsModel* model = new LogsDetailsModel();
+    mBaseView->mDetailsModel = model;
+    mBaseView->deleteEvent();
+    QVERIFY( HbStubHelper::dialogShown() );
+}
+
+void UT_LogsBaseView::testDeleteEventOkAnswer()
+{
+    // No model, nothing happens
+    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
+    QVERIFY( !mBaseView->mDetailsModel );
+    mBaseView->deleteEventOkAnswer();
+    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
+
+    // Model exists, call to delete event made and view is closed
+    mViewManager->reset();
+    LogsDetailsModel* model = new LogsDetailsModel();
+    mBaseView->mDetailsModel = model;
+    mBaseView->deleteEventOkAnswer();
+    QVERIFY( LogsDetailsModel::mLastCallName == QLatin1String("clearEvent") );
+    QVERIFY( !mViewManager->mPreviousActivated );    
+}
+
+void UT_LogsBaseView::testAskConfirmation()
+{
+    // No receiver and slots specified
+    mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), 0);
+    QVERIFY( HbStubHelper::dialogShown() );
+    
+    // Receiver and slots specified
+    HbStubHelper::reset();
+    mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), this,
+            SLOT(""), SLOT(""));
+    QVERIFY( HbStubHelper::dialogShown() );
 }

@@ -25,6 +25,7 @@
 //SYSTEM
 #include <QVariant>
 #include <xqservicerequest.h>
+#include <xqrequestinfo.h>
 
 // -----------------------------------------------------------------------------
 //
@@ -190,6 +191,11 @@ void LogsCall::createcall(QString service, QString type, QString num, bool sync)
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), num", num )
     XQServiceRequest snd(service, type, sync);
     snd << num;
+    // Start call at bg, call UI will bring itself to foreground when ever
+    // it thinks it is good time to do it.
+    XQRequestInfo info;
+    info.setBackground(true);
+    snd.setInfo(info);
     QVariant retValue;
     snd.send(retValue);
     LOGS_QDEBUG( "logs [ENG] <- LogsCall::createcall()" )
@@ -206,6 +212,11 @@ void LogsCall::createCallWithService(QString service, QString type, QString num,
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createCallWithService(), num", serviceId )
     XQServiceRequest snd(service, type, sync);
     snd << num << serviceId;
+    // Start call at bg, call UI will bring itself to foreground when ever
+    // it thinks it is good time to do it.
+    XQRequestInfo info;
+    info.setBackground(true);
+    snd.setInfo(info);
     QVariant retValue;
     snd.send(retValue);
     LOGS_QDEBUG( "logs [ENG] <- LogsCall::createCallWithService()" )

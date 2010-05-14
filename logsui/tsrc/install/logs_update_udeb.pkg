@@ -20,7 +20,7 @@
 &EN
 
 ; Header
-#{"LogsApp"},(0x101F4CD5),1,0,0,TYPE=SP
+#{"LogsApp"},(0x101F4CD5),1,0,0,TYPE=SA,RU
 
 ; Localised Vendor name
 %{"Symbian"}

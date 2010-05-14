@@ -24,4 +24,5 @@ class QtHighwayStubHelper{
         static void reset();
         static QString service();
         static QString message();
+        static bool isRequestBg();
 };

@@ -23,6 +23,7 @@
 #include <QSignalSpy>
 #include <QtTest/QtTest>
 #include <thumbnailmanager_qt.h>
+#include <hbicon.h>
 
 
  const QString path1 = "c:\\data\\images\\bg_1.png";
@@ -59,26 +60,28 @@ void UT_LogsThumbnailManager::testConstructor()
 void UT_LogsThumbnailManager::testNonExistingIcon()
     {
     QSignalSpy spy(mIconMgr, SIGNAL(contactIconReady(int)));
-    Q_ASSERT(spy.isValid());
+    QVERIFY(spy.isValid());
     QCOMPARE( spy.count(), 0 );
-    mIcon = mIconMgr->contactIcon(path3, 0);
-    Q_ASSERT(mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path3, 0);
+    QVERIFY(mIcon->isNull()); // default icon used first
+    QVERIFY(mIcon == HbIcon::defaultIcon());
+    
     mIconMgr->cancel();
     
-    // No avatarpath, use defaul icon, note that defaul icon is null
-    // because svg config is not enabled in .pro file
-    mIcon = mIconMgr->contactIcon(QString(), 0);
-    Q_ASSERT(mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(QString(), 0);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
     
     }
    
 void UT_LogsThumbnailManager::testOneExistingIcon()
     {
     QSignalSpy spy(mIconMgr, SIGNAL(contactIconReady(int)));
-    Q_ASSERT(spy.isValid());
+    QVERIFY(spy.isValid());
     QCOMPARE( spy.count(), 0 );
-    mIcon = mIconMgr->contactIcon(path1, 10);
-    Q_ASSERT(mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path1, 10);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
     
     QPixmap pixmap(path1);
     int index = 10;
@@ -87,13 +90,15 @@ void UT_LogsThumbnailManager::testOneExistingIcon()
     mIconMgr->mTnmReqMap.insert(reqId, path1);
     mIconMgr->thumbnailReady(pixmap, clientData, 1, 0);
     //
-    mIcon = mIconMgr->contactIcon(path1, 10);
-    Q_ASSERT(!mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path1, 10);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon != HbIcon::defaultIcon());
     //
     mIconMgr->cancel();
     //
-    mIcon = mIconMgr->contactIcon(path1, 10);
-    Q_ASSERT(mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path1, 10);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
     reqId = mIconMgr->mThumbnailManager->getThumbnail(path1, clientData, 0);
     mIconMgr->mTnmReqMap.insert(reqId, path1);
     mIconMgr->thumbnailReady(pixmap, clientData, 2, -1);
@@ -102,21 +107,25 @@ void UT_LogsThumbnailManager::testOneExistingIcon()
     QCOMPARE(spy.count(), 1);
     QList<QVariant> arguments = spy.takeFirst();
     QVERIFY(arguments.at(0).toInt() == 10);
-    mIcon = mIconMgr->contactIcon(path1, 10);
-    Q_ASSERT(!mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path1, 10);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
     }
     
 void UT_LogsThumbnailManager::testCancel()
     {
     QSignalSpy spy(mIconMgr, SIGNAL(contactIconReady(int)));
-    Q_ASSERT(spy.isValid());
+    QVERIFY(spy.isValid());
     QCOMPARE( spy.count(), 0 );
-    mIcon = mIconMgr->contactIcon(path1, 10);
-    Q_ASSERT(mIcon.isNull());
-    mIcon = mIconMgr->contactIcon(path1, 11);
-    Q_ASSERT(mIcon.isNull());
-    mIcon = mIconMgr->contactIcon(path3, 0);
-    Q_ASSERT(mIcon.isNull());
+    mIcon = &mIconMgr->contactIcon(path1, 10);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
+    mIcon = &mIconMgr->contactIcon(path1, 11);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
+    mIcon = &mIconMgr->contactIcon(path3, 0);
+    QVERIFY(mIcon->isNull());
+    QVERIFY(mIcon == HbIcon::defaultIcon());
     mIconMgr->thumbnailLoad();
     mIconMgr->cancel();
     QCOMPARE(spy.count(), 0);

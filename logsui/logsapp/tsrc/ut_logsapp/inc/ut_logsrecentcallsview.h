@@ -79,7 +79,10 @@ private slots: //test methods
     void testUpdateWidgetsSizeAndLayout();
     void testDialpadClosed();
     void testClearList();
+    void testClearListOkAnswer();
     void testIsExitAllowed();
+    void testContactSearch();
+    void testDialpadOpened();
     
 private: //helper functions
     

@@ -50,7 +50,6 @@ LogsMatchesModel::LogsMatchesModel(
       mParentModel(parentModel),
       mLogsCntFinder(0),
       mIconManager(0),
-      mSearchEnabled(false),
       mResultCount(0)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::LogsMatchesModel()" )
@@ -118,6 +117,16 @@ QVariant LogsMatchesModel::data(const QModelIndex &index, int role) const
         return var;
     }
     return doGetData(role, *item);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMatchesModel::contactSavingCompleted(bool modified)
+{
+    Q_UNUSED(modified);
+    forceSearchQuery();
 }
 
 // -----------------------------------------------------------------------------
@@ -192,33 +201,20 @@ QVariant LogsMatchesModel::createContact(const LogsModelItemContainer& item) con
     return var;
 }
 
-
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
 //
-int LogsMatchesModel::predictiveSearchStatus()
-{
-    return mDbConnector->predictiveSearchStatus();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-int LogsMatchesModel::setPredictiveSearch(bool enabled)
+int LogsMatchesModel::doSetPredictiveSearch(bool enabled)
 {    
-    LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::setPredictiveSearch()" )
+    LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::doSetPredictiveSearch()" )
     int err = mDbConnector->setPredictiveSearch(enabled);    
     if (!err) {
-        if ((mSearchEnabled && !enabled) || (!mSearchEnabled && enabled)) {
-            //in case of search is turned off, getLogMatches will only reset 
-            //previous search results
-            mSearchEnabled = enabled;
-            forceSearchQuery();
-        }
+       //in case of search is turned off, getLogMatches will only reset 
+       //previous search results
+       forceSearchQuery();
     }     
-    LOGS_QDEBUG_2( "logs [ENG] <- LogsMatchesModel::setPredictiveSearch(), err: ", err )
+    LOGS_QDEBUG_2( "logs [ENG] <- LogsMatchesModel::doSetPredictiveSearch(), err: ", err )
     return err;
 }
 
@@ -310,8 +306,6 @@ void LogsMatchesModel::initPredictiveSearch()
     int searchStatus = mDbConnector->predictiveSearchStatus();
     //searchStatus equal to 0 means that search should be permanently disabled
     if (searchStatus != 0) {
-        mSearchEnabled = (searchStatus == 1 || searchStatus < 0);
-
         mLogsCntFinder = new LogsCntFinder(LogsCommonData::getInstance().contactManager());
         connect(mLogsCntFinder, SIGNAL(queryReady()),this, SLOT(queryReady()));
         
@@ -404,17 +398,6 @@ void LogsMatchesModel::logsMatches(const QString& pattern)
 //
 // -----------------------------------------------------------------------------
 //
-LogsContact* LogsMatchesModel::createContact(const QString& number)
-{
-    LogsContact* contact = new LogsContact(number, *mDbConnector);
-    connect( contact, SIGNAL(saveCompleted(bool)), this, SLOT(forceSearchQuery()) );
-    return contact;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
 void LogsMatchesModel::getLogsMatches(const QString& pattern, 
                                       bool async, 
                                       bool force )
@@ -442,7 +425,8 @@ void LogsMatchesModel::getLogsMatches(const QString& pattern,
 void LogsMatchesModel::doSearchQuery()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::doSearchQuery()" );
-    if (mCurrentSearchPattern != mPrevSearchPattern && mSearchEnabled){
+    if (mCurrentSearchPattern != mPrevSearchPattern && 
+            mDbConnector->predictiveSearchStatus() == 1 ){
         mPrevSearchPattern = mCurrentSearchPattern;
         if (mCurrentSearchPattern.length() > 0) {
             LOGS_QDEBUG( "logs [ENG]    do search" );

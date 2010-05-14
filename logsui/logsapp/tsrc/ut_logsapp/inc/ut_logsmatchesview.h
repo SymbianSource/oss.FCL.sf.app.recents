@@ -65,6 +65,7 @@ private slots: //test methods
     void testHandleOrientationChanged();
     void testUpdateEmptyListWidgetsVisibility();
     void testUpdateAddContactButton();
+    void testContactSearch();
     
 private:
  

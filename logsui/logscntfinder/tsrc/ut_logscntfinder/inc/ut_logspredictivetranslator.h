@@ -18,6 +18,7 @@
 #define UT_LOGSPREDICTIVETRANSLATOR_H
 
 #include <QObject>
+#include <hbinputlanguage.h>
 
 class LogsPredictiveTranslator;
 
@@ -46,12 +47,12 @@ private slots: //test methods
      
     void testConstructor();
     void testTranslate();
-    void testTranslateChar();
-    void testStartsWith();
+    void testStartsWith(); 
     
 private:
  
-    LogsPredictiveTranslator* mTranslator;  
+   HbInputLanguage mOrigLang; 
+   LogsPredictiveTranslator* mTranslator;  
 };
 
 

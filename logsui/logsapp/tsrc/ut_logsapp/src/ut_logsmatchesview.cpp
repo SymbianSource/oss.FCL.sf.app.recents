@@ -145,7 +145,8 @@ void UT_LogsMatchesView::testCallKeyPressed()
     mMatchesView->callKeyPressed();
     QVERIFY( !LogsCall::isCallToNumberCalled() );
 
-    // No any item where to call, but dial string exists
+    // No any item where to call, but dial string exists and dialpad is open
+    mMatchesView->mDialpad->mIsOpen = true;
     QString dial("12345");
     mMatchesView->mDialpad->editor().setText( dial );
     mMatchesView->callKeyPressed();
@@ -157,13 +158,27 @@ void UT_LogsMatchesView::testCallKeyPressed()
     mMatchesView->mModel->mTextData.append("testdata2");
     mMatchesView->callKeyPressed();
     QVERIFY( LogsCall::isCallToNumberCalled() );
+    
+    // If dialpad is closed and matches exist, call is made to first item in list
+    mMatchesView->mDialpad->mIsOpen = false;
+    LogsCall::resetTestData();
+    mMatchesView->callKeyPressed();
+    QVERIFY( !LogsCall::isCallToNumberCalled() );
+    QVERIFY( LogsCall::lastCalledFunction() == "initiateCallback" );
 }
 
 void UT_LogsMatchesView::testVideoCallToCurrentNum()
 {
+    // Dialpad not open, and no matches, not calling
+    mMatchesView->mDialpad->mIsOpen = false;
     LogsCall::resetTestData();
     QString dial("12345");
     mMatchesView->mDialpad->editor().setText( dial );
+    mMatchesView->videoCallToCurrentNum();
+    QVERIFY( !LogsCall::isCallToNumberCalled() );
+    
+    // Dialpad open, calling video call to num
+    mMatchesView->mDialpad->mIsOpen = true;
     mMatchesView->videoCallToCurrentNum();
     QVERIFY( LogsCall::isCallToNumberCalled() );
 }
@@ -175,8 +190,15 @@ void UT_LogsMatchesView::testSendMessageToCurrentNum()
     mMatchesView->sendMessageToCurrentNum();
     QVERIFY( !LogsMessage::isMessageSent() );
     
+    // Not sent as dialpad is closed
+    mMatchesView->mDialpad->mIsOpen = false;
     QString dial("12345");
     mMatchesView->mDialpad->editor().setText( dial );
+    mMatchesView->sendMessageToCurrentNum();
+    QVERIFY( !LogsMessage::isMessageSent() );
+    
+    // Sent as dialpad is opened
+    mMatchesView->mDialpad->mIsOpen = true;
     mMatchesView->sendMessageToCurrentNum();
     QVERIFY( LogsMessage::isMessageSent() );
 }
@@ -389,3 +411,25 @@ void UT_LogsMatchesView::testUpdateAddContactButton()
     delete mMatchesView->mAddToContactsButton;
     mMatchesView->mAddToContactsButton = 0;
 }
+
+void UT_LogsMatchesView::testContactSearch()
+{	
+    LogsMatchesView* view = mRepository->matchesView();
+	LogsDbConnector* dbConnector = 0;
+    LogsMatchesModel* model1 = new LogsMatchesModel(*dbConnector);
+    QVariant arg = qVariantFromValue( model1 );
+    view->activated( true, arg );
+    int status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 1 );   
+    
+    //set contact search off, view changes and dialpad content is not cleared  
+    mMatchesView->mDialpad->editor().setText( "1234" );
+    mViewManager->reset();
+    view->toggleContactSearch();
+    status = view->mModel->predictiveSearchStatus();
+    QVERIFY( status == 2 );
+    QVERIFY( mViewManager->mViewId == LogsRecentViewId );
+    QVERIFY( mMatchesView->mDialpad->editor().text() == "1234" );    
+    
+}
+

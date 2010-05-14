@@ -54,6 +54,7 @@ private slots: //test methods
     void testGetDecorationData();
     void testIconName();
     void testGetCallerId();
+    void testSqueezedString();
     void testClearList();
     void testMarkEventsSeen();
     void testClearMissedCallsCounter();
@@ -61,6 +62,7 @@ private slots: //test methods
     void testCompressData();
     void testPredictiveSearchStatus();
     void testSetPredictiveSearch();
+    void testUpdateConfiguration();
     
 private:
  

@@ -20,9 +20,22 @@
 
 #include "ut_logscntfinder.h"
 #include "ut_logspredictivetranslator.h"
+#include "ut_logspredictive12keytranslator.h"
+#include "ut_logspredictivelatin12keytranslator.h"
+#include "ut_logspredictivethai12keytranslator.h"
 #include "ut_logscntentry.h"
 
 #include "testresultxmlparser.h"
+
+
+#define UTEST_CLASS( tc )\
+    tc tc##_instance;\
+    QStringList tc##_args( #tc );\
+    resultFileName = QString("c:/") + QString( #tc ) + QString(".xml");\
+    tc##_args << "-xml" << "-o" << resultFileName;\
+    QTest::qExec(&tc##_instance, tc##_args);\
+    parser.parseAndPrintResults(resultFileName,true)
+    
 
 
 int main(int argc, char *argv[]) 
@@ -42,27 +55,14 @@ int main(int argc, char *argv[])
         app = new QApplication(argc, argv);
     
     TestResultXmlParser parser;
+    QString resultFileName;
     
-    UT_LogsCntFinder ut_logsCntFinder;
-    QString resultFileName = "c:/ut_logs_logsCntFinder.xml";
-    QStringList args_logsCntFinder( "ut_logsCntFinder");
-    args_logsCntFinder << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsCntFinder, args_logsCntFinder);
-    parser.parseAndPrintResults(resultFileName,true); 
-    
-    UT_LogsPredictiveTranslator ut_logsPredictiveTranslator;
-    resultFileName = "c:/ut_logs_logsPredictiveTranslator.xml";
-    QStringList args_logsCntFinder1( "ut_LogsPredictiveTranslator" );
-    args_logsCntFinder1 << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsPredictiveTranslator, args_logsCntFinder1);
-    parser.parseAndPrintResults(resultFileName,true); 
-
-    UT_LogsCntEntry ut_logscntentry;
-    resultFileName = "c:/ut_logs_logscntentry.xml";
-    QStringList args_logsCntFinder2( "ut_logscntentry" );
-    args_logsCntFinder2 << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logscntentry, args_logsCntFinder2);
-    parser.parseAndPrintResults(resultFileName,true); 
+    UTEST_CLASS( UT_LogsPredictiveTranslator );
+    UTEST_CLASS( UT_LogsPredictive12KeyTranslator );
+    UTEST_CLASS( UT_LogsPredictiveLatin12KeyTranslator );
+    UTEST_CLASS( UT_LogsPredictiveThai12KeyTranslator );
+    UTEST_CLASS( UT_LogsCntEntry );
+    UTEST_CLASS( UT_LogsCntFinder );
     
     if (promptOnExit) {
         printf("Press any key...\n");

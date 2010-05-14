@@ -25,6 +25,7 @@
 class LogsEvent;
 class LogsDbConnector;
 class LogsModelItemContainer;
+class LogsContact;
 
 /**
  * Abstract logs model.
@@ -51,6 +52,30 @@ public:
     
     ~LogsAbstractModel();
     
+        
+    /**
+     * Factory method for creating a new contact object. Transfers ownership.
+     */
+    LogsContact* createContact(const QString& number);
+    
+        /**
+     * Returns cenrep key status of predictive search feature. 
+     * @return 0 - feature is permanently off and can't be turned on,
+     *         1 - feature is on
+     *         2 - feature is temporarily off and can be turned on 
+     *         negative value indicates some error in fetching the key
+     */
+    int predictiveSearchStatus();
+    /**
+     * Allows to modify cenrep key value of predictive search features. 
+     * However, this function can't be used if feature is set permanently off 
+     * (see predictiveSearchStatus())
+     * @param enabled, specify whether cenrep key will be set to 1 or 2
+     * @ return 0 if cenrep key value modified succesfully,
+     *          -1 in case of some error
+     */
+    int setPredictiveSearch(bool enabled);
+    
 public:
     
     static QString directionIconName(const LogsEvent& event);
@@ -69,6 +94,9 @@ protected:
 protected: //data 
     
     LogsDbConnector* mDbConnector;
+    
+public: // test data
+    int mPredectiveSearchStatus;
     
 private:
     

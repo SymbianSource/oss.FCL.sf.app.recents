@@ -111,6 +111,12 @@ void UT_LogsViewManager::testchangeMatchesView()
     mLogsViewManager->changeMatchesView(QString("+123456"));
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->matchesView() );
+             
+    // Contact search disabled, go to recent calls view instead
+    mLogsViewManager->mComponentsRepository->mModel->mPredectiveSearchStatus = 0;
+    mLogsViewManager->changeMatchesView(QString("+123456777"));
+    QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
+             mLogsViewManager->mComponentsRepository->recentCallsView() );
 }
 
 void UT_LogsViewManager::testExitApplication()

@@ -121,24 +121,28 @@ void UT_LogsCall::testCall()
     mLogsCall->call(LogsCall::TypeLogsVoiceCall);
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
     QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     // Video call message is longer than voice call
     QtHighwayStubHelper::reset();
     mLogsCall->call(LogsCall::TypeLogsVideoCall);
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
 
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->call(LogsCall::TypeLogsVoIPCall);
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" );    
+    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" ); 
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     // Not supported calltype
     QtHighwayStubHelper::reset();
     mLogsCall->call(static_cast<LogsCall::CallType>(9999));
     QVERIFY( QtHighwayStubHelper::service().isEmpty() );
     QVERIFY( QtHighwayStubHelper::message().isEmpty() );
+    QVERIFY( !QtHighwayStubHelper::isRequestBg() );
 }
 
 void UT_LogsCall::testInitiateCallback()
@@ -147,6 +151,7 @@ void UT_LogsCall::testInitiateCallback()
     mLogsCall->initiateCallback();
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
     QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     // Video call message is longer than voice call
     mLogsCall->mDefaultCall = LogsCall::TypeLogsVideoCall;
@@ -154,11 +159,13 @@ void UT_LogsCall::testInitiateCallback()
     mLogsCall->initiateCallback();
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     mLogsCall->mDefaultCall = LogsCall::TypeLogsVoIPCall;
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->initiateCallback();
     QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" );    
+    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" );  
+    QVERIFY( QtHighwayStubHelper::isRequestBg() );
 }

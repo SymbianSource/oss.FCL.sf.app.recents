@@ -52,6 +52,7 @@ private: //data
 public: // test helpers
     static bool isMessageSent();
     static void resetTestData();
+    static bool isDefaultMessageSent();
     
 private:
     friend class UT_LogsMessage;

@@ -24,6 +24,7 @@
 #include "logsengdefs.h"
 #include "logsmessage.h"
 
+
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
 Q_DECLARE_METATYPE(LogsMessage *)
@@ -33,7 +34,8 @@ Q_DECLARE_METATYPE(LogsContact *)
 //
 // -----------------------------------------------------------------------------
 //
-LogsAbstractModel::LogsAbstractModel() : QAbstractListModel(), mDbConnector(0)
+LogsAbstractModel::LogsAbstractModel() : 
+    QAbstractListModel(), mDbConnector(0),mPredectiveSearchStatus(1)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::LogsAbstractModel()" )
    
@@ -49,6 +51,47 @@ LogsAbstractModel::~LogsAbstractModel()
     LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::~LogsAbstractModel()" )
 
     LOGS_QDEBUG( "logs [ENG] <- LogsAbstractModel::~LogsAbstractModel()" )
+}
+
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+LogsContact* LogsAbstractModel::createContact(const QString& number)
+{
+    return new LogsContact(number);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::predictiveSearchStatus()
+{
+    return mPredectiveSearchStatus;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::setPredictiveSearch(bool enabled)
+{    
+		int result = 0;
+		if ( mPredectiveSearchStatus == 0 ){
+			result = -5;
+		}
+		else {
+			if ( enabled ){
+			mPredectiveSearchStatus = 1;
+			}
+			else {
+			mPredectiveSearchStatus = 2;
+			}
+	  }
+    
+    return result;
 }
 
 // -----------------------------------------------------------------------------

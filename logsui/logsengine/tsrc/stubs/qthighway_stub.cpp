@@ -16,16 +16,19 @@
 */
 
 #include <xqservicerequest.h>
-
+#include <xqrequestinfo.h>
+#include <QHash>
 #include "qthighway_stub_helper.h"
 
 QString qtHighwayStubService;
 QString qtHighwayStubMessage;
+bool qtHighwayStubRequestBg = false;
 
 void QtHighwayStubHelper::reset()
 {
     qtHighwayStubService.clear();
     qtHighwayStubMessage.clear();
+    qtHighwayStubRequestBg = false;
 }
 
 QString QtHighwayStubHelper::service()
@@ -36,6 +39,11 @@ QString QtHighwayStubHelper::service()
 QString QtHighwayStubHelper::message()
 {
     return qtHighwayStubMessage;
+}
+
+bool QtHighwayStubHelper::isRequestBg()
+{
+    return qtHighwayStubRequestBg;
 }
 
 XQServiceRequest::XQServiceRequest(
@@ -73,4 +81,28 @@ bool XQServiceRequest::send(QVariant& retValue)
 void XQServiceRequest::addArg(const QVariant& v)
 {
 
+}
+
+void XQServiceRequest::setInfo(const XQRequestInfo &info)
+{
+    Q_UNUSED(info);
+}
+
+XQRequestInfo::XQRequestInfo()
+{
+}
+
+XQRequestInfo::~XQRequestInfo()
+{
+    
+}
+
+void XQRequestInfo::setBackground(bool on)
+{
+    qtHighwayStubRequestBg = on;
+}
+
+bool XQRequestInfo::isBackground() const
+{
+    return qtHighwayStubRequestBg;
 }
