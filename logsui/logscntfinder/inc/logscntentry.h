@@ -91,6 +91,8 @@ private:
     void resetHighlights( LogsCntTextList& nameArray );
     bool doSimpleMatch( const QString& pattern ) const;
     bool doComplexMatch( QStringList patternArray ) const;
+    int startsWith( const LogsCntText& nameItem, const QString& pattern, 
+                    bool optimize = true ) const;
     
 
 private:

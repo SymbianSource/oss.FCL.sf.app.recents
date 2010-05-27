@@ -20,6 +20,8 @@ TARGET =
 
 QT += testlib xml
 CONFIG  += qtestlib
+CONFIG  += hb
+HB = hbcore hbinput 
 
 #include(../tsrc.pri)
 

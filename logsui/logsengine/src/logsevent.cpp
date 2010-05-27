@@ -257,9 +257,11 @@ void LogsEvent::setEventUid( int uid )
 // LogsEvent::setEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEvent::setEventType( LogsEventType eventType )
+bool LogsEvent::setEventType( LogsEventType eventType )
 {
+    bool changed( mEventType != eventType );
     mEventType = eventType;
+    return changed;
 }
 
 // ----------------------------------------------------------------------------
@@ -519,10 +521,9 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
         phoneFilter.setValue(mLogsEventData->remoteUrl());
         phoneFilter.setMatchFlags(QContactFilter::MatchExactly);
     } else if ( !mNumber.isEmpty() ){
-         // remove non-significant parts from number for better matching
         phoneFilter.setDetailDefinitionName( QContactPhoneNumber::DefinitionName,  
                                              QContactPhoneNumber::FieldNumber);
-        phoneFilter.setValue(stripPhoneNumber(mNumber));
+        phoneFilter.setValue(mNumber);
         phoneFilter.setMatchFlags(QContactFilter::MatchEndsWith);
     } else {
         // Searching not possible
@@ -551,39 +552,6 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
         }
     }
     return contactNameStr;
-}
-
-
-// ----------------------------------------------------------------------------
-// LogsEvent::stripPhoneNumber
-// ----------------------------------------------------------------------------
-//
-QString LogsEvent::stripPhoneNumber(const QString& num)
-{
-    // Remove international part from beginning if starts with '+'
-    // and leading digit can be removed if doesn't start with '+'
-    // NOTE: since international part is not fixed length, this
-    // approach is not bulletproof (i.e. if international part is
-    // only one digit long, part of group identification code is ignored
-    // which might lead to incorrect matching in case where user
-    // would have two contacts with same subscriber number part but for
-    // different operator (quite unlikely).
-
-    if ( num.length() == 0 ){
-        return num;
-    }
-    QString modifiedNum( num );
-    if ( modifiedNum.at(0) == '+' ) {
-        // QString handles automatically case of removing too much
-        const int removePlusAndInternationalPart = 4;
-        modifiedNum.remove( 0, removePlusAndInternationalPart );
-    }
-    else {
-        const int removeFirstDigit = 1;
-        modifiedNum.remove( 0, removeFirstDigit );
-    }
-
-    return modifiedNum;
 }
 
 // ----------------------------------------------------------------------------

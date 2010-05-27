@@ -26,6 +26,7 @@ INCLUDEPATH += ./inc
 INCLUDEPATH += ../inc
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
 HEADERS += inc/logscntfinder.h

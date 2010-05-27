@@ -743,8 +743,8 @@ void UT_LogsRecentCallsView::testUpdateWidgetsSizeAndLayout()
     view->mViewManager.mainWindow().setOrientation( Qt::Vertical );
     view->mDialpad->closeDialpad();
     view->mListView = &list;
-    view->mListView->setLayoutName("dummy");
-    view->mLayoutSectionName = "dummy";
+    view->mListView->setLayoutName(QLatin1String("dummy"));
+    view->mLayoutSectionName = QLatin1String("dummy");
     view->updateWidgetsSizeAndLayout();
     QVERIFY( view->mListView->layoutName() == logsListDefaultLayout );
     QVERIFY( view->mLayoutSectionName == logsViewDefaultSection );
@@ -755,10 +755,37 @@ void UT_LogsRecentCallsView::testUpdateWidgetsSizeAndLayout()
        
     // When dialpad is opened and has input, menu content is different
     view->mDialpad->openDialpad();
-    QString hello("hello");
+    QLatin1String hello("hello");
     view->mDialpad->editor().setText( hello );
     view->updateWidgetsSizeAndLayout();
     QVERIFY(action && action->isVisible());
+}
+
+
+void UT_LogsRecentCallsView::testGetListItemTextWidth()
+{
+    mRecentCallsView->mListView = new HbListView();
+    
+    mRecentCallsView->mViewManager.mainWindow().setOrientation( Qt::Vertical );
+    
+    // Default layout
+    mRecentCallsView->mListView->setLayoutName(
+                            QLatin1String(logsListDefaultLayout));
+    QCOMPARE( mRecentCallsView->getListItemTextWidth(), 200 );
+    
+    // Landscape layout
+    mRecentCallsView->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
+    mRecentCallsView->mListView->setLayoutName(
+                            QLatin1String(logsListLandscapeLayout));
+    QCOMPARE( mRecentCallsView->getListItemTextWidth(), 206 );
+    
+    // Landscape with dialpad layout
+    mRecentCallsView->mListView->setLayoutName(
+                            QLatin1String(logsListLandscapeDialpadLayout));
+    QCOMPARE( mRecentCallsView->getListItemTextWidth(), 206 );
+    
+    delete mRecentCallsView->mListView;
+    mRecentCallsView->mListView = 0;
 }
 
 void UT_LogsRecentCallsView::testDialpadClosed()

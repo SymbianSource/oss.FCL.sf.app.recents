@@ -105,6 +105,8 @@ private:
     void gestureEvent(QGestureEvent *event);
     
     QSwipeGesture::SwipeDirection swipeAngleToDirection(int angle, int delta); 
+    int getListItemTextWidth();
+    
     
 private:
     

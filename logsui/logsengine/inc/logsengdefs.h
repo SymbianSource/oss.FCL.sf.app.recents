@@ -31,7 +31,7 @@ const char logsVideoCallIconId[] = "qtg_large_video_call";
 const char logsVoipCallIconId[] = "qtg_large_voip";
 
 const char logsRemotePartyInfoIconId[] = "qtg_large_info";
-const char logsCallDurationIconId[] = "qtg_large_callduration";
+const char logsCallDurationIconId[] = "qtg_large_call_duration";
 const char logsCallDateAndTimeIconId[] = "qtg_large_calendar";
 const char logsThumbUnknownId[] = "qtg_large_avatar";
 

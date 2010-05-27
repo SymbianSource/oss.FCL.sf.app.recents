@@ -368,11 +368,13 @@ QString LogsModel::SqueezedString(
     qreal totalwidth = 0;
     int x = 0;
     if (fontMetrics.width(fullString) > maxwidth){
-    		maxwidth = maxwidth - fontMetrics.width(tr("...")+secondarystring);
+    	maxwidth = maxwidth - fontMetrics.width(tr("...")+secondarystring);
         for (x = 0; (x < basestring.count()) && (totalwidth < maxwidth); x++){
             totalwidth  = totalwidth + fontMetrics.width(basestring[x]);
         }
-        if ( ( totalwidth > maxwidth ) && ( x>0 ) ) x--;
+        if ( x>1 ){
+            x -= 2;
+        }
         return basestring.left(x) + tr("...") + secondarystring;
     } else {
         return fullString;  

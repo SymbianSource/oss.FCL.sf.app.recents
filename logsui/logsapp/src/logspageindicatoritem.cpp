@@ -17,12 +17,14 @@
 
 #include <QGraphicsColorizeEffect>
 #include <QPropertyAnimation>
-
+#include <hbcolorscheme.h>
+#include <hbevent.h>
 #include "logspageindicatoritem.h"
+#include "logslogger.h"
 
-
-const char logsNormalIconName[]    = "qtg_graf_hspage_normal";//"qtg_mono_tab_passive";//
-const char logsHighlightIconName[] = "qtg_graf_hspage_highlight";//"qtg_mono_tab_active";//
+const char logsNormalIconName[]    = "qtg_mono_tab_passive";
+const char logsHighlightIconName[] = "qtg_mono_tab_active";
+const char logsIconColor[] = "qtc_button_normal";//"qtc_default_main_pane_normal");//
   
 const int logsEffectDurationInMs = 1000;
 
@@ -40,6 +42,9 @@ LogsPageIndicatorItem::LogsPageIndicatorItem(bool active, QGraphicsItem *parent)
         setIcon(HbIcon(logsNormalIconName));
     }
 
+    setFlags(HbIcon::Colorized);
+    updateColor();
+     
     QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
     effect->setColor(Qt::white);
     effect->setStrength(0);
@@ -79,6 +84,32 @@ void LogsPageIndicatorItem::setActive(bool active)
 bool LogsPageIndicatorItem::isActive() const
 {
     return mIsActive;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsPageIndicatorItem::changeEvent(QEvent * event)
+{
+    if (event->type() == HbEvent::ThemeChanged) {
+        LOGS_QDEBUG( "logs [UI] LogsPageIndicatorItem::changeEvent(), themeChanged" );
+        updateColor();
+    }
+    HbIconItem::changeEvent(event);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsPageIndicatorItem::updateColor()
+{
+    QColor col = HbColorScheme::color(logsIconColor);
+    if (col.isValid() && (color() != col) ) {
+        setColor(col);
+        LOGS_QDEBUG_2( "logs [UI] LogsPageIndicatorItem::updateColor(), color: ", col );
+    }
 }
 
 // -----------------------------------------------------------------------------

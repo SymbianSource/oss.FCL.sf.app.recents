@@ -714,5 +714,5 @@ void LogsMatchesModelItemContainer::getFormattedContactInfo(
     }
     contactName = contactName.trimmed();
     
-    contactNumber = entry.phoneNumber().richText();    
+    contactNumber = entry.phoneNumber().text();
 }

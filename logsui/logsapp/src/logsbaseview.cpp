@@ -392,11 +392,11 @@ void LogsBaseView::setDialpadPosition()
         mDialpad->setPreferredSize(screenRect.width()/2,
                                    (screenRect.height()-scenePos().y()));                                  
     } else {
-        // dialpad takes 65% of the screen height
+        // dialpad takes 55% of the screen height
         qreal screenHeight = screenRect.height();
-        mDialpad->setPos(QPointF(0, screenHeight/2.25));
+        mDialpad->setPos(QPointF(0, screenHeight*0.45));
         mDialpad->setPreferredSize(screenRect.width(),
-                                   screenHeight-screenHeight/2.25);        
+                                   screenHeight*0.55);        
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::setDialpadPosition()" );
 }
@@ -510,17 +510,6 @@ void LogsBaseView::showListItemMenu(
     if (itemContextMenu->actions().count() > 0) {
         itemContextMenu->setPreferredPos(coords,HbPopup::TopLeftCorner);
         itemContextMenu->open();
-        //TODO: 
-        //the hack below is needed since otherwise listbox will get mouse event
-        //and "activated" signal will be emitted (=>initiateCallback() called)
-        //Remove it, when something is done in platform code for that
-        if (scene()) {
-             QGraphicsItem *item = scene()->mouseGrabberItem();
-             if (item) {
-                 LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showListItemMenu() ungrabbing the mouse" );
-                 item->ungrabMouse();
-             }
-        }
     }
 }
 
@@ -715,7 +704,7 @@ void LogsBaseView::saveContact()
                 new HbLabel(hbTrId("txt_dial_title_add_to_contacts"), popup));
         popup->setAttribute(Qt::WA_DeleteOnClose);
         popup->setTimeout( HbPopup::NoTimeout );
-        popup->setSecondaryAction(
+        popup->addAction(
                 new HbAction(hbTrId("txt_dial_button_cancel"), popup));
 
         HbWidget* buttonWidget = new HbWidget(popup);
@@ -1037,7 +1026,7 @@ void LogsBaseView::updateListSize()
 //
 void LogsBaseView::handleOrientationChanged()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleOrientationChanged()!" );
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleOrientationChanged()" );
     setDialpadPosition();
     updateWidgetsSizeAndLayout();    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::handleOrientationChanged()");
@@ -1063,16 +1052,22 @@ void LogsBaseView::askConfirmation( QString heading , QString text,
 {
     HbMessageBox* note = new HbMessageBox(text, HbMessageBox::MessageTypeQuestion);
     note->setAttribute(Qt::WA_DeleteOnClose);
-    note->setHeadingWidget(new HbLabel( heading ));
-    //note->setText( text );
-    note->setPrimaryAction(new HbAction(hbTrId("txt_common_button_ok"), note));
-    note->setSecondaryAction(new HbAction(hbTrId("txt_common_button_cancel"), note));
-
-    if (receiver && okSlot) {
-        connect(note->primaryAction(), SIGNAL(triggered()), receiver, okSlot);
+    note->setHeadingWidget(new HbLabel(heading));
+    note->setDismissPolicy(HbPopup::TapOutside);    
+    
+    if (note->actions().count() > 0 && note->actions().at(0)) {
+        note->actions().at(0)->setText(hbTrId("txt_common_button_ok"));
+        
+        if (receiver && okSlot) {
+            connect(note->actions().at(0), SIGNAL(triggered()), receiver, okSlot);
+        }
     }
-    if (receiver && cancelSlot) {
-        connect(note->secondaryAction(), SIGNAL(triggered()), receiver, cancelSlot);
+    if (note->actions().count() > 1 && note->actions().at(1)) {
+        note->actions().at(1)->setText(hbTrId("txt_common_button_cancel"));
+    
+        if (receiver && cancelSlot) {
+            connect(note->actions().at(1), SIGNAL(triggered()), receiver, cancelSlot);
+        }
     }
     note->open();
 }
@@ -1090,11 +1085,9 @@ void LogsBaseView::updateContactSearchAction()
         if ( isContactSearchPermanentlyDisabled() ){
            contactSearchAction->setVisible(false);
         } else if ( isContactSearchEnabled() ){
-           contactSearchAction->setIconText("Contact search off");
            contactSearchAction->setText(hbTrId("txt_dialer_ui_opt_contact_search_off"));
            contactSearchAction->setVisible(mDialpad->isOpen());
         } else {
-           contactSearchAction->setIconText("Contact search on");
            contactSearchAction->setText(hbTrId("txt_dialer_ui_opt_contact_search_on"));
            contactSearchAction->setVisible(mDialpad->isOpen());
         }

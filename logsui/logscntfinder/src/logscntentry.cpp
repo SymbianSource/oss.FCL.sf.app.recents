@@ -203,7 +203,7 @@ void LogsCntEntry::setPhoneNumber( const QString& number )
     
     mCached=true;
     mPhoneNumber.mText = number;
-    mPhoneNumber.mTranslatedText = translator->translate( mPhoneNumber.mText );
+    mPhoneNumber.mTranslatedText = translator->translateText( mPhoneNumber.mText );
     
 }
 
@@ -221,7 +221,7 @@ void LogsCntEntry::doSetText( const QString& text, LogsCntTextList& textlist )
     while( iter.hasNext() ) {
         LogsCntText txt;
         txt.mText = iter.next();
-        txt.mTranslatedText = translator->translate( txt.mText );
+        txt.mTranslatedText = translator->translateText( txt.mText );
         textlist.append( txt );
     }
     if ( textlist.count() == 0 ) {
@@ -278,8 +278,8 @@ void LogsCntEntry::doSetHighlights( const QString& pattern,
     //simple
     while( names.hasNext() ) {
         LogsCntText& nameItem = names.next();
-        nameItem.mHighlights = 
-                translator->startsWith( nameItem.mText, pattern, false );
+        //must use non-optimized version with whole pattern
+        nameItem.mHighlights = startsWith( nameItem, pattern, false );
     }
     
     //complex
@@ -289,13 +289,41 @@ void LogsCntEntry::doSetHighlights( const QString& pattern,
         names.toFront();
         while( names.hasNext() ) {
             LogsCntText& nameItem = names.next();
-            int matchSize = translator->startsWith( nameItem.mText, 
-                                                    patternItem, !hasSeparators );
+            int matchSize = startsWith( nameItem, patternItem, !hasSeparators );
             nameItem.mHighlights = matchSize > nameItem.mHighlights ?
                                    matchSize : nameItem.mHighlights; 
         }
     }
 }
+
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::startsWith()
+// -----------------------------------------------------------------------------
+//
+int LogsCntEntry::startsWith( const LogsCntText& nameItem, 
+                              const QString& pattern, bool optimize ) const
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsCntEntry::startsWith()" )
+    //assumed that text has found based on pattern, thus only checking with
+    //first char is enough, if mightContainZeroes eq false
+    const QString& text = nameItem.mTranslatedText;
+    
+    int matchCount = pattern.length();
+    if ( text.isEmpty() || matchCount > text.length() ) {
+        matchCount = 0;
+    } else {
+        if ( !optimize ) {
+            matchCount = text.startsWith( pattern ) ? matchCount : 0; 
+        } else {
+            matchCount = *text.data() == *pattern.data() ? 
+                         matchCount : 0;
+        }
+    }
+    LOGS_QDEBUG( "logs [FINDER] -> LogsCntEntry::startsWith()" )
+    return matchCount;
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsCntEntry::setSpeedDial()

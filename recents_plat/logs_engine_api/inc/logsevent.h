@@ -288,7 +288,7 @@ public:
 
         void setEventUid( int uid );
 
-        void setEventType( LogsEventType aEventType );
+        bool setEventType( LogsEventType aEventType );
 
         void setLogsEventData( LogsEventData* logsEventData );
 

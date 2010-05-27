@@ -17,8 +17,10 @@
 #include <QObject>
 #include <QLocale>
 #include <QHash>
+#include <hbinputkeymapfactory.h>
 #include <hbinputsettingproxy.h>
 #include <QStringList>
+#include <QTextCodec>
 
 #include "logspredictivetranslator.h"
 #include "logspredictivelatin12keytranslator.h"
@@ -34,18 +36,24 @@ LogsPredictiveTranslator* LogsPredictiveTranslator::mInstance = 0;
 //
 LogsPredictiveTranslator* LogsPredictiveTranslator::instance()
 {
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::\
+instance()" )
     if ( !mInstance ) {
         HbInputLanguage lang = 
                 HbInputSettingProxy::instance()->globalInputLanguage();
+        LOGS_QDEBUG_2( "logs [FINDER] Input lang is %d", 
+                       lang.language() )
         switch( lang.language() ) {
             case QLocale::Thai:
-                mInstance = new LogsPredictiveThai12KeyTranslator();
+                mInstance = new LogsPredictiveThai12KeyTranslator( lang );
                 break;
             default:
-                mInstance = new LogsPredictiveLatin12KeyTranslator();
+                mInstance = new LogsPredictiveLatin12KeyTranslator( lang );
                 break;
             }
     }
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
+instance()" )
     return mInstance;
 }
 
@@ -64,10 +72,16 @@ void LogsPredictiveTranslator::deleteInstance()
 // LogsPredictiveTranslator::LogsPredictiveTranslator()
 // -----------------------------------------------------------------------------
 //
-LogsPredictiveTranslator::LogsPredictiveTranslator()
+LogsPredictiveTranslator::LogsPredictiveTranslator( const HbInputLanguage& lang )
+    : mNameTranslator(0)
+
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::\
 LogsPredictiveTranslator()" )
+
+    mKeyMap = HbKeymapFactory::instance()->keymap( lang.language(), 
+                                                   lang.variant() );
+
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 LogsPredictiveTranslator()" )
 }
@@ -83,62 +97,130 @@ LogsPredictiveTranslator::~LogsPredictiveTranslator()
 ~LogsPredictiveTranslator()" )
     mInstance = 0;
     mKeyMap = 0;
+    delete mNameTranslator;
+    mNameTranslator = 0;
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 ~LogsPredictiveTranslator()" )
     
 }
 
 // -----------------------------------------------------------------------------
+// LogsPredictiveTranslator::translateText()
+// -----------------------------------------------------------------------------
+//
+const QString LogsPredictiveTranslator::translateText( 
+                                                  const QString& text )
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::translateText()" )
+    LOGS_QDEBUG_2( "logs [FINDER] text ", text );
+            
+    bool ok;
+    
+    QString result = translate( text, &ok );
+    if ( !ok ) {
+        LOGS_QDEBUG( "logs [FINDER] Text is not in input language" )
+        result = nameTranslator( text ).translate( text );
+    }
+    
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::translateText()" )
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveTranslator::nameTranslator()
+// -----------------------------------------------------------------------------
+//
+const LogsPredictiveTranslator& LogsPredictiveTranslator::nameTranslator( 
+                                                   const QString& name )
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::nameTranslator()" )
+    
+    const LogsPredictiveTranslator* nameTranslator = this;
+    if ( mNameTranslator && mNameTranslator->encodes( name ) ) {
+        LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
+nameTranslator() - use current" )
+        nameTranslator = mNameTranslator;
+    } else { 
+        delete mNameTranslator;
+        mNameTranslator = new LogsPredictiveLatin12KeyTranslator();
+        if( mNameTranslator->encodes( name ) ) {
+            nameTranslator = mNameTranslator;
+            LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
+nameTranslator() - use latin" )
+            return *nameTranslator;
+        }
+        delete mNameTranslator;
+        mNameTranslator = new LogsPredictiveThai12KeyTranslator();
+        if( mNameTranslator->encodes( name ) ) {
+            nameTranslator = mNameTranslator;
+            LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
+nameTranslator() - use thai" )
+            return *nameTranslator;
+        }
+        delete mNameTranslator;
+        mNameTranslator = 0;
+        LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
+nameTranslator() - use global input language" )
+
+    }
+    
+        
+    return *nameTranslator;
+    
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveTranslator::encodes()
+// -----------------------------------------------------------------------------
+//
+bool LogsPredictiveTranslator::encodes( const QString& sniplet )
+{
+    bool ok;
+    translate( sniplet, &ok );
+    return ok;
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveTranslator::translatePattern()
+// -----------------------------------------------------------------------------
+//
+const QString LogsPredictiveTranslator::translatePattern( 
+                                                   const QString& pattern ) const
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::translatePattern()" )
+    QString result = translate( pattern );
+    
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::translatePattern()" )
+    return result;
+}
+
+// -----------------------------------------------------------------------------
 // LogsPredictiveTranslator::translate()
 // -----------------------------------------------------------------------------
 //
-const QString LogsPredictiveTranslator::translate( const QString& name, 
-                                                   int count ) const
+const QString LogsPredictiveTranslator::translate( const QString& text,
+                                                   bool* ok, int count ) const
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::translate()" )
-    LOGS_QDEBUG_2( "logs [FINDER] name ", name );
+    LOGS_QDEBUG_2( "logs [FINDER] text ", text );
     
-    count = count == -1 ? name.length() : count;
+    count = count == -1 ? text.length() : count;
+    bool isok = ok ? *ok : true;
     QString result;
-    const QChar* content = name.data();
+    const QChar* content = text.data();
     int index = 0;
-    while( index < count ) {
-        QChar ch = translateChar( *content++ );
+    while( index < count && isok ) {
+        QChar ch = translateChar( *content++, isok );
         if ( !ch.isNull() ) {
             result.append( ch );
         }
         index++;
     }
+    if ( ok ) {
+        *ok = isok;
+    }
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::translate()" )
     return result;
 }
 
-// -----------------------------------------------------------------------------
-// LogsPredictiveTranslator::startsWith()
-// -----------------------------------------------------------------------------
-//
-int LogsPredictiveTranslator::startsWith( const QString& text, 
-                                          const QString& pattern,
-                                          bool optimize ) const
-{
-    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::startsWith()" )
-    //assumed that text has found based on pattern, thus only checking with
-    //first char is enough, if mightContainZeroes eq false
-    int matchCount = pattern.length();
-    if ( text.isEmpty() || matchCount > text.length() ) {
-        matchCount = 0;
-    } else {
-        if ( !optimize ) {
-            QString translatedText = translate( text, pattern.length() );
-            matchCount = translatedText == pattern ? matchCount : 0; 
-        } else {
-            matchCount = translateChar( *text.data() ) == *pattern.data() ? 
-                         matchCount : 0;
-        }
-    }
-        
-    LOGS_QDEBUG_2( "logs [FINDER] matchCount=", matchCount )
-    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::startsWith()" )
-    return matchCount;
-}
 

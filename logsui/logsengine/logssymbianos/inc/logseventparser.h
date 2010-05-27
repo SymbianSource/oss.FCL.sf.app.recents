@@ -54,7 +54,7 @@ class LogsEventParser
         /**
          * Resolve event type based on available information.
          */
-        static void resolveEventType(LogsEvent& dest);
+        static bool resolveEventType(LogsEvent& dest);
         
         static void eventTypeSpecificParsing(LogsEvent& dest);
         

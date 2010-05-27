@@ -19,6 +19,7 @@
 
 #include <QObject>
 #include <qcontactmanager.h>
+#include <hbinputlanguage.h>
 
 QTM_USE_NAMESPACE
 
@@ -48,8 +49,10 @@ private slots:
 
 private slots: //test methods
     void testPredictiveSearchQuery();
+    void testPredictiveThaiSearchQuery();
     void testKeymap();
-    void testPredictiveSearchQueryZero();
+    void testPredictiveSearchQueryZeroStart();
+    void testPredictiveSearchQueryZeroMiddle();
     void testPredictiveSearchQueryLimit();
     void testPredictiveSearchQueryLogs();
     void testPredictiveSearchQueryLogsContacts();
@@ -68,6 +71,7 @@ private:
     void createContactsForQueryOrder();
     void createContactsForQueryZero();
     void createHistoryEvents();
+    void createThaiContacts();
     void createLogEvent(
         QString firstname, 
         QString Lastname, 

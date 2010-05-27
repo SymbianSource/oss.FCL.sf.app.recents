@@ -412,7 +412,6 @@ void LogsRecentCallsView::initListWidget()
             this,
             SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)));
     
-    mListView->setScrollingStyle(HbScrollArea::PanOrFlick); 
     mListView->setFrictionEnabled(true);
     
     mListViewX = mListView->pos().x();
@@ -706,20 +705,49 @@ void LogsRecentCallsView::updateWidgetsSizeAndLayout()
         updateMenu();
         updateListLayoutName(*mListView);
         updateListSize();
-        HbDeviceProfile deviceProf;
         LogsConfigurationParams param;
-        QString testString = mListView->layoutName();
-        //note: ListItemTextWidth values are currently hardcoded and 
-        //they are taken from hblistviewitem.css "text-1" field
-        if (mListView->layoutName() == logsListLandscapeDialpadLayout) {
-            param.setListItemTextWidth( 38 * deviceProf.unitValue() );
-        } else {
-            param.setListItemTextWidth( 40 * deviceProf.unitValue() );
-        }
+        param.setListItemTextWidth( getListItemTextWidth() );
         mModel->updateConfiguration(param);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateWidgetsSizeAndLayout()" );
 }
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::getListItemTextWidth
+// -----------------------------------------------------------------------------
+//
+int LogsRecentCallsView::getListItemTextWidth()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::ListItemText()" );
+
+    qreal width = 0;
+
+    // layoutrect broken, fix will be in MCL wk14, use workaround meanwhile
+    //QRectF screenRect = mViewManager.mainWindow().layoutRect();
+    QRectF screenRect = (mViewManager.mainWindow().orientation() == Qt::Horizontal) ? 
+            QRectF(0,0,640,360) : QRectF(0,0,360,640);
+    LOGS_QDEBUG_2( "logs [UI]  screenRect:", screenRect );
+    
+    // Cannot use hb-param-screen-width in expressions currently due bug in layoutrect
+    qreal modifier = 0.0;
+    QString expr;
+    if (mListView->layoutName() == QLatin1String(logsListDefaultLayout)) {
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) + var(hb-param-margin-gene-right) + var(hb-param-margin-gene-middle-horizontal))";
+        width = screenRect.width();
+    } else {
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) + var(hb-param-margin-gene-right))";
+        width = screenRect.width() / 2;
+    }
+    
+    if ( expr.isEmpty() || !style()->parameter(expr, modifier) ){
+        LOGS_QDEBUG( "logs [UI] No expression or incorrect expression" );
+    }
+    width -= modifier;
+    
+    LOGS_QDEBUG_2( "logs [UI] <- LogsRecentCallsView::ListItemText(): ", width );   
+    return qRound(width);
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::updateCallButton

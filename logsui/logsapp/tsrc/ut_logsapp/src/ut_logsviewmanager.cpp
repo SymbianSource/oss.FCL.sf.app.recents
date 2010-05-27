@@ -126,7 +126,7 @@ void UT_LogsViewManager::testExitApplication()
     mLogsViewManager->mComponentsRepository->model()->mCompressCalled = false;
     mLogsViewManager->mMainWindow.mForeground = true;
     mLogsViewManager->exitApplication();
-    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
+    QVERIFY( HbStubHelper::quitCalled() );
     QVERIFY( !mLogsViewManager->mMainWindow.isForeground() );
     
     // Exit not yet possible, app sent only to bg
@@ -135,13 +135,13 @@ void UT_LogsViewManager::testExitApplication()
     mLogsViewManager->mComponentsRepository->recentCallsView()->mMarkingMissedAsSeen = true;
     HbStubHelper::reset();
     mLogsViewManager->exitApplication();
-    QVERIFY( !mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
+    QVERIFY( !HbStubHelper::quitCalled() );
     QVERIFY( !mLogsViewManager->mMainWindow.isForeground() );
     
     // Simulate view allowing exit after denying it first
     mLogsViewManager->mComponentsRepository->recentCallsView()->mMarkingMissedAsSeen = false;
     mLogsViewManager->proceedExit();
-    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
+    QVERIFY( HbStubHelper::quitCalled() );
 }
 
 void UT_LogsViewManager::testAppFocusGained()

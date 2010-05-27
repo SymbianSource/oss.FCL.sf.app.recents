@@ -20,7 +20,7 @@
 
 #include <qtcontacts.h>
 #include <QtTest/QtTest>
-
+#include <hbinputsettingproxy.h>
 
 void st_LogsCntFinder::initTestCase()
 {
@@ -60,6 +60,9 @@ void st_LogsCntFinder::cleanup()
     m_manager = 0;
     delete m_finder;
     m_finder = 0;
+    HbInputLanguage eng( QLocale::English );
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    
 }
 
 void st_LogsCntFinder::createContacts()
@@ -92,6 +95,7 @@ void st_LogsCntFinder::createContacts()
     createOneContact( QString("Tisha"), QString("Iatzkovits"), QString("932472398") );
     createOneContact( QString("Wilda"), QString("Lazar"), QString("932472398") );
     createOneContact( QString("Una Vivi"), QString("Kantsak"), QString("932472398") );
+    
    
     int contactsCount = m_manager->contactIds().count();
     QCOMPARE(contactsCount, 13);
@@ -100,6 +104,34 @@ void st_LogsCntFinder::createContacts()
     
 }
 
+void st_LogsCntFinder::createThaiContacts()
+{
+    /*Create contacts in Contacts DB
+
+		*/
+		
+    const QChar thaiFName1[] = {0x0E06,0x0E0A}; // map:23
+    const QChar thaiLName1[] = {0x0E0E,0x0E14,0x0E19,0x0E1E,0x0E23,0x0E2A };//map 456789
+    
+    QString first ( thaiFName1, 2 );
+    QString last ( thaiFName1, 6 );
+    createOneContact( first, last, QString("932472398") );
+		
+    const QChar thaiFName2[] = {0x0E30,0x0E0A};//#3, 
+    const QChar thaiLName2[] = {0x0E2F,0x0E14,0x0E19,0x0E1E,0x0E23,0x0E2A };//*56789
+    
+    QString first2 ( thaiFName1, 2 );
+    QString last2 ( thaiFName1, 6 );
+    createOneContact( first2, last2, QString("932472398") );
+		
+		
+   
+    int contactsCount = m_manager->contactIds().count();
+    QCOMPARE(contactsCount, 2);
+    qDebug() << "st_LogsCntFinder::createThaiContacts_ThaiSearch. created " << contactsCount << " contacts";
+
+    
+}
 
 void st_LogsCntFinder::createHistoryEvents()
 {
@@ -153,6 +185,54 @@ void st_LogsCntFinder::createOneContact(QString firstname, QString Lastname,
 //
 // Tests
 //
+
+void st_LogsCntFinder::testPredictiveThaiSearchQuery()
+{
+    HbInputLanguage thai( QLocale::Thai );
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
+    		  
+    createThaiContacts();
+
+		//There is no recent call in logs UI
+    //case 1
+    /*m_finder->predictiveSearchQuery( QString("2") );
+    QCOMPARE( m_finder->resultsCount(), 1 );*/
+    qDebug() << "-- 2 query starts --";
+    m_finder->predictiveSearchQuery( QString("2") );
+    qDebug() << "found " << m_finder->resultsCount() << " matches:";
+ 
+    qDebug() << "-- 4 query starts --";
+    m_finder->predictiveSearchQuery( QString("4") );
+    qDebug() << "found " << m_finder->resultsCount() << " matches:";
+        qDebug() << "-- 402 query starts --";
+    m_finder->predictiveSearchQuery( QString("402") );
+    qDebug() << "found " << m_finder->resultsCount() << " matches:";
+        qDebug() << "-- *4 query starts --";
+    m_finder->predictiveSearchQuery( QString("*4") );
+    qDebug() << "found " << m_finder->resultsCount() << " matches:";
+        qDebug() << "-- *402### query starts --";
+    m_finder->predictiveSearchQuery( QString("*402###") );
+    qDebug() << "found " << m_finder->resultsCount() << " matches:";
+
+    /*m_finder->predictiveSearchQuery( QString("4") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
+    m_finder->predictiveSearchQuery( QString("402") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
+    m_finder->predictiveSearchQuery( QString("*4") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
+    m_finder->predictiveSearchQuery( QString("*402###") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
+    m_finder->predictiveSearchQuery( QString("*4***00002###") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    */
+    
+    
+}
+
 
 // Test basic predictive search, all records with names starting letters "J, K, L" are matched
 void st_LogsCntFinder::testPredictiveSearchQuery()
@@ -315,38 +395,53 @@ void st_LogsCntFinder::testKeymap()
 4-5. multi-zeros between "1-9" numbers, only the first works as "AND" statement;
 6. Query limit is 15, the 16th is ignored, and first 0 works as "AND" statement */
 
-void st_LogsCntFinder::testPredictiveSearchQueryZero()
+
+void st_LogsCntFinder::testPredictiveSearchQueryZeroStart()
 {
     createContactsForQueryZero();
-
-    m_finder->predictiveSearchQuery( QString("56603") );
-    QCOMPARE( m_finder->resultsCount(), 1 );
     
     m_finder->predictiveSearchQuery( QString("00202") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     
     m_finder->predictiveSearchQuery( QString("02010") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
+}
+void st_LogsCntFinder::testPredictiveSearchQueryZeroMiddle()
+{
+    createContactsForQueryZero();
+    m_finder->predictiveSearchQuery( QString("566") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    
+
+    m_finder->predictiveSearchQuery( QString("56603") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+
     m_finder->predictiveSearchQuery( QString("2003") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     
-    m_finder->predictiveSearchQuery( QString("200904") );
-    QCOMPARE( m_finder->resultsCount(), 1 );
-    
     m_finder->predictiveSearchQuery( QString("2272645837883065") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+       
+    m_finder->predictiveSearchQuery( QString("200904") );
     QCOMPARE( m_finder->resultsCount(), 1 );
     
 }
 
+/* 
+Dlice 00202       Qwerty        45789348
+#Paula 2003       Augustin Ci   0078945617 
+Paula 02010       Ezerty Adam   78945617
+Ced               Y,g           +78945617
+Jari-Pekka        Baraniktestteste 78945617
+*/
 void st_LogsCntFinder::createContactsForQueryZero()
 {
     createContacts();
     createOneContact( QString("Dlice 00202"), QString("Qwerty"), QString("45789348") );
-    createOneContact( QString("#Paula 2003"), QString("Augustin Ci"), QString("78945617") );
+    createOneContact( QString("#Paula 2003"), QString("Augustin Ci"), QString("0078945617") );
     createOneContact( QString("Paula 02010"), QString("Ezerty Adam"), QString("78945617") );
-    createOneContact( QString("Ced"), QString("Y,g"), QString("78945617") );
-    createOneContact( QString("Jari-Pekka"), QString("Baraniktestteste"), QString("78945617") );
+    createOneContact( QString("Ced"), QString("Y,g"), QString("+78945617") );
+    createOneContact( QString("Jari-Pekka"), QString(" "), QString("78945617") );
 
     int contactsCount = m_manager->contactIds().count();
     QCOMPARE(contactsCount, 18);

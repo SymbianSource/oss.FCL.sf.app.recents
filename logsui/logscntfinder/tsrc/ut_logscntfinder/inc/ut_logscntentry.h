@@ -54,6 +54,8 @@ private slots: //test methods
     void testSetHighlights_latin12k();
     void testRichText_latin12k();
     void testMatch_latin12k();
+    void testStartsWith_latin12k();
+    
     //with thai 12 keys
     void testMatch_thai12k();
     void testSetHighlights_thai12k();

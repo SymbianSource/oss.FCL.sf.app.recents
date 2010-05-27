@@ -1,31 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hbdocument version="0.7">
+<hbdocument version="1.0">
     <object name="logs_act_video_call" type="HbAction">
-        <string name="iconText" value="Video call"/>
-        <string name="text" value="Video call" locid="txt_common_opt_video_call"/>
-        <string name="toolTip" value="Video call"/>
+        <string locid="txt_common_opt_video_call" name="text" value="Video call"/>
     </object>
     <object name="logs_act_create_message" type="HbAction">
-        <string name="iconText" value="Send message"/>
-        <string name="text" value="Send message" locid="txt_common_opt_create_message"/>
-        <string name="toolTip" value="Send message"/>
+        <string locid="txt_common_opt_create_message" name="text" value="Send message"/>
     </object>
     <object name="logs_act_add_to_contacts" type="HbAction">
-        <string name="iconText" value="Add to contacts"/>
-        <string name="text" value="Add to contacts" locid="txt_common_menu_add_to_contacts"/>
-        <string name="toolTip" value="Add to contacts"/>
+        <string locid="txt_common_menu_add_to_contacts" name="text" value="Add to contacts"/>
     </object>
     <object name="logs_act_clear_list" type="HbAction">
-        <string name="iconText" value="Clear list"/>
-        <string name="text" value="Clear list" locid="txt_dialer_ui_opt_clear_list"/>
-        <string name="toolTip" value="Clear list"/>
+        <string locid="txt_dialer_ui_opt_clear_list" name="text" value="Clear list"/>
     </object>
     <object name="logs_act_contact_search" type="HbAction">
-        <string name="iconText" value="Contact search"/>
-        <string name="text" value="Contact search" locid="txt_dialer_ui_opt_contact_search"/>
-        <string name="toolTip" value="Contact search"/>
+        <string locid="txt_dialer_ui_opt_contact_search" name="text" value="Contact search"/>
     </object>
-    
     <object name="logs_act_dialer" type="HbAction">
         <icon iconName="qtg_mono_dialer" name="icon"/>
         <string name="toolTip" value="Dialer"/>
@@ -39,74 +28,73 @@
         <string name="toolTip" value="Show"/>
     </object>
     <object name="logs_act_recent" type="HbAction">
-        <string name="iconText" value="Recent calls"/>
-        <string name="text" value="Recent calls" locid="txt_dialer_subhead_recent_calls"/>
-        <string name="toolTip" value="Recent calls"/>
+        <string locid="txt_dialer_subhead_recent_calls" name="text" value="Recent calls"/>
         <string name="checkable" value="TRUE"/>
     </object>
     <object name="logs_act_received" type="HbAction">
-        <string name="iconText" value="Received calls"/>
-        <string name="text" value="Received calls" locid="txt_dial_subhead_received_calls"/>
-        <string name="toolTip" value="Received calls"/>
+        <string locid="txt_dial_subhead_received_calls" name="text" value="Received calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <object name="logs_act_dialled" type="HbAction">
-        <string name="iconText" value="Dialled calls"/>
-        <string name="text" value="Dialled calls" locid="txt_dialer_subhead_dialled_calls"/>
-        <string name="toolTip" value="Dialled calls"/>
+        <string locid="txt_dialer_subhead_dialled_calls" name="text" value="Dialled calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <object name="logs_act_missed" type="HbAction">
-        <string name="iconText" value="Missed calls"/>
-        <string name="text" value="Missed calls" locid="txt_dialer_subhead_missed_calls"/>
-        <string name="toolTip" value="Missed calls"/>
+        <string locid="txt_dialer_subhead_missed_calls" name="text" value="Missed calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <widget name="logs_recent_calls_view" type="HbView">
         <widget name="logs_content" role="HbView:widget" type="HbWidget">
-            <widget name="logs_list_view" type="HbListView">
-                <real name="z" value="2.0001"/>
-                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
-                <real name="spacing" value="0un"/>
-            </widget>
             <widget name="logs_label_empty_list" type="HbLabel">
                 <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
-                <real name="z" value="3"/>
-                <rect height="26.12959" name="geometry" width="349.95" x="0.75un" y="8.25un"/>
-                <sizehint height="3.9un" type="PREFERRED" width="18.91045un"/>
-                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
+                <real name="z" value="1"/>
                 <bool name="visible" value="FALSE"/>
-                <string name="plainText" value="No history of calls" locid="txt_dialer_ui_list_no_history_of_calls"/>
-                <enums name="logicalFont" value="FontPrimary"/>    
+                <string locid="txt_dialer_ui_list_no_history_of_calls" name="plainText" value="No history of calls"/>
+                <fontspec name="fontSpec" role="Primary" textheight="var(hb-param-text-height-primary)"/>
             </widget>
-            <widget name="qroupbox_container" type="HbWidget">
-                <widget name="logs_groupbox_recent_calls" type="HbGroupBox">
-	                <string name="heading" value="Recent calls"/>
-	                <bool name="collapsable" value="FALSE"/>
-	                <real name="spacing" value="0un"/>
+            <widget name="container" type="HbWidget">
+                <widget name="qroupbox_container" type="HbWidget">
+                    <widget name="logs_groupbox_recent_calls" type="HbGroupBox">
+                        <real name="z" value="1"/>
+                        <bool name="collapsable" value="FALSE"/>
+                        <string name="heading" value="Recent calls"/>
+                    </widget>
+                    <widget name="logs_page_indicator" type="LogsPageIndicator">
+                        <real name="z" value="2"/>
+                        <sizehint height="var(hb-param-graphic-size-secondary)" type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary))"/>
+                    </widget>
+                    <real name="z" value="0"/>
+                    <layout type="anchor">
+                        <anchoritem dst="logs_groupbox_recent_calls" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                        <anchoritem dst="logs_groupbox_recent_calls" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                        <anchoritem dst="logs_groupbox_recent_calls" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                        <anchoritem dst="logs_groupbox_recent_calls" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                        <anchoritem dst="logs_page_indicator" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                        <anchoritem dst="logs_page_indicator" dstEdge="CENTERV" spacing="0un" src="" srcEdge="CENTERV"/>
+                    </layout>
                 </widget>
-                <widget name="logs_page_indicator" type="LogsPageIndicator">
-                    <real name="z" value="3"/>
-	                <sizehint type="PREFERRED" height="var(hb-param-graphic-size-secondary)" width="expr(4*var(hb-param-graphic-size-secondary))"/>
+                <widget name="logs_list_view" type="HbListView">
+                    <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem"/>
                 </widget>
                 <real name="z" value="2"/>
-                <layout type="anchor" widget="qroupbox_container">
-                    <anchoritem dst="logs_groupbox_recent_calls" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                    <anchoritem dst="logs_groupbox_recent_calls" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                    <anchoritem dst="logs_groupbox_recent_calls" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
-                    <anchoritem dst="logs_groupbox_recent_calls" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
-                    <anchoritem dst="logs_page_indicator" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                    <anchoritem dst="logs_page_indicator" dstEdge="CENTERV" spacing="0un" src="" srcEdge="CENTERV"/>
+                <layout orientation="Vertical" type="linear">
+                    <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
+                    <linearitem itemname="qroupbox_container"/>
+                    <linearitem itemname="logs_list_view"/>
                 </layout>
             </widget>
-            <layout orientation="Vertical" type="linear">
-                <contentsmargins bottom="var(hb-param-margin-view-bottom)" left="var(hb-param-margin-view-left)" right="var(hb-param-margin-view-right)" top="var(hb-param-margin-view-top)"/>
-                <linearitem itemname="qroupbox_container"/>
-                <linearitem itemname="logs_list_view"/>
+            <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
+            <layout type="anchor">
+                <anchoritem dst="container" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="container" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="container" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="container" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-screen))" src="" srcEdge="LEFT"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="TOP" spacing="8.5un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-screen))" src="" srcEdge="RIGHT"/>
             </layout>
         </widget>
         <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
-            <real name="z" value="2"/>
             <enums name="orientation" value="Horizontal"/>
             <ref object="logs_act_contacts" role="HbToolBar:addAction"/>
             <ref object="logs_act_dialer" role="HbToolBar:addAction"/>
@@ -121,73 +109,13 @@
         </widget>
         <string name="title" value="Dialer"/>
     </widget>
-    <section name="portrait_dialpad">
-        <widget name="logs_content" role="HbView:widget" type="HbWidget">
-            <layout orientation="Vertical" type="linear">
-                <contentsmargins bottom="expr(var(hb-param-margin-view-bottom)+54un)" left="var(hb-param-margin-view-left)" right="var(hb-param-margin-view-right)" top="var(hb-param-margin-view-top)"/>
-                <linearitem itemname="qroupbox_container"/>
-                <linearitem itemname="logs_list_view"/>
-            </layout>
-        </widget>
-        <widget name="logs_label_empty_list" type="HbLabel">
-            <rect height="26.12959" name="geometry" width="349.95" x="0.75un" y="8un"/>
-        </widget>
-        <widget name="logs_page_indicator" type="LogsPageIndicator">
-	        <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary))"/>
-            <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
-        </widget>        
-        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
-            <bool name="visible" value="FALSE"/>
-        </widget>
-    </section>
-    <section name="landscape_dialpad">
-        <widget name="logs_content" role="HbView:widget" type="HbWidget">
-            <layout orientation="Vertical" type="linear">
-                <contentsmargins bottom="var(hb-param-margin-view-bottom)" left="var(hb-param-margin-view-left)" right="expr(var(hb-param-margin-view-right)+48un)" top="var(hb-param-margin-view-top)"/>
-                <linearitem itemname="qroupbox_container"/>
-                <linearitem itemname="logs_list_view"/>
-            </layout>
-        </widget>
-        <widget name="logs_label_empty_list" type="HbLabel">
-            <rect height="26" name="geometry" width="312.75" x="0.75un" y="8un"/>
-        </widget>
-        <widget name="logs_page_indicator" type="LogsPageIndicator">
-	        <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary)+0.75un)"/>
-            <contentsmargins bottom="0un" left="0un" right="0.75un" top="0un"/>
-        </widget>
-        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
-            <bool name="visible" value="FALSE"/>
-        </widget>
-    </section>
-    <section name="default">
-        <widget name="logs_content" role="HbView:widget" type="HbWidget">
-            <layout orientation="Vertical" type="linear">
-                <contentsmargins bottom="var(hb-param-margin-view-bottom)" left="var(hb-param-margin-view-left)" right="var(hb-param-margin-view-right)" top="var(hb-param-margin-view-top)"/>
-                <linearitem itemname="qroupbox_container"/>
-                <linearitem itemname="logs_list_view"/>
-            </layout>
-        </widget>
-        <widget name="logs_label_empty_list" type="HbLabel">
-            <rect height="26.12959" name="geometry" width="349.95" x="0.75un" y="8un"/>
-        </widget>
-        <widget name="logs_page_indicator" type="LogsPageIndicator">
-	        <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary))"/>
-            <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
-        </widget>
-        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
-            <bool name="visible" value="TRUE"/>
-        </widget>
-    </section>
-
     <!-- Context menu -->    
     <widget name="logs_show_filter_menu" type="HbMenu">
-        <integer name="timeout" value="5000000"/> <!-- 5 seconds timeout -->
-        <enums name="dismissPolicy" value="TapAnywhere"/>
         <ref object="logs_act_recent" role="HbMenu:addAction"/>
         <ref object="logs_act_dialled" role="HbMenu:addAction"/>
         <ref object="logs_act_received" role="HbMenu:addAction"/>
         <ref object="logs_act_missed" role="HbMenu:addAction"/>
-    </widget>    
+    </widget>
     <connect receiver="logs_recent_calls_view" sender="logs_act_video_call" signal="triggered(bool)" slot="videoCallToCurrentNum()"/>
     <connect receiver="logs_recent_calls_view" sender="logs_act_create_message" signal="triggered(bool)" slot="sendMessageToCurrentNum()"/>
     <connect receiver="logs_recent_calls_view" sender="logs_act_add_to_contacts" signal="triggered(bool)" slot="addToContacts()"/>
@@ -197,7 +125,43 @@
     <connect receiver="logs_recent_calls_view" sender="logs_act_contacts" signal="triggered(bool)" slot="openContactsApp()"/>
     <connect receiver="logs_recent_calls_view" sender="logs_act_show" signal="triggered(bool)" slot="showFilterMenu()"/>
     <connect receiver="logs_recent_calls_view" sender="logs_show_filter_menu" signal="triggered(HbAction*)" slot="changeFilter(HbAction*)"/>
-    <metadata activeUIState="Common ui state" display="QHD portrait" unit="un">
+    <section name="portrait_dialpad">
+        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
+            <bool name="visible" value="FALSE"/>
+        </widget>
+        <widget name="logs_content" role="HbView:widget" type="HbWidget">
+            <contentsmargins bottom="expr(var(hb-param-screen-height)*0.55)" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
+        </widget>
+        <widget name="logs_page_indicator" type="LogsPageIndicator">
+            <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary))"/>
+            <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
+        </widget>
+    </section>
+    <section name="landscape_dialpad">
+        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
+            <bool name="visible" value="FALSE"/>
+        </widget>
+        <widget name="logs_content" role="HbView:widget" type="HbWidget">
+            <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-screen-height)/2)" top="expr(var(hb-param-margin-view-top))"/>
+        </widget>
+        <widget name="logs_page_indicator" type="LogsPageIndicator">
+            <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary)+0.75un)"/>
+            <contentsmargins bottom="0un" left="0un" right="0.75un" top="0un"/>
+        </widget>
+    </section>
+    <section name="default">
+        <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
+            <bool name="visible" value="TRUE"/>
+        </widget>
+        <widget name="logs_content" role="HbView:widget" type="HbWidget">
+            <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
+        </widget>
+        <widget name="logs_page_indicator" type="LogsPageIndicator">
+            <sizehint type="PREFERRED" width="expr(4*var(hb-param-graphic-size-secondary))"/>
+            <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
+        </widget>
+    </section>
+    <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="portrait" sections="#common portrait_dialpad"/>
         <uistate name="landscape" sections="#common landscape_dialpad"/>

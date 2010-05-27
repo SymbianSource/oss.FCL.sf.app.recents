@@ -34,6 +34,7 @@ class HbStubHelper
         static void setWidgetOpen(bool isOpen);
         static bool isWidgetOpen();    
         static bool isWidgetRaised();
+        static void setColorScheme(QColor col);
 };
 
 #endif

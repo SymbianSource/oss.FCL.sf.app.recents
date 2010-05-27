@@ -77,6 +77,7 @@ private slots: //test methods
     void testActivateEmptyListIndicator();
     void testUpdateMenu();
     void testUpdateWidgetsSizeAndLayout();
+    void testGetListItemTextWidth();
     void testDialpadClosed();
     void testClearList();
     void testClearListOkAnswer();

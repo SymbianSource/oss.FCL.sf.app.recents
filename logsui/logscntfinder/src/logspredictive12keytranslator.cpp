@@ -31,8 +31,9 @@ const QChar ZeroSepar('0');
 // LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator()
 // -----------------------------------------------------------------------------
 //
-LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator() 
-    : LogsPredictiveTranslator()
+LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator( 
+                                                    const HbInputLanguage& lang ) 
+    : LogsPredictiveTranslator( lang )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictive12KeyTranslator::\
 LogsPredictive12KeyTranslator()" )
@@ -60,15 +61,28 @@ LogsPredictive12KeyTranslator::~LogsPredictive12KeyTranslator()
 //
 QStringList LogsPredictive12KeyTranslator::patternTokens( const QString& pattern ) const
 {
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictive12KeyTranslator::\
+patternTokens()" )
+    LOGS_QDEBUG_2( "logs [FINDER] pattern ", pattern );
+
     QStringList target = pattern.split( ZeroSepar, QString::SkipEmptyParts );
     if ( target.length() > 1 ) {
+        LOGS_QDEBUG( "logs [FINDER] has separator(s) " )
         QString& first = target[0];
         QString& last = target[target.length()-1];
         padWithZeros( first, pattern, 0 );
         padWithZeros( last, pattern, last.length() );
+    } else if ( target.length() == 1 && //0280 -> 028
+                pattern[pattern.length()-1] == ZeroSepar ) {
+        LOGS_QDEBUG( "logs [FINDER] no separators, trailing zero(s) " )
+        QString& first = target[0];
+        padWithZeros( first, pattern, 0 );
     } else if ( target.length() == 0 ) {
+        LOGS_QDEBUG( "logs [FINDER] only separators " )
         target.append( ZeroSepar );
     }
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictive12KeyTranslator::\
+patternTokens()" )
     return target;
 }
 

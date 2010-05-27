@@ -97,25 +97,18 @@ QContactManager::~QContactManager()
 
 }
 
-QList<QContactLocalId> QContactManager::contacts(
-        const QContactFilter& filter, const QList<QContactSortOrder>& sortOrders) const
-{
-    Q_UNUSED(filter)
-    Q_UNUSED(sortOrders)
-    QList<QContactLocalId> list;
-    if ( QString("11112222").endsWith(logsTestNumber) ){
-        list.append( logsTestContactId );
-    }
-    return list;
-}
-
 QList<QContactLocalId> QContactManager::contactIds(
         const QContactFilter& filter, const QList<QContactSortOrder>& sortOrders) const
 {
     Q_UNUSED(filter)
     Q_UNUSED(sortOrders)
     QList<QContactLocalId> list;
-    if ( QString("11112222").endsWith(logsTestNumber) ){
+    QString matchNum = logsTestNumber;
+    // simulate contact API behavior
+    if ( matchNum.length() > 4 && matchNum.startsWith('+') ){
+        matchNum.remove(0,4);
+    }
+    if ( QString("11112222").endsWith(matchNum) ){
         list.append( logsTestContactId );
     }
     return list;
@@ -124,6 +117,16 @@ QList<QContactLocalId> QContactManager::contactIds(
 QContact QContactManager::contact(const QContactLocalId& contactId, const QStringList& definitionRestrictions) const
 {
 		Q_UNUSED(definitionRestrictions)
+    QContact contact;
+    if ( contactId == logsTestContactId ) {
+        logsTestContactLocalId = logsTestContactId;
+    }
+    return contact;
+}
+
+QContact QContactManager::contact(const QContactLocalId& contactId, const QContactFetchHint& fetchHint) const
+{
+    Q_UNUSED(fetchHint)
     QContact contact;
     if ( contactId == logsTestContactId ) {
         logsTestContactLocalId = logsTestContactId;

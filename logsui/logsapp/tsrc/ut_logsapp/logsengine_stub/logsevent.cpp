@@ -243,9 +243,11 @@ void LogsEvent::setEventUid( int uid )
 // LogsEvent::setEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEvent::setEventType( LogsEventType eventType )
+bool LogsEvent::setEventType( LogsEventType eventType )
 {
+    bool changed( mEventType != eventType );
     mEventType = eventType;
+    return changed;
 }
 
 // ----------------------------------------------------------------------------

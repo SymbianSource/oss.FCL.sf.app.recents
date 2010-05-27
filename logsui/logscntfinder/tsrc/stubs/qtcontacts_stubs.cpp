@@ -155,11 +155,9 @@ QContactManager::~QContactManager()
 
 
 QList<QContactLocalId> QContactManager::contactIds(
-        const QContactFilter& filter, 
+        const QContactFilter& /*filter*/, 
         const QList<QContactSortOrder>& /*sortOrders*/) const
 {
-    const QContactDetailFilter& df = 
-        static_cast<const QContactDetailFilter&>( filter );
         
     QList<QContactLocalId> list;
     ContactQueryResults* resultSet = ContactQueryResults::instance();
@@ -174,7 +172,7 @@ QList<QContactLocalId> QContactManager::contactIds(
 
 QContact QContactManager::contact( 
     const QContactLocalId& contactId, 
-    const QStringList& definitionRestrictions ) const
+    const QStringList& /*definitionRestrictions*/ ) const
 {
     QContact contact;
     QContactId id;
@@ -232,9 +230,9 @@ QContact::~QContact()
 }
 
 
-QContact& QContact::operator=(const QContact& other)
+QContact& QContact::operator=(const QContact& /*other*/)
 {
-
+    return *this;
 }
 
 QContactDetail QContact::detail(const QString& definitionId) const
@@ -244,8 +242,8 @@ QContactDetail QContact::detail(const QString& definitionId) const
     if ( definitionId == QContactName::DefinitionName ){
         QContactName name;
         QContactLocalId id = localId();
-        name.setValue(QContactName::FieldFirst, results->firstNameAt( (int) id-1 ) );
-        name.setValue(QContactName::FieldLast, results->lastNameAt( (int) id-1 ) );
+        name.setValue(QContactName::FieldFirstName, results->firstNameAt( (int) id-1 ) );
+        name.setValue(QContactName::FieldLastName, results->lastNameAt( (int) id-1 ) );
         return name;
     }
     if ( definitionId == QContactPhoneNumber::DefinitionName ){
@@ -256,10 +254,8 @@ QContactDetail QContact::detail(const QString& definitionId) const
     }
     if ( definitionId == QContactAvatar::DefinitionName){
         QContactAvatar avatar;
-        avatar.setSubType(QContactAvatar::SubTypeImage);
-        avatar.setAvatar("c:\\data\\images\\logstest1.jpg");
-        QString a( "Avatar" );
-        avatar.setValue( QContactAvatar::FieldAvatar, a );
+        avatar.setValue(QContactAvatar::FieldSubType, QContactAvatar::SubTypeImage );
+        avatar.setValue(QContactAvatar::FieldAvatar, "c:\\data\\images\\logstest1.jpg" );
         return avatar;
     }
     QContactDetail detail;
@@ -275,19 +271,21 @@ QContactDetail::QContactDetail()
 {
 
 }
-QContactDetail::QContactDetail(const QString& definitionName) : d(new QContactDetailPrivate)
+
+QContactDetail::QContactDetail(const QString& /*definitionName*/) : d(new QContactDetailPrivate)
 {
 
 }
+
 QContactDetail::~QContactDetail()
 {
 
 }
 
 
-QContactDetail& QContactDetail::operator=(const QContactDetail& other)
+QContactDetail& QContactDetail::operator=(const QContactDetail& /*other*/)
 {
-
+    return *this;
 }
 
 QString QContactDetail::definitionName() const

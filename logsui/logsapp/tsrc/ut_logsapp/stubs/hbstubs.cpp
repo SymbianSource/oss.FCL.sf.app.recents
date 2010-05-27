@@ -22,6 +22,7 @@
 #include "hbstubs_helper.h"
 #include <hbmessagebox.h>
 #include <hbapplication.h>
+#include <hbcolorscheme.h>
 #include <QCoreApplication>
 #include <QTimer>
 #include <QGesture>
@@ -40,6 +41,7 @@ bool testQuitCalled = false;
 Qt::GestureState testState = Qt::NoGesture;
 bool testIsWidgetOpen = false;
 bool testIsWidgetRaised = false;
+QColor testColor = Qt::white;
 
 void HbStubHelper::reset()
 {
@@ -49,6 +51,7 @@ void HbStubHelper::reset()
     testQuitCalled = false;
     testIsWidgetRaised = false;
     testDialogShown = false;
+    testColor = Qt::white;
 }
 
 
@@ -105,6 +108,12 @@ void HbStubHelper::setWidgetOpen(bool isOpen)
 {
     testIsWidgetOpen = isOpen;
 }
+
+void HbStubHelper::setColorScheme(QColor col)
+{
+    testColor = col;
+}
+
 
 bool QGraphicsWidget::close()
 {
@@ -191,7 +200,7 @@ HbMainWindow::~HbMainWindow()
     
 void HbMainWindow::setOrientation(Qt::Orientation orientation, bool animate)
 {
-		Q_UNUSED(animate)
+    Q_UNUSED(animate)
     windowOrientation = orientation; 
 }
 
@@ -256,13 +265,11 @@ QList<HbMainWindow *> HbInstance::allMainWindows() const
 
 void HbMessageBox::setText(const QString &string)
 {
-    
     if (string == "Ok") {
     	selectedActionString = "primary";
     } else if (string == "Cancel") {
     	selectedActionString = "secondary";
     }
-   
 }
 
 
@@ -278,4 +285,22 @@ HbAction *HbDialog::exec()
 void QTimer::singleShot(int msec, QObject *receiver, const char *member)
 {
     testSingleShotTimer = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool HbStyle::parameter(const QString &parameter, qreal &value, const HbDeviceProfile &profile) const
+{
+    Q_UNUSED( profile );
+    value = parameter.length();
+    return true;
+}
+
+
+QColor HbColorScheme::color( const QString &colorRole )
+{
+    Q_UNUSED(colorRole);
+    return testColor;
 }

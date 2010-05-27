@@ -28,14 +28,18 @@ class LogsPredictive12KeyTranslator_mock : public LogsPredictive12KeyTranslator
 public:
     
     inline LogsPredictive12KeyTranslator_mock() 
-        :LogsPredictive12KeyTranslator() 
-    {  mKeyMap = 
-       HbKeymapFactory::instance()->keymap( QLocale::English, 
-                                            QLocale::AnyCountry );
+        :LogsPredictive12KeyTranslator( QLocale::English ) 
+    {  
     }
     
     inline QStringList nameTokens( const QString& /*name*/ ) const
             {return QStringList();}
+    inline const QChar translateChar( const QChar /*character*/, bool& /*ok*/ ) const
+            {return QChar();}
+    inline bool encodes( const QString& /*sniplet*/ )
+        {return true;}
+    inline int mib() const {return 0;}
+    
 
 };
 

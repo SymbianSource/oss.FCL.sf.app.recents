@@ -186,7 +186,12 @@ void LogsViewManager::proceedExit()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::proceedExit()" );
     
-    mComponentsRepository->model()->compressData();
+    // Instead of compressing data, exit the application for real because
+    // of bug in wk16 platform which prevents bg/fg switching of the app.
+    //
+    
+    //mComponentsRepository->model()->compressData();
+    qApp->quit();
     
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::proceedExit()" );
 }
