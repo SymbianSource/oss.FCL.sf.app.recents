@@ -43,6 +43,7 @@
 #include <hbmessagebox.h>
 #include <hbmainwindow.h>
 #include <QTimer>
+#include <hbactivitymanager.h>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
 
@@ -67,7 +68,7 @@ LogsRecentCallsView::LogsRecentCallsView(
       mMatchesModel(0),
       mMarkingMissedAsSeen(false),
       mPageIndicator(0),
-      mResetted(false)
+      mFirstActivation(true)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::LogsRecentCallsView()" );
     mModel = mRepository.model();
@@ -75,6 +76,13 @@ LogsRecentCallsView::LogsRecentCallsView(
     //TODO: taking away due to toolbar bug. If toolbar visibility changes on view
     //activation, there will be a crash due to previous view effect is playing
     //addViewSwitchingEffects();
+    
+    // Important to add in the same order as mCurrentView enums as correct
+    // activity id is taken directly from the array based on the enum
+    mActivities.append( logsActivityIdViewRecent );
+    mActivities.append( logsActivityIdViewReceived );
+    mActivities.append( logsActivityIdViewCalled );
+    mActivities.append( logsActivityIdViewMissed );
 }
     
 // -----------------------------------------------------------------------------
@@ -105,7 +113,11 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     // base class handling first
     LogsBaseView::activated(showDialer, args);
     
-    LogsServices::LogsView view = static_cast<LogsServices::LogsView>( args.toInt() );
+    int internalViewId = args.toInt();
+    if ( internalViewId < 0 || internalViewId > LogsServices::ViewMissed ){
+        internalViewId = LogsServices::ViewAll;
+    }
+    LogsServices::LogsView view = static_cast<LogsServices::LogsView>( internalViewId );
 
     // View update is needed when we activate view for the first time (!mFilter)
     // or if view has to be changed
@@ -115,14 +127,9 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     activateEmptyListIndicator(mFilter);
     
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mCurrentView));
-    
-    if ( mResetted ){
-        // After reset, first data addition should cause scrolling to topitem
-        connect( mFilter, SIGNAL(rowsInserted(const QModelIndex&,int,int)), 
-                 this, SLOT(scrollToTopItem()) );
-        mResetted = false;
-    }
 
+    mFirstActivation = false;
+    
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::activated()" );  
 }
 
@@ -161,13 +168,29 @@ bool LogsRecentCallsView::isExitAllowed()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::resetView()
+QString LogsRecentCallsView::saveActivity(
+    QDataStream& serializedActivity, QVariantHash& metaData)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::resetView()" );
-    LogsBaseView::resetView();
-    mResetted = true;
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::resetView()" );
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    if ( mCurrentView >= 0 && mCurrentView < mActivities.count() ){
+        return mActivities.at( mCurrentView );
+    }
+    return QString();
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QVariant LogsRecentCallsView::loadActivity(
+    const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return mActivities.indexOf(activityId);
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::initView
@@ -718,24 +741,22 @@ void LogsRecentCallsView::updateWidgetsSizeAndLayout()
 //
 int LogsRecentCallsView::getListItemTextWidth()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::ListItemText()" );
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::getListItemTextWidth()" );
 
-    qreal width = 0;
-
-    // layoutrect broken, fix will be in MCL wk14, use workaround meanwhile
-    //QRectF screenRect = mViewManager.mainWindow().layoutRect();
-    QRectF screenRect = (mViewManager.mainWindow().orientation() == Qt::Horizontal) ? 
-            QRectF(0,0,640,360) : QRectF(0,0,360,640);
+    qreal width = 0.0;
+    QRectF screenRect = mViewManager.mainWindow().layoutRect();
     LOGS_QDEBUG_2( "logs [UI]  screenRect:", screenRect );
     
     // Cannot use hb-param-screen-width in expressions currently due bug in layoutrect
     qreal modifier = 0.0;
     QString expr;
     if (mListView->layoutName() == QLatin1String(logsListDefaultLayout)) {
-        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) + var(hb-param-margin-gene-right) + var(hb-param-margin-gene-middle-horizontal))";
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) ";
+        expr += "+ var(hb-param-margin-gene-right) + var(hb-param-margin-gene-middle-horizontal))";
         width = screenRect.width();
     } else {
-        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) + var(hb-param-margin-gene-right))";
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) ";
+        expr += "+ var(hb-param-margin-gene-right))";
         width = screenRect.width() / 2;
     }
     
@@ -744,7 +765,7 @@ int LogsRecentCallsView::getListItemTextWidth()
     }
     width -= modifier;
     
-    LOGS_QDEBUG_2( "logs [UI] <- LogsRecentCallsView::ListItemText(): ", width );   
+    LOGS_QDEBUG_2( "logs [UI] <- LogsRecentCallsView::getListItemTextWidth(): ", width );   
     return qRound(width);
 }
 
@@ -769,7 +790,7 @@ void LogsRecentCallsView::updateCallButton()
 //
 void LogsRecentCallsView::handleMissedCallsMarking()
 {
-    if ( mFilter && !mMarkingMissedAsSeen && !mResetted && 
+    if ( mFilter && !mMarkingMissedAsSeen && !mFirstActivation && 
           ( mFilter->filterType() == LogsFilter::Missed || 
             mFilter->filterType() == LogsFilter::All ) ){
         // Don't care if timer would be already running, slot's implementation

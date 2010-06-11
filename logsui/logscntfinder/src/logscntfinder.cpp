@@ -307,13 +307,8 @@ const LogsCntEntry& LogsCntFinder::resultAt( int index )
         entry->setPhoneNumber( 
               contactPhoneNumber.value( QContactPhoneNumber::FieldNumber ) );
         QContactAvatar contactAvatar = contact.detail<QContactAvatar>();
-        QString subType = contactAvatar.value( QContactAvatar::FieldSubType );
-        QString avatar = contactAvatar.value( QContactAvatar::FieldAvatar );
-        
-        if ( subType == QLatin1String( QContactAvatar::SubTypeImage ) &&
-             !avatar.isEmpty() ) {
-            entry->setAvatarPath( avatar );
-        }
+        QString avatar = contactAvatar.value( QContactAvatar::FieldImageUrl );
+        entry->setAvatarPath( avatar );
         
         updateResult( entry );      
     }

@@ -70,6 +70,7 @@ void UT_LogsMatchesView::testConstructor()
     QVERIFY( mMatchesView->mActionMap.count() == 0 );
     QVERIFY( mMatchesView->mLayoutSectionName == "" );
     QVERIFY( !mMatchesView->mAddToContactsButton );
+    QCOMPARE( mMatchesView->mActivities.at(0), QString(logsActivityIdViewMatches) );
 }
 
 void UT_LogsMatchesView::testActivated()
@@ -104,23 +105,26 @@ void UT_LogsMatchesView::testActivated()
     //Pass model as input arg
     LogsDbConnector* dbConnector = 0;
     LogsMatchesModel* model1 = new LogsMatchesModel(*dbConnector);
+    model1->resetLastCall();
     QVariant arg = qVariantFromValue( model1 );
     mMatchesView->activated( true, arg );
     QVERIFY( mMatchesView->mListView );
-    QVERIFY( mMatchesView->mModel == model1 );  
+    QVERIFY( mMatchesView->mModel == model1 );
+    QVERIFY( mMatchesView->mModel->mLastCall.isEmpty() );
     
     LogsMatchesModel* model2 = new LogsMatchesModel(*dbConnector);
+    model2->resetLastCall();
     QVariant arg2 = qVariantFromValue( model2 );
     mMatchesView->activated( true, arg2 );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel == model2 );
+    QVERIFY( mMatchesView->mModel->mLastCall.isEmpty() );
     
     // After passing model as input arg, do not pass model
     mMatchesView->activated( true,QVariant() );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel );
-    QVERIFY( mMatchesView->mModel != model1 );
-    QVERIFY( mMatchesView->mModel != model2 );
+    QVERIFY( mMatchesView->mModel->mLastCall == QLatin1String("constructor") );
 }
 
 

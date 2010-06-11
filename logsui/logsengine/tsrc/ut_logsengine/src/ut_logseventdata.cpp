@@ -97,3 +97,8 @@ void UT_LogsEventData::testIsCsCompatible()
     mEventData->mRemoteUrl = "test@1.2.3.4";
     QVERIFY( !mEventData->isCsCompatible() );
 }
+
+void UT_LogsEventData::testSerialization()
+{
+    
+}

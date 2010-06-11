@@ -35,6 +35,8 @@ class HbStubHelper
         static bool isWidgetOpen();    
         static bool isWidgetRaised();
         static void setColorScheme(QColor col);
+        static void setActivityReason(Hb::ActivationReason reason);
+        static void setActivityId(QString activityId);
 };
 
 #endif

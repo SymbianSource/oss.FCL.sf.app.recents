@@ -208,12 +208,14 @@ void UT_LogsDbConnector::testReadCompleted()
     QSignalSpy spyAdded(mDbConnector, SIGNAL(dataAdded(QList<int>)));
     QSignalSpy spyRemoved(mDbConnector, SIGNAL(dataRemoved(QList<int>)));
     QSignalSpy spyUpdated(mDbConnector, SIGNAL(dataUpdated(QList<int>)));
+    QSignalSpy spyReset(mDbConnector, SIGNAL(dataReset()));
 
     // No events, no signal
     mDbConnector->readCompleted(0);
     QVERIFY( spyAdded.count() == 0 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 0 );
+    QVERIFY( spyReset.count() == 0 );
     
     // Events exists, their indexes are signaled
     LOGS_TEST_CREATE_EVENT(event, 0, LogsEvent::EventAdded );
@@ -224,6 +226,7 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( addedIndexes.at(0) == 0 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 0 );
+    QVERIFY( spyReset.count() == 0 );
     QVERIFY( mDbConnector->mEvents.count() == 1 );
     QVERIFY( mEvents.count() == 1 );
     
@@ -240,6 +243,7 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( addedIndexes2.at(1) == 1 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 0 );
+    QVERIFY( spyReset.count() == 0 );
     QVERIFY( mDbConnector->mEvents.count() == 3 );
     QVERIFY( mEvents.count() == 3 );
     
@@ -251,6 +255,7 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( spyAdded.count() == 2 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 1 );
+    QVERIFY( spyReset.count() == 0 );
     QList<int> updatedIndexes = qvariant_cast< QList<int> >(spyUpdated.at(0).at(0));
     QVERIFY( updatedIndexes.count() == 1 );
     QVERIFY( updatedIndexes.at(0) == 1 );
@@ -264,12 +269,24 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( spyAdded.count() == 2 );
     QVERIFY( spyRemoved.count() == 1 );
     QVERIFY( spyUpdated.count() == 1 );
+    QVERIFY( spyReset.count() == 0 );
     QList<int> removedIndexes = qvariant_cast< QList<int> >(spyRemoved.at(0).at(0));
     QVERIFY( removedIndexes.count() == 1 );
     QVERIFY( removedIndexes.at(0) == 2 ); // index 2
     QVERIFY( mDbConnector->mEvents.count() == 2 );
     QVERIFY( mEvents.count() == 2 );
     
+    // Event added and removed, reset should be signaled
+    mDbConnector->mEvents.at(0)->mEventState = LogsEvent::EventAdded;
+    mDbConnector->mEvents.at(1)->mIsInView = false;
+    mDbConnector->readCompleted(1);
+    QVERIFY( spyAdded.count() == 2 );
+    QVERIFY( spyRemoved.count() == 1 );
+    QVERIFY( spyUpdated.count() == 1 );
+    QVERIFY( spyReset.count() == 1 );
+    QVERIFY( mDbConnector->mEvents.count() == 1 );
+    QVERIFY( mEvents.count() == 1 );
+
     // Read completed when compression is enabled, reader is stopped
     QVERIFY( mDbConnector->init() == 0 );
     QVERIFY( mDbConnector->start() == 0 );

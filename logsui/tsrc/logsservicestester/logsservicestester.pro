@@ -19,16 +19,22 @@ TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
 INCLUDEPATH += .
+INCLUDEPATH += ..\..\logsapp\inc
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 CONFIG += hb
 
 # Input
+HEADERS += logsservicetesterwidget.h
+HEADERS += logsservicetesterappcloser.h
+
 SOURCES += main.cpp
+SOURCES += logsservicetesterwidget.cpp
+SOURCES += logsservicetesterappcloser.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0xEC209DCF
-    TARGET.CAPABILITY = CAP_APPLICATION AllFiles
-    LIBS += -llogsservices   
+    TARGET.CAPABILITY = CAP_APPLICATION PowerMgmt
+    LIBS += -llogsservices  -lxqservice 
 }
 

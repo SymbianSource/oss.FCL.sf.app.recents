@@ -54,7 +54,6 @@ private slots: //test methods
     void testInitView();
     void testActivated();
     void testDeactivated();
-    void testResetView();
     void testInitListWidget();
     void testUpdateFilter();
     void testUpdateViewName();
@@ -84,6 +83,8 @@ private slots: //test methods
     void testIsExitAllowed();
     void testContactSearch();
     void testDialpadOpened();
+    void testSaveActivity();
+    void testLoadActivity();
     
 private: //helper functions
     

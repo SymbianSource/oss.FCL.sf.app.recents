@@ -292,6 +292,15 @@ void LogsDetailsModel::getNumberToClipboard()
 //
 // -----------------------------------------------------------------------------
 //
+LogsEvent LogsDetailsModel::getLogsEvent() const
+{
+    return *mEvent;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 bool LogsDetailsModel::isAddress(QString value) const
 {
 	QChar c('@');

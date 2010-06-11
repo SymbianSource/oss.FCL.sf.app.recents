@@ -24,6 +24,7 @@
 #include <qcontactname.h>
 #include <qcontactonlineaccount.h>
 #include <hbglobal.h>
+#include <QDataStream>
 #include "logsevent.h"
 #include "logseventparser.h"
 #include "logseventdata.h"
@@ -347,6 +348,85 @@ LogsEvent::LogsEventType LogsEvent::eventType() const
 }
 
 // ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+LogsEvent::LogsEvent( QDataStream& serializedEvent )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEvent::LogsEvent deserialize")
+    serializedEvent >> mLogId;
+    int tempEnum;
+    serializedEvent >> tempEnum;
+    mDirection = static_cast<LogsEvent::LogsDirection>( tempEnum );
+    serializedEvent >> tempEnum;
+    mEventType = static_cast<LogsEvent::LogsEventType>( tempEnum );
+    serializedEvent >> mUid;
+    
+    serializedEvent >> mRemoteParty;
+    serializedEvent >> mNumber;
+    serializedEvent >> mDuplicates;
+    serializedEvent >> mTime;
+    serializedEvent >> mRingDuration;
+    serializedEvent >> mIsRead;  
+    serializedEvent >> mIsALS;
+    serializedEvent >> mDuration;
+          
+    serializedEvent >> mIndex;
+    serializedEvent >> mIsInView;
+    serializedEvent >> tempEnum;
+    mEventState = static_cast<LogsEvent::LogsEventState>( tempEnum );
+    serializedEvent >> mIsLocallySeen;
+    serializedEvent >> mIsPrivate;
+    serializedEvent >> mIsUnknown;
+    
+    LogsEventData* logsEventData = new LogsEventData(serializedEvent);
+    if ( serializedEvent.status() == QDataStream::ReadPastEnd ){
+        mLogsEventData = 0;
+        delete logsEventData;
+    } else {
+        mLogsEventData = logsEventData;
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsEvent::LogsEvent deserialize")
+    
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::serialize( QDataStream& serializeDestination )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEvent::serialize")
+    serializeDestination << mLogId;
+    serializeDestination << mDirection;
+    serializeDestination << mEventType;
+    serializeDestination << mUid;
+    
+    serializeDestination << mRemoteParty;
+    serializeDestination << mNumber;
+    serializeDestination << mDuplicates;
+    serializeDestination << mTime;
+    serializeDestination << mRingDuration;
+    serializeDestination << mIsRead;  
+    serializeDestination << mIsALS;
+    serializeDestination << mDuration;
+       
+    serializeDestination << mIndex;
+    serializeDestination << mIsInView;
+    serializeDestination << mEventState;
+    serializeDestination << mIsLocallySeen;
+    serializeDestination << mIsPrivate;
+    serializeDestination << mIsUnknown; 
+    
+    if ( mLogsEventData ){
+        mLogsEventData->serialize(serializeDestination);
+    }
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsEvent::serialize")
+    return true;
+}
+        
+// ----------------------------------------------------------------------------
 // LogsEvent::RingDuration
 //
 // For ring duation feature
@@ -560,8 +640,8 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
 //
 QString LogsEvent::parseContactName(const QContactName& name)
 {
-    QString firstName = name.value(QContactName::FieldFirst);
-    QString lastName = name.value(QContactName::FieldLast);
+    QString firstName = name.value(QContactName::FieldFirstName);
+    QString lastName = name.value(QContactName::FieldLastName);
     QString parsedName;
     if (!lastName.isEmpty()) {
         if (!firstName.isEmpty()) {

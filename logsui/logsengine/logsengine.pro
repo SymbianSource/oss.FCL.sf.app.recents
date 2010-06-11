@@ -19,7 +19,6 @@ TEMPLATE = lib
 
 TARGET = logsengine
 CONFIG += hb dll svg
-RESOURCES += logsengine.qrc
 
 INCLUDEPATH += ./
 INCLUDEPATH += ./inc

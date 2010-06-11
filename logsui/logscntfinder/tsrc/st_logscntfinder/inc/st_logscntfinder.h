@@ -26,7 +26,7 @@ QTM_USE_NAMESPACE
 class LogsCntFinder;
 
 
-class st_LogsCntFinder : public QObject                 
+class ST_LogsCntFinder : public QObject                 
 {
      Q_OBJECT
     
@@ -48,14 +48,33 @@ private slots:
      void cleanup();
 
 private slots: //test methods
-    void testPredictiveSearchQuery();
-    void testPredictiveThaiSearchQuery();
-    void testKeymap();
+
+    void testKeymap_2();
+    void testKeymap_3();
+    void testKeymap_4();
+    void testKeymap_5();
+    void testKeymap_6();
+    void testKeymap_7();
+    void testKeymap_8();
+    void testKeymap_9();
     void testPredictiveSearchQueryZeroStart();
+    void testPredictiveSearchQueryZeroStartZeroEnd();
     void testPredictiveSearchQueryZeroMiddle();
-    void testPredictiveSearchQueryLimit();
+    void testPredictiveSearchQueryMultiZerosMiddle();
+    void testPredictiveSearchQueryZeroMiddleLong();
+    void testPredictiveSearchQueryMultiZerosAndZeroMiddle();
+    void testPredictiveSearchQueryPartialCached();
+    void testPredictiveSearchQueryFullyCached();
+    void testPredictiveSearchQueryPartialCachedNoResults();
+    void testPredictiveSearchQueryFullyCachedNoResults();
+    void testPredictiveSearchQueryCachedZeroCase();
     void testPredictiveSearchQueryLogs();
-    void testPredictiveSearchQueryLogsContacts();
+    void testPredictiveSearchQueryLogsZeroCase();
+    void testPredictiveSearchQueryLogsContactsPartialCached();
+    void testPredictiveSearchQueryLogsContactsFullyCached();
+    void testPredictiveSearchQueryLogsContactsZeroCase();
+    void testPredictiveSearchQueryLogsContactsPhoneNumberMatch();
+    void testPredictiveSearchQueryLimit();
     void testQueryOrder();
 
 private:
@@ -71,7 +90,6 @@ private:
     void createContactsForQueryOrder();
     void createContactsForQueryZero();
     void createHistoryEvents();
-    void createThaiContacts();
     void createLogEvent(
         QString firstname, 
         QString Lastname, 

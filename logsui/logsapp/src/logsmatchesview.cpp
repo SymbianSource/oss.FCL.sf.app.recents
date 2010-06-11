@@ -48,6 +48,8 @@ LogsMatchesView::LogsMatchesView(
       mAddToContactsButton(0)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsMatchesView::LogsMatchesView()" );
+    
+    mActivities.append( logsActivityIdViewMatches );
 }
     
 // -----------------------------------------------------------------------------
@@ -216,7 +218,7 @@ void LogsMatchesView::dialpadEditorTextChanged()
     
     QString pattern = mDialpad->editor().text();
     if ( pattern.isEmpty() ){
-        // Treat empty input field same was as back press
+        // Treat empty input field same way as back press
         LogsBaseView::handleBackSoftkey();
     } else if ( mModel ) {
         mModel->logsMatches( pattern );

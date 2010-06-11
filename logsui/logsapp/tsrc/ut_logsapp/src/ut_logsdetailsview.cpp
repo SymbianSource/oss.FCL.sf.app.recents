@@ -68,9 +68,9 @@ void UT_LogsDetailsView::cleanup()
 void UT_LogsDetailsView::testConstructor()
 {
     QVERIFY(mDetailsView);
-    QVERIFY(mDetailsView->mSoftKeyBackAction);
     QVERIFY(mDetailsView->viewId() == LogsDetailsViewId );
     QVERIFY(!mDetailsView->mDetailsModel);
+    QCOMPARE( mDetailsView->mActivities.at(0), QString(logsActivityIdViewDetails) );
 }
 
 void UT_LogsDetailsView::testActivated()
@@ -338,4 +338,34 @@ void UT_LogsDetailsView::testSendMessage()
     mDetailsView->sendMessage();
     QVERIFY( !LogsMessage::isDefaultMessageSent() );
     QVERIFY( LogsMessage::isMessageSent() );
+}
+
+void UT_LogsDetailsView::testSaveActivity()
+{
+    QByteArray serializedActivity;
+    int sizeBefore = serializedActivity.size();
+    QDataStream stream(&serializedActivity, QIODevice::WriteOnly | QIODevice::Append);
+    QVariantHash metaData;
+    QVERIFY( mDetailsView->saveActivity(stream, metaData) == QString(logsActivityIdViewDetails) );
+    QVERIFY(serializedActivity.size() == sizeBefore); // Event not serialized as no model
+    
+    mDetailsView->mDetailsModel = new LogsDetailsModel();
+    mDetailsView->mDetailsModel->mEvent = new LogsEvent;
+    QVERIFY( mDetailsView->saveActivity(stream, metaData) == QString(logsActivityIdViewDetails) );
+    QVERIFY(serializedActivity.size() > sizeBefore); // Event serialized
+    
+}
+
+void UT_LogsDetailsView::testLoadActivity()
+{
+    QByteArray serializedActivity;
+    QDataStream stream(&serializedActivity, QIODevice::ReadWrite | QIODevice::Append);
+    LogsEvent event;
+    event.serialize(stream);
+    QVariantHash metaData;
+    QVariant args = mDetailsView->loadActivity(QString(logsActivityIdViewDetails), stream, metaData);
+    QVERIFY( !args.isNull() );
+    LogsDetailsModel* model = qVariantValue<LogsDetailsModel*>(args);
+    QVERIFY( model != 0 );
+    delete model;
 }

@@ -19,9 +19,11 @@
 #include "logseventdata.h"
 #include "logsevent.h"
 #include "logseventdataparser.h"
+#include "logslogger.h"
 
 #include <QRegExp>
 #include <QRegExpValidator>
+#include <QDataStream>
 
 // ----------------------------------------------------------------------------
 // LogsEventData::LogsEventData
@@ -61,6 +63,56 @@ LogsEventData::LogsEventData( const LogsEventData& data )
     mContactLocalId = data.mContactLocalId;
     mRemoteUrl = data.mRemoteUrl;
     mLocalUrl = data.mLocalUrl;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+LogsEventData::LogsEventData( QDataStream& serializedEvent )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEventData::LogsEventData deserialize")
+        
+    serializedEvent >> mIsCNAP;
+    serializedEvent >> mIsVT;
+    serializedEvent >> mIsPoC;
+    serializedEvent >> mIsVoIP;
+    serializedEvent >> mIsEmerg;
+    serializedEvent >> mDataSent;
+    serializedEvent >> mDataReceived;        
+    serializedEvent >> mMsgPartsNumber;            
+    serializedEvent >> mServiceId;
+    serializedEvent >> mContactLocalId;
+    serializedEvent >> mRemoteUrl;
+    serializedEvent >> mLocalUrl;
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsEventData::LogsEventData deserialize")
+    
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEventData::serialize( QDataStream& serializeDestination )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEventData::serialize")
+        
+    serializeDestination << mIsCNAP;
+    serializeDestination << mIsVT;
+    serializeDestination << mIsPoC;
+    serializeDestination << mIsVoIP;
+    serializeDestination << mIsEmerg;
+    serializeDestination << mDataSent;
+    serializeDestination << mDataReceived;        
+    serializeDestination << mMsgPartsNumber;            
+    serializeDestination << mServiceId;
+    serializeDestination << mContactLocalId;
+    serializeDestination << mRemoteUrl;
+    serializeDestination << mLocalUrl;
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsEventData::serialize")
+    return true;
 }
 
 // ----------------------------------------------------------------------------

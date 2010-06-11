@@ -37,8 +37,10 @@ INCLUDEPATH += ../../../inc
 
 # Input
     HEADERS += inc\pt_logscntfinder.h 
-            
+    HEADERS += inc\pt_logscntfinderqwerty.h 
     SOURCES += src\pt_logscntfinder.cpp   
+    SOURCES += src\pt_logscntfinderqwerty.cpp   
+    SOURCES += src\main.cpp   
 
 symbian: {
     TARGET.UID2 = 0x100039CE

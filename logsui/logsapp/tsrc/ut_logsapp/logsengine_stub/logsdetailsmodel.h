@@ -44,6 +44,7 @@ public: // The exported API
     ~LogsDetailsModel();
     void clearEvent();
     void getNumberToClipboard();
+    LogsEvent getLogsEvent() const;
     
 public: // From QAbstractItemModel
     

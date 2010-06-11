@@ -85,6 +85,10 @@ private slots: //test methods
     void testDeleteEvent();
     void testDeleteEventOkAnswer();
     void testAskConfirmation();
+    void testMatchWithActivityId();
+    void testSaveActivity();
+    void testLoadActivity();
+    void testClearActivity();
     
 private:
  

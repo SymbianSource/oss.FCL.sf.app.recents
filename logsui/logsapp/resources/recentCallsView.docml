@@ -57,7 +57,7 @@
                     <widget name="logs_groupbox_recent_calls" type="HbGroupBox">
                         <real name="z" value="1"/>
                         <bool name="collapsable" value="FALSE"/>
-                        <string name="heading" value="Recent calls"/>
+                        <string locid="txt_dialer_subhead_recent_calls" name="heading" value="Recent calls"/>
                     </widget>
                     <widget name="logs_page_indicator" type="LogsPageIndicator">
                         <real name="z" value="2"/>
@@ -107,7 +107,7 @@
             <ref object="logs_act_clear_list" role="HbMenu:addAction"/>
             <ref object="logs_act_contact_search" role="HbMenu:addAction"/>
         </widget>
-        <string name="title" value="Dialer"/>
+        <string locid="txt_dial_title_dialer" name="title" value="Dialer"/>
     </widget>
     <!-- Context menu -->    
     <widget name="logs_show_filter_menu" type="HbMenu">

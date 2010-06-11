@@ -21,17 +21,14 @@ TARGET =
 QT += testlib xml
 CONFIG  += qtestlib
 CONFIG  += hb
-HB = hbcore hbinput 
+DEFINES += QT_NO_DEBUG_OUTPUT
 
-#include(../tsrc.pri)
-
-DEFINES += PBK_UNIT_TEST
 DEPENDPATH += .
 INCLUDEPATH += ./
 INCLUDEPATH += ./inc
 INCLUDEPATH += ../inc
 
-#DEPENDPATH += .
+DEPENDPATH += .
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 INCLUDEPATH += ../../
 INCLUDEPATH += ../../inc
@@ -39,18 +36,18 @@ INCLUDEPATH += ../../../inc
 INCLUDEPATH += ../../../tsrc/qtestutils/inc
 
 # Input
-HEADERS += inc\st_logscntfinder.h 
+HEADERS += inc/st_logscntfinder.h 
+HEADERS += inc/st_logscntfinderqwerty.h 
+HEADERS += inc/st_logscntfinderthai.h
             
-SOURCES += src\st_logscntfinder.cpp   
+SOURCES += src/main.cpp   
+SOURCES += src/st_logscntfinder.cpp   
+SOURCES += src/st_logscntfinderqwerty.cpp
+SOURCES += src/st_logscntfinderthai.cpp
 SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
 
 symbian: {
-    TARGET.UID2 = 0x100039CE
-    TARGET.UID3 = 0xEfa329b3
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
-    LIBS += \
-        -lxqservice \
-        -lQtContacts \
-        -llogscntfinder
+    LIBS += -lflogger -lqtcontacts -llogscntfinder
 }

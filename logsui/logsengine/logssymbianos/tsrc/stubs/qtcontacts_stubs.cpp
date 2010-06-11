@@ -256,9 +256,9 @@ QVariant QContactDetail::variantValue(const QString& key) const
 
 QString QContactDetail::value(const QString& key) const
 {
-    if ( key == QContactName::FieldFirst ){
+    if ( key == QContactName::FieldFirstName ){
         return logsFirstName;
-    } else if ( key == QContactName::FieldLast ) {
+    } else if ( key == QContactName::FieldLastName ) {
         return logsLastName;
     } else if ( key == QContactPhoneNumber::FieldNumber ) {
         return QString( "12345" );

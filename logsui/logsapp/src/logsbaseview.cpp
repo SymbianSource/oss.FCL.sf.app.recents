@@ -42,6 +42,7 @@
 #include <hblistview.h>
 #include <QGraphicsLinearLayout>
 #include <hbpushbutton.h>
+#include <hbactivitymanager.h>
 
 
 Q_DECLARE_METATYPE(LogsCall*)
@@ -49,7 +50,6 @@ Q_DECLARE_METATYPE(LogsMessage*)
 Q_DECLARE_METATYPE(LogsContact*)
 Q_DECLARE_METATYPE(LogsDetailsModel*)
 
-const int contextMenuTimeout = 5000000; //5 secs
 
 // -----------------------------------------------------------------------------
 // 
@@ -73,11 +73,11 @@ LogsBaseView::LogsBaseView(
       mCallTypeMapper(0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::LogsBaseView()" );
-    
-    mSoftKeyBackAction = new HbAction(Hb::BackNaviAction, this);
-    connect(mSoftKeyBackAction, SIGNAL(triggered()), this, 
-            SLOT(handleBackSoftkey()));
 
+    setNavigationAction(new HbAction(Hb::BackNaviAction, this));
+    connect(navigationAction(), SIGNAL(triggered()), this, 
+            SLOT(handleBackSoftkey()));
+    
     mDialpad =  mRepository.dialpad();
     
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::LogsBaseView()" );
@@ -136,6 +136,51 @@ void LogsBaseView::resetView()
 //
 // -----------------------------------------------------------------------------
 //
+void LogsBaseView::clearActivity(HbActivityManager& manager)
+{
+    foreach ( const QString& activity, mActivities ){
+        manager.removeActivity(activity);
+    }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsBaseView::saveActivity(
+    QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return mActivities.isEmpty() ? QString() : mActivities.at(0);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QVariant LogsBaseView::loadActivity(
+    const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( activityId );
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return QVariant();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool LogsBaseView::matchWithActivityId(const QString& activityId)
+{
+    return mActivities.contains(activityId);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsBaseView::activated(bool showDialer, QVariant args)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::activated()" );
@@ -154,10 +199,6 @@ void LogsBaseView::activated(bool showDialer, QVariant args)
     connect( &mDialpad->editor(), SIGNAL( contentsChanged() ), this,
             SLOT( dialpadEditorTextChanged() ) );
 
-    if ( navigationAction() != mSoftKeyBackAction ) {
-        setNavigationAction(mSoftKeyBackAction);
-    }
-    
     if (showDialer && !mDialpad->isOpen()) {
         openDialpad();
     }
@@ -365,6 +406,9 @@ void LogsBaseView::openContactsApp()
     // Need to do request in async manner, otherwise new phonebook ui process
     // will be started due bug(?) in highway.
     XQServiceRequest snd("com.nokia.services.phonebookappservices.Launch","launch()", false);
+    XQRequestInfo info;
+    info.setForeground(true);
+    snd.setInfo(info);
     int retValue;
     snd.send(retValue);
     
@@ -378,19 +422,15 @@ void LogsBaseView::openContactsApp()
 void LogsBaseView::setDialpadPosition()
 {
     HbMainWindow& window = mViewManager.mainWindow(); 
-    // layoutrect broken, fix will be in MCL wk14, use workaround meanwhile
-    //QRectF screenRect = window.layoutRect();
-    QRectF screenRect = (window.orientation() == Qt::Horizontal) ? 
-        QRectF(0,0,640,360) : QRectF(0,0,360,640);
-
+    QRectF screenRect = window.layoutRect();
     LOGS_QDEBUG_2( "logs [UI] -> LogsBaseView::setDialpadPosition(), screenRect:", 
             screenRect );
     if (window.orientation() == Qt::Horizontal) {
         // dialpad takes half of the screen width    
         mDialpad->setPos(QPointF(screenRect.width()/2,
-                                 this->scenePos().y()));
+                                 scenePos().y()));
         mDialpad->setPreferredSize(screenRect.width()/2,
-                                   (screenRect.height()-scenePos().y()));                                  
+                                   (screenRect.height()-scenePos().y())); 
     } else {
         // dialpad takes 55% of the screen height
         qreal screenHeight = screenRect.height();
@@ -498,7 +538,6 @@ void LogsBaseView::showListItemMenu(
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showListItemMenu()" );
     HbMenu* itemContextMenu = new HbMenu();    
     itemContextMenu->setDismissPolicy(HbMenu::TapAnywhere);
-    itemContextMenu->setTimeout(contextMenuTimeout);
     itemContextMenu->setAttribute(Qt::WA_DeleteOnClose);
     
     updateListItemData(item->modelIndex());    
@@ -1050,6 +1089,7 @@ void LogsBaseView::toggleActionAvailability( HbAction* action, bool available )
 void LogsBaseView::askConfirmation( QString heading , QString text,
         QObject* receiver, const char* okSlot, const char* cancelSlot )
 {
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::askConfirmation()" );
     HbMessageBox* note = new HbMessageBox(text, HbMessageBox::MessageTypeQuestion);
     note->setAttribute(Qt::WA_DeleteOnClose);
     note->setHeadingWidget(new HbLabel(heading));
@@ -1070,6 +1110,7 @@ void LogsBaseView::askConfirmation( QString heading , QString text,
         }
     }
     note->open();
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::askConfirmation()" );
 }
 
 // -----------------------------------------------------------------------------

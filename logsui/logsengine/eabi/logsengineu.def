@@ -86,4 +86,9 @@ EXPORTS
 	_ZNK9LogsEvent8durationEv @ 85 NONAME
 	_ZNK9LogsEvent9directionEv @ 86 NONAME
 	_ZNK9LogsEvent9eventTypeEv @ 87 NONAME
+	_ZN9LogsEvent9serializeER11QDataStream @ 88 NONAME
+	_ZN9LogsEventC1ER11QDataStream @ 89 NONAME
+	_ZN9LogsEventC2ER11QDataStream @ 90 NONAME
+	_ZN9LogsModel16logsDetailsModelER9LogsEvent @ 91 NONAME
+	_ZNK16LogsDetailsModel12getLogsEventEv @ 92 NONAME
 

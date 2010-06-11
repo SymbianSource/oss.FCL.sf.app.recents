@@ -52,7 +52,9 @@ public: // From LogsBaseView
     virtual void activated(bool showDialer, QVariant args);
     virtual void deactivated();
     virtual bool isExitAllowed();
-    virtual void resetView();
+    virtual QString saveActivity(QDataStream& serializedActivity, QVariantHash& metaData);
+    virtual QVariant loadActivity(
+        const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData);
     
 public slots:
     
@@ -127,7 +129,7 @@ private:
     LogsMatchesModel* mMatchesModel; 
     bool mMarkingMissedAsSeen;
     LogsPageIndicator* mPageIndicator;
-    bool mResetted;
+    bool mFirstActivation;
     
 };
 

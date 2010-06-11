@@ -27,6 +27,7 @@
 class LogsEventData;
 class LogsEventStrings;
 class CLogEvent;
+class QDataStream;
 
 QTM_BEGIN_NAMESPACE
 class QContactName;
@@ -165,6 +166,16 @@ public:
          * @return true if event has been marked as read
          */
         LOGSENGINE_EXPORT bool isRead() const;
+        
+        /**
+         * Construct event from serialized data stream
+         */
+        LOGSENGINE_EXPORT LogsEvent( QDataStream& serializedEvent );
+        
+        /**
+         * Serialize event to data stream
+         */
+        LOGSENGINE_EXPORT bool serialize( QDataStream& serializeDestination );
         
     public:
         

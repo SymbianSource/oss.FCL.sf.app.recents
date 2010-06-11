@@ -23,6 +23,7 @@
 #include "logsabstractviewmanager.h"
 #include "logsdefs.h"
 #include "logscontact.h"
+#include "logsmodel.h"
 
 //SYSTEM
 #include <hblistview.h>
@@ -50,6 +51,8 @@ LogsDetailsView::LogsDetailsView(
     //TODO: taking away due to toolbar bug. If toolbar visibility changes on view
     //activation, there will be a crash due to previous view effect is playing
     //addViewSwitchingEffects();
+    
+    mActivities.append( logsActivityIdViewDetails );
 }
     
 // -----------------------------------------------------------------------------
@@ -113,15 +116,44 @@ void LogsDetailsView::deactivated()
 }
 
 // -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsDetailsView::saveActivity(
+    QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    if ( mDetailsModel ){
+        mDetailsModel->getLogsEvent().serialize(serializedActivity);
+    }
+    return LogsBaseView::saveActivity(serializedActivity, metaData);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QVariant LogsDetailsView::loadActivity(
+    const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( activityId );
+    Q_UNUSED( metaData );
+    LogsEvent event(serializedActivity);
+    LogsDetailsModel* details = mRepository.model()->logsDetailsModel(event);
+    return qVariantFromValue( details );
+}
+
+// -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
 //
 void LogsDetailsView::callKeyPressed()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::callKeyPressed()" );
+    
     if ( !tryCallToDialpadNumber() && mCall ){
         mCall->initiateCallback();
     }
+
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::callKeyPressed()" );
 }
 

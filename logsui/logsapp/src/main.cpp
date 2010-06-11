@@ -18,6 +18,7 @@
 #include "logsmainwindow.h"
 #include "logsviewmanager.h"
 #include "logsservicehandler.h"
+#include "logsservicehandlerold.h"
 #include "logslogger.h"
 #include "logsdefs.h"
 
@@ -26,39 +27,16 @@
 #include <hbmainwindow.h>
 #include <hbapplication.h>
 #include <hbstyleloader.h>
-#include <QTranslator>
+#include <hbtranslator.h>
 
 int main(int argc, char *argv[])
 {
     LOGS_QDEBUG( "logs [UI] -> main()" )
   
-    HbApplication app(argc, argv);
+    HbApplication app(argc, argv, Hb::NoSplash);
     LogsMainWindow window;
-    
-    QString lang = QLocale::system().name();
-    QString path = "z:/resource/qt/translations/";
-    //Load common translator
-    QTranslator commontranslator;
-    bool returncode = false;
-    LOGS_QDEBUG("logs [UI] loading common strings translator");
-    returncode = commontranslator.load( path + "common_" + lang);
-    if (returncode==false) {
-    	LOGS_QDEBUG("logs [UI] unable to open file: " + path + "common_" + lang);
-    } else {
-        app.installTranslator(&commontranslator);
-    }
-    
-    //Load application-specific translator
-    QTranslator translator;
-    LOGS_QDEBUG("logs [UI] loading application strings translator");
-    LOGS_QDEBUG("logs [UI] translation filename dialer_" + lang);
-    returncode = translator.load( path + "dialer_" + lang);
-    if (returncode==false) {
-    	LOGS_QDEBUG( "logs [UI] .qm file not found from  " + path);
-    } else {
-    	LOGS_QDEBUG( "logs [UI] .qm loaded successfully from " + path);
-        app.installTranslator(&translator);    
-    }
+    HbTranslator translator("dialer");
+    translator.loadCommon();
 
     HbStyleLoader::registerFilePath(":/logslayouts");
     
@@ -67,7 +45,8 @@ int main(int argc, char *argv[])
     // This can cause problem of service request not coming through if
     // HbApplication creation takes long time.
     LogsServiceHandler service(window);
-    LogsViewManager viewManager(window, service);
+    LogsServiceHandlerOld serviceOld(window);
+    LogsViewManager viewManager(window, service, serviceOld);
     
     // Don't show window yet as app might be started at background
     int err = app.exec();

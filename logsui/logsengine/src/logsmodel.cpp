@@ -59,6 +59,9 @@ LogsModel::LogsModel(LogsModelType modelType, bool resourceControl) :
             this, SLOT( dataUpdated(QList<int>) ));
     connect( mDbConnector, SIGNAL( dataRemoved(QList<int>) ), 
             this, SLOT( dataRemoved(QList<int>) ));
+    connect( mDbConnector, SIGNAL( dataReset() ), 
+                this, SLOT( resetModel() ));
+    
     connect( hbInstance->theme(), SIGNAL ( changeFinished() ),
             this, SLOT ( resetModel()));
     mDbConnector->init();
@@ -180,6 +183,16 @@ int LogsModel::updateConfiguration(LogsConfigurationParams& params)
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsModel::updateConfiguration()" )
     return retVal;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+LogsDetailsModel* LogsModel::logsDetailsModel(LogsEvent& event)
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsModel::logsDetailsModel()" )
+    return new LogsDetailsModel( *mDbConnector, event );
 }
 
 // -----------------------------------------------------------------------------
@@ -387,7 +400,9 @@ QString LogsModel::SqueezedString(
 //
 void LogsModel::resetModel()
 {
-   this->reset();
+    LOGS_QDEBUG( "logs [ENG] -> LogsModel::resetModel()" )
+    this->reset();
+    LOGS_QDEBUG( "logs [ENG] <- LogsModel::resetModel()" )
 }
 // -----------------------------------------------------------------------------
 //

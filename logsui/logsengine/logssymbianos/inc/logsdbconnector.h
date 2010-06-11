@@ -88,6 +88,13 @@ class LogsDbConnector :
         void dataRemoved(QList<int> removedIndexes);
         
         /**
+         * Signaled once significant changes in data has occured.
+         * Corresponding changes have been already done to event array
+         * when this signal is emitted.
+         */
+        void dataReset();
+        
+        /**
          * Signaled once asycn event clearing has completed.
          * @param err, 0 if marking completed succesfully
          */

@@ -184,3 +184,103 @@ void UT_LogsEvent::testParseContactName()
     QVERIFY(event.parseContactName(name) == "");
 }
 
+void UT_LogsEvent::testSerialization()
+{
+    // Serialize/deserialize, no event data
+    LogsEvent event;
+    event.mLogId = 3;        
+    event.mDirection = LogsEvent::DirMissed;
+    event.mEventType = LogsEvent::TypeVideoCall;
+    event.mUid = 222222;
+    event.mLogsEventData = 0;
+    event.mRemoteParty = "remotePart";
+    event.mNumber = "33333";
+    event.mDuplicates = 2;                 
+    event.mRingDuration = 3;
+    event.mIsRead = true;  
+    event.mIsALS = false;
+    event.mDuration = 30;
+    event.mIndex = 3;
+    event.mIsInView = true;
+    event.mEventState = LogsEvent::EventAdded;
+    event.mIsLocallySeen = true;
+    event.mIsPrivate = false;
+    event.mIsUnknown = false;
+    
+    QByteArray serializedEvent;
+    QDataStream stream(&serializedEvent, QIODevice::WriteOnly | QIODevice::Append);
+    event.serialize(stream);
+    
+    QDataStream readStream(&serializedEvent, QIODevice::ReadOnly);
+    
+    LogsEvent deserializedEvent(readStream);
+    QVERIFY( deserializedEvent.mLogId == 3 );        
+    QVERIFY( deserializedEvent.mDirection == LogsEvent::DirMissed );
+    QVERIFY( deserializedEvent.mEventType == LogsEvent::TypeVideoCall );
+    QVERIFY( deserializedEvent.mUid == 222222 );
+    QVERIFY( deserializedEvent.mLogsEventData == 0 );
+    QVERIFY( deserializedEvent.mRemoteParty == "remotePart" );
+    QVERIFY( deserializedEvent.mNumber == "33333" );
+    QVERIFY( deserializedEvent.mDuplicates == 2 );                 
+    QVERIFY( deserializedEvent.mRingDuration == 3 );
+    QVERIFY( deserializedEvent.mIsRead == true );  
+    QVERIFY( deserializedEvent.mIsALS == false );
+    QVERIFY( deserializedEvent.mDuration == 30 );
+    QVERIFY( deserializedEvent.mIndex == 3 );
+    QVERIFY( deserializedEvent.mIsInView == true );
+    QVERIFY( deserializedEvent.mEventState == LogsEvent::EventAdded );
+    QVERIFY( deserializedEvent.mIsLocallySeen == true );
+    QVERIFY( deserializedEvent.mIsPrivate == false );
+    QVERIFY( deserializedEvent.mIsUnknown == false );
+    
+    // Serialize/deserialize, event data exists
+    event.mLogsEventData = new LogsEventData();
+    
+    QByteArray serializedEvent2;
+    QDataStream stream2(&serializedEvent2, QIODevice::WriteOnly | QIODevice::Append);
+    event.serialize(stream2);  
+    QDataStream readStream2(&serializedEvent2, QIODevice::ReadOnly);      
+    LogsEvent deserializedEvent2(readStream2);
+    QVERIFY( deserializedEvent2.mLogId == 3 );        
+    QVERIFY( deserializedEvent2.mDirection == LogsEvent::DirMissed );
+    QVERIFY( deserializedEvent2.mEventType == LogsEvent::TypeVideoCall );
+    QVERIFY( deserializedEvent2.mUid == 222222 );
+    QVERIFY( deserializedEvent2.mLogsEventData != 0 );
+    QVERIFY( deserializedEvent2.mRemoteParty == "remotePart" );
+    QVERIFY( deserializedEvent2.mNumber == "33333" );
+    QVERIFY( deserializedEvent2.mDuplicates == 2 );                 
+    QVERIFY( deserializedEvent2.mRingDuration == 3 );
+    QVERIFY( deserializedEvent2.mIsRead == true );  
+    QVERIFY( deserializedEvent2.mIsALS == false );
+    QVERIFY( deserializedEvent2.mDuration == 30 );
+    QVERIFY( deserializedEvent2.mIndex == 3 );
+    QVERIFY( deserializedEvent2.mIsInView == true );
+    QVERIFY( deserializedEvent2.mEventState == LogsEvent::EventAdded );
+    QVERIFY( deserializedEvent2.mIsLocallySeen == true );
+    QVERIFY( deserializedEvent2.mIsPrivate == false );
+    QVERIFY( deserializedEvent2.mIsUnknown == false );
+    
+    // Incorrect stream
+    QByteArray serializedEvent3;
+    QDataStream stream3(&serializedEvent3, QIODevice::ReadWrite | QIODevice::Append);
+    LogsEvent deserializedEvent3(stream3);
+    QVERIFY( deserializedEvent3.mLogId == 0 );        
+    QVERIFY( deserializedEvent3.mDirection == LogsEvent::DirIn );
+    QVERIFY( deserializedEvent3.mEventType == LogsEvent::TypeVoiceCall );
+    QVERIFY( deserializedEvent3.mUid == 0 );
+    QVERIFY( deserializedEvent3.mLogsEventData == 0 );
+    QVERIFY( deserializedEvent3.mRemoteParty == "" );
+    QVERIFY( deserializedEvent3.mNumber == "" );
+    QVERIFY( deserializedEvent3.mDuplicates == 0 );                 
+    QVERIFY( deserializedEvent3.mRingDuration == 0 );
+    QVERIFY( deserializedEvent3.mIsRead == false );  
+    QVERIFY( deserializedEvent3.mIsALS == false );
+    QVERIFY( deserializedEvent3.mDuration == 0 );
+    QVERIFY( deserializedEvent3.mIndex == 0 );
+    QVERIFY( deserializedEvent3.mIsInView == false );
+    QVERIFY( deserializedEvent3.mEventState == LogsEvent::EventAdded );
+    QVERIFY( deserializedEvent3.mIsLocallySeen == false );
+    QVERIFY( deserializedEvent3.mIsPrivate == false );
+    QVERIFY( deserializedEvent3.mIsUnknown == false );
+}
+

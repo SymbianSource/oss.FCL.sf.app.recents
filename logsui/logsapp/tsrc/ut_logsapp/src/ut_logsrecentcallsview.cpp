@@ -94,6 +94,11 @@ void UT_LogsRecentCallsView::testConstructor()
     QVERIFY( mRecentCallsView->mCurrentView == LogsServices::ViewAll );
     QVERIFY( mRecentCallsView->viewId() == LogsRecentViewId );
     QVERIFY( mRecentCallsView->mLayoutSectionName == "" );
+    QCOMPARE( mRecentCallsView->mActivities.at(LogsServices::ViewAll), QString(logsActivityIdViewRecent) );
+    QCOMPARE( mRecentCallsView->mActivities.at(LogsServices::ViewReceived), QString(logsActivityIdViewReceived) );
+    QCOMPARE( mRecentCallsView->mActivities.at(LogsServices::ViewCalled), QString(logsActivityIdViewCalled) );
+    QCOMPARE( mRecentCallsView->mActivities.at(LogsServices::ViewMissed), QString(logsActivityIdViewMissed) );
+    
 }
 
 void UT_LogsRecentCallsView::testInitView()
@@ -145,27 +150,19 @@ void UT_LogsRecentCallsView::testActivated()
     
     view->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
     view->mDialpad->editor().setText( QString("hello") );
-    view->mResetted = true;
+    view->mFirstActivation = true;
     view->activated(false, QVariant(LogsServices::ViewAll));
     QVERIFY( view->mFilter->filterType() == LogsFilter::All );  
     VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
     QVERIFY( !view->mDialpad->editor().text().isEmpty() );
     QVERIFY( view->mListView->layoutName() == logsListLandscapeLayout );
     QVERIFY( view->mLayoutSectionName == logsViewDefaultSection );
-    QVERIFY( !view->mResetted );
+    QVERIFY( !view->mFirstActivation );
 }
 
 void UT_LogsRecentCallsView::testDeactivated()
 {
     mRecentCallsView->deactivated();
-}
-
-void UT_LogsRecentCallsView::testResetView()
-{
-    // Opened dialpad is closed and text in it is cleared
-    QVERIFY( !mRecentCallsView->mResetted );
-    mRecentCallsView->resetView();
-    QVERIFY( mRecentCallsView->mResetted );
 }
 
 void UT_LogsRecentCallsView::testInitListWidget()
@@ -204,6 +201,7 @@ void UT_LogsRecentCallsView::testUpdateFilter()
     mRecentCallsView->mListView = 0;
             
     //filter is updated with a new one, missed calls marking as seen is started (by timer)
+    mRecentCallsView->mFirstActivation = false;
     QVERIFY( mRecentCallsView->mFilter );
     mRecentCallsView->mListView = new HbListView();
     mRecentCallsView->updateFilter(LogsFilter::Missed);
@@ -214,9 +212,9 @@ void UT_LogsRecentCallsView::testUpdateFilter()
     mRecentCallsView->mListView = 0;
     
     //filter is updated with a new one, missed calls marking as seen is not started
-    //as view was resetted
+    //as this is first view activation
     HbStubHelper::reset();
-    mRecentCallsView->mResetted = true;
+    mRecentCallsView->mFirstActivation = true;
     mRecentCallsView->mListView = new HbListView();
     mRecentCallsView->updateFilter(LogsFilter::Missed);
     QVERIFY( mRecentCallsView->mFilter );
@@ -930,4 +928,29 @@ void UT_LogsRecentCallsView::testDialpadOpened()
     mRecentCallsView->mDialpad->editor().setText( "" );
     mRecentCallsView->dialpadOpened();
     QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+}
+
+void UT_LogsRecentCallsView::testSaveActivity()
+{
+    QByteArray serializedActivity;
+    QDataStream stream(&serializedActivity, QIODevice::WriteOnly | QIODevice::Append);
+    QVariantHash metaData;
+    mRecentCallsView->mCurrentView = LogsServices::ViewMissed;
+    QVERIFY( mRecentCallsView->saveActivity(stream, metaData) == QString(logsActivityIdViewMissed) );
+    mRecentCallsView->mCurrentView = LogsServices::ViewAll;
+    QVERIFY( mRecentCallsView->saveActivity(stream, metaData) == QString(logsActivityIdViewRecent) );
+
+}
+
+void UT_LogsRecentCallsView::testLoadActivity()
+{
+    QByteArray serializedActivity;
+    QDataStream stream(&serializedActivity, QIODevice::ReadOnly);
+    QVariantHash metaData;
+    QVariant args = mRecentCallsView->loadActivity(QString(logsActivityIdViewCalled), stream, metaData);
+    QVERIFY( !args.isNull() );
+    QVERIFY( args.toInt() == LogsServices::ViewCalled );
+    QVariant args2 = mRecentCallsView->loadActivity(QString(logsActivityIdViewMissed), stream, metaData);
+    QVERIFY( !args2.isNull() );
+    QVERIFY( args2.toInt() == LogsServices::ViewMissed);
 }

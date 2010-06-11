@@ -254,8 +254,7 @@ QContactDetail QContact::detail(const QString& definitionId) const
     }
     if ( definitionId == QContactAvatar::DefinitionName){
         QContactAvatar avatar;
-        avatar.setValue(QContactAvatar::FieldSubType, QContactAvatar::SubTypeImage );
-        avatar.setValue(QContactAvatar::FieldAvatar, "c:\\data\\images\\logstest1.jpg" );
+        avatar.setValue(QContactAvatar::FieldImageUrl, "c:\\data\\images\\logstest1.jpg" );
         return avatar;
     }
     QContactDetail detail;

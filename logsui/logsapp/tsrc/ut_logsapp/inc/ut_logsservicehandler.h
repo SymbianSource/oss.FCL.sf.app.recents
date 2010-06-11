@@ -21,6 +21,7 @@
 #include <QObject>
 
 class LogsServiceHandler;
+class LogsServiceHandlerOld;
 
 class LogsViewManager;
 class LogsMainWindow;
@@ -51,12 +52,17 @@ private slots:
 private slots: //test methods
      
     void testConstructor();
+    //test functions for old service handler
     void testStart();
     void testStartWithNum();
+    
+    //test functions for new service handler
+    void testShow();
     
 private:
  
     LogsServiceHandler* mService;
+    LogsServiceHandlerOld* mServiceOld;
     LogsMainWindow* mMainWindow;
     LogsViewManager* mLogsViewManager;
 };

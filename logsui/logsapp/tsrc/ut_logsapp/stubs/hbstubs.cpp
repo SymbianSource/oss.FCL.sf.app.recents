@@ -23,7 +23,10 @@
 #include <hbmessagebox.h>
 #include <hbapplication.h>
 #include <hbcolorscheme.h>
+#include <hbview.h>
+#include <hbactivitymanager.h>
 #include <QCoreApplication>
+#include <QApplication>
 #include <QTimer>
 #include <QGesture>
 
@@ -42,6 +45,11 @@ Qt::GestureState testState = Qt::NoGesture;
 bool testIsWidgetOpen = false;
 bool testIsWidgetRaised = false;
 QColor testColor = Qt::white;
+QList<HbView *> testViews;
+QList<QVariantHash> testActivities;
+HbActivityManager testActivityManager;
+Hb::ActivationReason testActivationReason = Hb::ActivationReasonNormal;
+QString testActivityId = "LogsViewMatches";
 
 void HbStubHelper::reset()
 {
@@ -52,6 +60,9 @@ void HbStubHelper::reset()
     testIsWidgetRaised = false;
     testDialogShown = false;
     testColor = Qt::white;
+    testActivationReason = Hb::ActivationReasonNormal;
+    testActivityId = "LogsViewMatches";
+    testActivities.clear();
 }
 
 
@@ -114,6 +125,41 @@ void HbStubHelper::setColorScheme(QColor col)
     testColor = col;
 }
 
+void HbStubHelper::setActivityReason(Hb::ActivationReason reason)
+{
+    testActivationReason = reason;
+}
+
+void HbStubHelper::setActivityId(QString activityId)
+{
+    testActivityId = activityId;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QCoreApplication::QCoreApplication(int &argc, char **argv)
+{
+    
+}
+
+
+void QCoreApplication::quit()
+{
+    testQuitCalled = true; 
+}
+
+QApplication::QApplication(QApplication::QS60MainApplicationFactory factory, int &argc, char **argv, int version) 
+: QCoreApplication(argc, argv)
+{
+    
+}
+
+QApplication::~QApplication()
+{
+    
+}
 
 bool QGraphicsWidget::close()
 {
@@ -130,11 +176,52 @@ void QWidget::raise()
     testIsWidgetRaised = true;
 }
 
+QPixmap QPixmap::grabWidget(QWidget *widget, const QRect &rect)
+{
+    Q_UNUSED(widget);
+    Q_UNUSED(rect);
+    return QPixmap();
+}
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
 //
-HbApplication::HbApplication(int &/*argc*/, char */*argv*/[]) 
+HbActivityManager::HbActivityManager(QObject *parent) : QObject(parent)
+{
+    
+}
+HbActivityManager::~HbActivityManager()
+{
+    
+}
+    
+bool HbActivityManager::addActivity(const QString &activityId, const QVariant &data, const QVariantHash &parameters)
+{
+    testActivities.append(parameters);
+}
+bool HbActivityManager::removeActivity(const QString &activityId)
+{
+    if ( !testActivities.isEmpty() ){
+        testActivities.takeFirst();
+    }
+}
+QList<QVariantHash> HbActivityManager::activities() const
+{
+    return testActivities;
+}
+
+bool HbActivityManager::waitActivity()
+{
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+HbApplication::HbApplication(int &argc, char *argv[]) :
+    QApplication(0, argc, argv, 0) 
 {
 }
 
@@ -147,9 +234,26 @@ void HbApplication::quit()
     testQuitCalled = true; 
 }
 
-void QCoreApplication::quit()
+HbActivityManager *HbApplication::activityManager()
 {
-    testQuitCalled = true; 
+    return &testActivityManager;
+}
+
+Hb::ActivationReason HbApplication::activateReason() const
+{
+    return testActivationReason;
+}
+QVariantHash HbApplication::activateParams() const
+{
+    return QVariantHash();
+}
+QString HbApplication::activateId() const
+{
+    return testActivityId;
+}
+QVariant HbApplication::activateData()
+{
+    return QVariant();
 }
     
 // -----------------------------------------------------------------------------
@@ -191,6 +295,7 @@ HbMainWindow::HbMainWindow(QWidget *parent, Hb::WindowFlags windowFlags) : d_ptr
     Q_UNUSED(windowFlags)
     testViewCount = 0;
     testWindow = this;
+    testViews.clear();
 }
 
 HbMainWindow::~HbMainWindow()
@@ -211,13 +316,17 @@ Qt::Orientation HbMainWindow::orientation() const
 
 QRectF HbMainWindow::layoutRect() const
 {
-    return QRectF(0, 0, 100,100);
+    if (windowOrientation == Qt::Vertical) {
+        return QRectF(0, 0, 360, 640);
+    } else {
+        return QRectF(0, 0, 640, 360);
+    }
 }
 
 HbView *HbMainWindow::addView(QGraphicsWidget *widget)
 {
-    Q_UNUSED(widget)
     testViewCount++;
+    testViews.append( static_cast<HbView*>(widget) );
 }
 
 void HbMainWindow::setCurrentView(HbView *view, bool animate, Hb::ViewSwitchFlags flags)
@@ -227,10 +336,11 @@ void HbMainWindow::setCurrentView(HbView *view, bool animate, Hb::ViewSwitchFlag
     testView = view;
 }
 
-int HbMainWindow::viewCount() const
+QList<HbView *> HbMainWindow::views() const
 {
-    return testViewCount;
+    return testViews;
 }
+
 HbView *HbMainWindow::currentView() const
 {
     return testView;
@@ -269,16 +379,6 @@ void HbMessageBox::setText(const QString &string)
     	selectedActionString = "primary";
     } else if (string == "Cancel") {
     	selectedActionString = "secondary";
-    }
-}
-
-
-HbAction *HbDialog::exec()
-{
-    if (selectedActionString == "primary")	{
-        return primaryAction();
-    } else {
-        return 0;
     }
 }
 

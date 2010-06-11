@@ -85,7 +85,7 @@
             <ref object="logs_act_open_contact" role="HbMenu:addAction"/>
             <ref object="logs_act_delete_event" role="HbMenu:addAction"/>
         </widget>
-        <string name="title" value="Dialer"/>
+        <string locid="txt_dial_title_dialer" name="title" value="Dialer"/>
     </widget>
     <!-- Context menu -->    
     <widget name="logs_show_filter_menu" type="HbMenu">

@@ -27,6 +27,7 @@
 class LogsEventData;
 class LogsEventStrings;
 class CLogEvent;
+class QDataStream;
 
 // CLASS DECLARATION
 
@@ -180,6 +181,10 @@ public:
          * 
          */
         QString getNumberForCalling();
+        
+        LogsEvent( QDataStream& serializedEvent );
+        
+        bool serialize( QDataStream& serializeDestination );
         
     private:                               
 

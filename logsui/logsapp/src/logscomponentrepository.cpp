@@ -43,9 +43,9 @@ LogsComponentRepository::LogsComponentRepository(LogsAbstractViewManager& viewMa
       mDialpad(0),
       mDialpadKeyHandler(0)
 {
-    bool resourceControl = true;
-    mModel = new LogsModel(LogsModel::LogsRecentModel, resourceControl);
+    mModel = new LogsModel(LogsModel::LogsRecentModel);
 }
+
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------

@@ -49,6 +49,7 @@ private slots: //test methods
     void testSetters();
     void testGetters();
     void testIsCsCompatible();
+    void testSerialization();
     
 private:
  

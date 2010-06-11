@@ -37,6 +37,6 @@
 ;
 ; Three files to install
 ;
-"\epoc32\release\armv5\udeb\logsservicestester.exe"    - "!:\sys\bin\logsservicestester.exe"
+"\epoc32\release\armv5\urel\logsservicestester.exe"    - "!:\sys\bin\logsservicestester.exe"
 "\epoc32\data\z\resource\apps\logsservicestester.rsc"    - "!:\resource\apps\logsservicestester.rsc"
 "\epoc32\data\z\private\10003a3f\import\apps\logsservicestester_reg.rsc"    - "!:\private\10003a3f\import\apps\logsservicestester_reg.rsc"

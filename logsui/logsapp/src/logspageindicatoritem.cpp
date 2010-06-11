@@ -24,7 +24,7 @@
 
 const char logsNormalIconName[]    = "qtg_mono_tab_passive";
 const char logsHighlightIconName[] = "qtg_mono_tab_active";
-const char logsIconColor[] = "qtc_button_normal";//"qtc_default_main_pane_normal");//
+const char logsIconColor[] = "qtc_viewtitle_normal"; //groupbox text color
   
 const int logsEffectDurationInMs = 1000;
 
@@ -73,6 +73,7 @@ void LogsPageIndicatorItem::setActive(bool active)
             startAnimation();
         } else {
             setIcon(HbIcon(logsNormalIconName));
+            updateColor();
         }
     }
 }
@@ -136,4 +137,5 @@ void LogsPageIndicatorItem::startAnimation()
 void LogsPageIndicatorItem::animationFinished()
 {
     graphicsEffect()->setEnabled(false);
+    updateColor();
 }

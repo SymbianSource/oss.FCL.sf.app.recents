@@ -38,6 +38,8 @@
 #include <hblistviewitem.h>
 #include <hblistview.h>
 #include <QStringListModel>
+#include <hbapplication.h>
+#include <hbactivitymanager.h>
 
 void UT_LogsBaseView::initTestCase()
 {
@@ -69,7 +71,6 @@ void UT_LogsBaseView::cleanup()
 void UT_LogsBaseView::testConstructor()
 {
     QVERIFY( mBaseView );
-    QVERIFY( mBaseView->mSoftKeyBackAction );
     QVERIFY( !mBaseView->mShowFilterMenu );
     QVERIFY( !mBaseView->mInitialized );
     QVERIFY( mBaseView->mActionMap.isEmpty() );
@@ -529,6 +530,44 @@ void UT_LogsBaseView::testAskConfirmation()
     // Receiver and slots specified
     HbStubHelper::reset();
     mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), this,
-            SLOT(""), SLOT(""));
+            SLOT("dummy()"), SLOT("dummy()"));
     QVERIFY( HbStubHelper::dialogShown() );
+}
+
+void UT_LogsBaseView::testMatchWithActivityId()
+{
+    QVERIFY( !mBaseView->matchWithActivityId(QString("")) );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("somedummy")) );
+    mBaseView->mActivities.append( "testActivity1" );
+    mBaseView->mActivities.append( "testActivity2" );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("")) );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("somedummy")) );
+    QVERIFY( mBaseView->matchWithActivityId(QString("testActivity2")) );   
+}
+
+void UT_LogsBaseView::testSaveActivity()
+{
+    QDataStream serializedActivity; 
+    QVariantHash metaData;
+    QVERIFY( mBaseView->saveActivity(serializedActivity, metaData).isEmpty() );
+    mBaseView->mActivities.append( "testActivity1" );
+    QVERIFY( mBaseView->saveActivity(serializedActivity, metaData) == QString("testActivity1") );
+}
+
+void UT_LogsBaseView::testLoadActivity()
+{
+    QDataStream serializedActivity; 
+    QVariantHash metaData;
+    QVERIFY( mBaseView->loadActivity(QString("dummy"), serializedActivity, metaData).isNull() );
+}
+
+void UT_LogsBaseView::testClearActivity()
+{
+    HbStubHelper::reset();
+    HbActivityManager* manager = static_cast<HbApplication*>(qApp)->activityManager();
+    manager->addActivity("someact", QVariant(), QVariantHash());
+    QCOMPARE( manager->activities().count(), 1 );
+    mBaseView->mActivities.append( "testActivity1" );
+    mBaseView->clearActivity(*manager);
+    QCOMPARE( manager->activities().count(), 0 );
 }
