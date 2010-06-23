@@ -22,16 +22,16 @@
         <string name="toolTip" value="Show"/>
     </object>
     <object name="logs_act_recent" type="HbAction">
-        <string locid="txt_dialer_subhead_recent_calls" name="text" value="Recent calls"/>
+        <string locid="txt_dialer_ui_list_recent" name="text" value="Recent calls"/>
     </object>
     <object name="logs_act_received" type="HbAction">
-        <string locid="txt_dial_subhead_received_calls" name="text" value="Received calls"/>
+        <string locid="txt_dialer_ui_list_received" name="text" value="Received calls"/>
     </object>
     <object name="logs_act_dialled" type="HbAction">
-        <string locid="txt_dialer_subhead_dialled_calls" name="text" value="Dialled calls"/>
+        <string locid="txt_dialer_ui_list_dialled" name="text" value="Dialled calls"/>
     </object>
     <object name="logs_act_missed" type="HbAction">
-        <string locid="txt_dialer_subhead_missed_calls" name="text" value="Missed calls"/>
+        <string locid="txt_dialer_ui_list_missed" name="text" value="Missed calls"/>
     </object>
     <widget name="logs_matches_view" type="HbView">
         <widget name="logs_content" role="HbView:widget" type="HbWidget">
@@ -63,17 +63,6 @@
                 </layout>
             </widget>
             <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
-            <layout type="anchor">
-                <anchoritem dst="logs_button_addtocontacts" dstEdge="TOP" spacing="15un" src="" srcEdge="TOP"/>
-                <anchoritem dst="logs_button_addtocontacts" dstEdge="CENTERH" spacing="0un" src="" srcEdge="CENTERH"/>
-                <anchoritem dst="container" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                <anchoritem dst="container" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
-                <anchoritem dst="container" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="container" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
-                <anchoritem dst="logs_label_empty_list" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-screen) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="logs_label_empty_list" dstEdge="TOP" spacing="8.5un" src="" srcEdge="TOP"/>
-                <anchoritem dst="logs_label_empty_list" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-screen) )" src="" srcEdge="RIGHT"/>
-            </layout>
         </widget>
         <widget name="logs_toolbar" role="HbView:toolBar" type="HbToolBar">
             <enums name="orientation" value="Horizontal"/>
@@ -109,6 +98,17 @@
         </widget>
         <widget name="logs_content" role="HbView:widget" type="HbWidget">
             <contentsmargins bottom="expr(var(hb-param-screen-height)*0.55)" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
+            <layout type="anchor">
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="TOP" spacing="15un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="CENTERH" spacing="0un" src="" srcEdge="CENTERH"/>
+                <anchoritem dst="container" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="container" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="container" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="container" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-screen) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="TOP" spacing="8.5un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-screen) )" src="" srcEdge="RIGHT"/>
+            </layout>
         </widget>
     </section>
     <section name="landscape_dialpad">
@@ -117,6 +117,17 @@
         </widget>
         <widget name="logs_content" role="HbView:widget" type="HbWidget">
             <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-screen-height)/2)" top="expr(var(hb-param-margin-view-top))"/>
+            <layout type="anchor">
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="TOP" spacing="19un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="CENTERH" spacing="0un" src="" srcEdge="CENTERH"/>
+                <anchoritem dst="container" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="container" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="container" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="container" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-screen) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="TOP" spacing="8.5un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-screen) )" src="" srcEdge="RIGHT"/>
+            </layout>
         </widget>
     </section>
     <section name="default">
@@ -125,6 +136,17 @@
         </widget>
         <widget name="logs_content" role="HbView:widget" type="HbWidget">
             <contentsmargins bottom="expr(var(hb-param-margin-view-bottom))" left="expr(var(hb-param-margin-view-left))" right="expr(var(hb-param-margin-view-right))" top="expr(var(hb-param-margin-view-top))"/>
+            <layout type="anchor">
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="TOP" spacing="19un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_button_addtocontacts" dstEdge="CENTERH" spacing="0un" src="" srcEdge="CENTERH"/>
+                <anchoritem dst="container" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="container" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="container" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="container" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-screen) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="TOP" spacing="8.5un" src="" srcEdge="TOP"/>
+                <anchoritem dst="logs_label_empty_list" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-screen) )" src="" srcEdge="RIGHT"/>
+            </layout>
         </widget>
     </section>
     <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">

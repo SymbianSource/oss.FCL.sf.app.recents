@@ -160,12 +160,6 @@ void UT_LogsViewManager::testExitApplication()
     QVERIFY( HbStubHelper::quitCalled() );
 }
 
-void UT_LogsViewManager::testAppFocusGained()
-{
-    mLogsViewManager->appFocusGained();
-    // Nothing to verify
-}
-
 void UT_LogsViewManager::testStartingWithService()
 {     
     // If app is started with highway service, view is not activated

@@ -19,7 +19,6 @@
 
 #include "logsfilter.h"
 #include "logsbaseview.h"
-#include <QGesture>
 
 class HbListView;
 class HbLabel;
@@ -106,7 +105,6 @@ private:
     //from HbWidget
     void gestureEvent(QGestureEvent *event);
     
-    QSwipeGesture::SwipeDirection swipeAngleToDirection(int angle, int delta); 
     int getListItemTextWidth();
     
     

@@ -172,16 +172,16 @@ void UT_LogsEvent::testParseContactName()
     QtContactsStubsHelper::reset();
     QContactName name;
     QtContactsStubsHelper::setContactNames("firstname", "");
-    QVERIFY(event.parseContactName(name) == "firstname");    
+    QCOMPARE(event.parseContactName(name), QString("firstname"));
     
     QtContactsStubsHelper::setContactNames("firstname", "lastname");
-    QVERIFY(event.parseContactName(name) == "firstname lastname");
+    QCOMPARE(event.parseContactName(name), QString("firstname lastname"));
     
     QtContactsStubsHelper::setContactNames("", "lastname");
-    QVERIFY(event.parseContactName(name) == "lastname");
+    QCOMPARE(event.parseContactName(name), QString("lastname"));
     
     QtContactsStubsHelper::setContactNames("", "");
-    QVERIFY(event.parseContactName(name) == "");
+    QCOMPARE(event.parseContactName(name), QString(""));
 }
 
 void UT_LogsEvent::testSerialization()

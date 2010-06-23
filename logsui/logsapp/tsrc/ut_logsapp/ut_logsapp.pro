@@ -63,7 +63,6 @@ HEADERS += ../../inc/logspageindicatoritem.h
 #HEADERS += ../../../logsengine/inc/logscommondata.h
 HEADERS += ../../../logsengine/inc/logsconfigurationparams.h
 HEADERS += logsengine_stub/logscontact.h
-HEADERS += logsengine_stub/logsforegroundwatcher.h
 HEADERS += ./stubs/dialpad.h
 HEADERS += ./stubs/dialpadkeyhandler.h
 
@@ -83,7 +82,6 @@ SOURCES += logsengine_stub/logsevent.cpp
 SOURCES += logsengine_stub/logseventdata.cpp
 SOURCES += logsengine_stub/logscontact.cpp
 SOURCES += logsengine_stub/logsmatchesmodel.cpp
-SOURCES += logsengine_stub/logsforegroundwatcher.cpp
 SOURCES += ../../../logsengine/src/logsconfigurationparams.cpp
 SOURCES += src/ut_logsbaseview.cpp
 SOURCES += src/ut_logsrecentcallsview.cpp

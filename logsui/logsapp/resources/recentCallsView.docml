@@ -7,7 +7,7 @@
         <string locid="txt_common_opt_create_message" name="text" value="Send message"/>
     </object>
     <object name="logs_act_add_to_contacts" type="HbAction">
-        <string locid="txt_common_menu_add_to_contacts" name="text" value="Add to contacts"/>
+        <string locid="txt_common_opt_add_to_contacts" name="text" value="Add to contacts"/>
     </object>
     <object name="logs_act_clear_list" type="HbAction">
         <string locid="txt_dialer_ui_opt_clear_list" name="text" value="Clear list"/>
@@ -28,19 +28,19 @@
         <string name="toolTip" value="Show"/>
     </object>
     <object name="logs_act_recent" type="HbAction">
-        <string locid="txt_dialer_subhead_recent_calls" name="text" value="Recent calls"/>
+        <string locid="txt_dialer_ui_list_recent" name="text" value="Recent calls"/>
         <string name="checkable" value="TRUE"/>
     </object>
     <object name="logs_act_received" type="HbAction">
-        <string locid="txt_dial_subhead_received_calls" name="text" value="Received calls"/>
+        <string locid="txt_dialer_ui_list_received" name="text" value="Received calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <object name="logs_act_dialled" type="HbAction">
-        <string locid="txt_dialer_subhead_dialled_calls" name="text" value="Dialled calls"/>
+        <string locid="txt_dialer_ui_list_dialled" name="text" value="Dialled calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <object name="logs_act_missed" type="HbAction">
-        <string locid="txt_dialer_subhead_missed_calls" name="text" value="Missed calls"/>
+        <string locid="txt_dialer_ui_list_missed" name="text" value="Missed calls"/>
         <string name="checkable" value="TRUE"/>        
     </object>
     <widget name="logs_recent_calls_view" type="HbView">

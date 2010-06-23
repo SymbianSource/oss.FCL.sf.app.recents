@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <hbdocument version="1.0">
     <object name="logs_act_voice_call" type="HbAction">
-        <string locid="txt_common_menu_voice_call" name="text" value="Voice call"/>
+        <string locid="txt_common_opt_voice_call" name="text" value="Voice call"/>
     </object>
     <object name="logs_act_video_call" type="HbAction">
         <string locid="txt_common_opt_video_call" name="text" value="Video call"/>
     </object>
     <object name="logs_act_internet_call" type="HbAction">
-        <string locid="txt_common_menu_internet_call" name="text" value="Internet call"/>
+        <string locid="txt_common_opt_internet_call" name="text" value="Internet call"/>
     </object>
     <object name="logs_act_create_message" type="HbAction">
         <string locid="txt_common_opt_send_message" name="text" value="Create message"/>
     </object>
     <object name="logs_act_add_to_contacts" type="HbAction">
-        <string locid="txt_common_menu_add_to_contacts" name="text" value="Add to contacts"/>
+        <string locid="txt_common_opt_add_to_contacts" name="text" value="Add to contacts"/>
     </object>
     <object name="logs_act_open_contact" type="HbAction">
-        <string locid="txt_dialer_ui_menu_open_contact" name="text" value="Open contact"/>
+        <string locid="txt_dialer_ui_opt_open_contact" name="text" value="Open contact"/>
     </object>
     <object name="logs_act_delete_event" type="HbAction">
-        <string locid="txt_dialer_ui_title_delete_event" name="text" value="Delete event"/>
+        <string locid="txt_common_opt_delete" name="text" value="Delete event"/>
     </object>
     <object name="logs_act_dialer" type="HbAction">
         <icon iconName="qtg_mono_dialer" name="icon"/>
@@ -34,16 +34,16 @@
         <string name="toolTip" value="Show"/>
     </object>
     <object name="logs_act_recent" type="HbAction">
-        <string locid="txt_dialer_subhead_recent_calls" name="text" value="Recent calls"/>
+        <string locid="txt_dialer_ui_list_recent" name="text" value="Recent calls"/>
     </object>
     <object name="logs_act_received" type="HbAction">
-        <string locid="txt_dial_subhead_received_calls" name="text" value="Received calls"/>
+        <string locid="txt_dialer_ui_list_received" name="text" value="Received calls"/>
     </object>
     <object name="logs_act_dialled" type="HbAction">
-        <string locid="txt_dialer_subhead_dialled_calls" name="text" value="Dialled calls"/>
+        <string locid="txt_dialer_ui_list_dialled" name="text" value="Dialled calls"/>
     </object>
     <object name="logs_act_missed" type="HbAction">
-        <string locid="txt_dialer_subhead_missed_calls" name="text" value="Missed calls"/>
+        <string locid="txt_dialer_ui_list_missed" name="text" value="Missed calls"/>
     </object>
     <widget name="logs_details_view" type="HbView">
         <widget name="logs_content" role="HbView:widget" type="HbWidget">

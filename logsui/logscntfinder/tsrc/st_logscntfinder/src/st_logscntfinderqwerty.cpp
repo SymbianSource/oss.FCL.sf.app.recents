@@ -77,7 +77,7 @@ void ST_LogsCntFinderQwerty::init()
     
     // Remove all contacts from the database
     QList<QContactLocalId> cnt_ids = m_manager->contactIds();
-    QVERIFY( m_manager->removeContacts(cnt_ids, 0 ) );
+    m_manager->removeContacts(cnt_ids, 0 );
     cnt_ids = m_manager->contactIds();
     QCOMPARE(cnt_ids.count(), 0);
     
@@ -97,7 +97,7 @@ void ST_LogsCntFinderQwerty::createContacts()
     
     // Remove all contacts from the database
     QList<QContactLocalId> cnt_ids = m_manager->contactIds();
-    QVERIFY( m_manager->removeContacts(cnt_ids, 0 ) );
+    m_manager->removeContacts(cnt_ids, 0 );
     cnt_ids = m_manager->contactIds();
     QVERIFY(0 == cnt_ids.count());
     
@@ -128,7 +128,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchNameAndEmailMatch()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
@@ -161,7 +160,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchWithSpace()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
@@ -186,7 +184,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchEmailMatch()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
@@ -210,7 +207,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchNoEmails()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
@@ -230,7 +226,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchOverLongPattern()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
@@ -254,7 +249,6 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchSpecialCharsInPattern()
 {
 
     createContacts();
-    QEXPECT_FAIL("", "Not implemented", Abort );
     
     QContactDetailFilter df;
     df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );

@@ -32,7 +32,7 @@
 
 //SYSTEM
 #include <QtTest/QtTest>
-#include <QGesture>
+#include <hbswipegesture.h>
 #include <hbmainwindow.h>
 #include <hblistview.h>
 #include <hblabel.h>
@@ -393,9 +393,8 @@ void UT_LogsRecentCallsView::testGestureEvent()
     view->activated( false, QVariant(LogsServices::ViewCalled) );
     view->mCurrentView = LogsServices::ViewCalled;
     view->mAppearingView = LogsServices::ViewCalled;
-    mRecentCallsView->mViewManager.mainWindow().setOrientation( Qt::Vertical );
 
-    QSwipeGesture* swipe = new QSwipeGesture();
+    HbSwipeGesture* swipe = new HbSwipeGesture();
     QList<QGesture*> list;
     QGestureEvent event(list);
     event.ignore(Qt::SwipeGesture);
@@ -404,7 +403,8 @@ void UT_LogsRecentCallsView::testGestureEvent()
     QVERIFY(!event.isAccepted(Qt::SwipeGesture));    
     view->gestureEvent(&event);
     QVERIFY(!event.isAccepted(Qt::SwipeGesture));
-    QVERIFY(view->mAppearingView == LogsServices::ViewCalled);
+    QCOMPARE(view->mCurrentView, LogsServices::ViewCalled);
+    QCOMPARE(view->mAppearingView, LogsServices::ViewCalled);
     
     //swipe gesture in event, but gesture isn't finished
     list.append(swipe);
@@ -414,84 +414,34 @@ void UT_LogsRecentCallsView::testGestureEvent()
     QVERIFY(swipe->state() != Qt::GestureFinished);
     view->gestureEvent(&event2);
     QVERIFY(!event2.isAccepted(Qt::SwipeGesture));
-    QVERIFY(view->mAppearingView == LogsServices::ViewCalled);
+    QCOMPARE(view->mCurrentView, LogsServices::ViewCalled);
+    QCOMPARE(view->mAppearingView, LogsServices::ViewCalled);
     
-    //vertical orientation swipe right up
+    //swipe right
     HbStubHelper::setGestureState(Qt::GestureFinished);
     event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(10);
+    swipe->setSceneSwipeAngle(10);
     view->gestureEvent(&event2);
-    QVERIFY( view->mAppearingView == LogsServices::ViewAll );
+    QCOMPARE(view->mCurrentView, LogsServices::ViewCalled);
+    QCOMPARE(view->mAppearingView, LogsServices::ViewAll );
     QVERIFY( event2.isAccepted(Qt::SwipeGesture) );
     
-    //vertical orientation swipe left up
+    //swipe left
     event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(170);
+    swipe->setSceneSwipeAngle(170);
     view->gestureEvent(&event2);
-    QVERIFY(view->mAppearingView == LogsServices::ViewReceived);
+    QCOMPARE(view->mCurrentView, LogsServices::ViewCalled);
+    QCOMPARE(view->mAppearingView, LogsServices::ViewReceived);
     QVERIFY(event2.isAccepted(Qt::SwipeGesture));
-
-    //vertical orientation swipe down, nothing happens
+    
+    //swipe down, nothing happens
     event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(70);
+    swipe->setSceneSwipeAngle(70);
     view->mAppearingView = view->mCurrentView;
     view->gestureEvent(&event2);
-    QVERIFY(view->mAppearingView == LogsServices::ViewCalled);
+    QCOMPARE(view->mCurrentView, LogsServices::ViewCalled);
+    QCOMPARE(view->mAppearingView, LogsServices::ViewCalled);
     QVERIFY(!event2.isAccepted(Qt::SwipeGesture));
-    
-    //horizontal orientation swipe right up
-    mRecentCallsView->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
-    event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(80);
-    view->gestureEvent(&event2);
-    QVERIFY(view->mAppearingView == LogsServices::ViewReceived);
-    QVERIFY(event2.isAccepted(Qt::SwipeGesture));
-    
-    //horizontal orientation swipe right down
-    event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(280);
-    view->gestureEvent(&event2);
-    QVERIFY(view->mAppearingView == LogsServices::ViewAll);
-    QVERIFY(event2.isAccepted(Qt::SwipeGesture));
-
-    //horizontal orientation swipe left, nothing happens
-    event2.setAccepted(Qt::SwipeGesture, false);
-    swipe->setSwipeAngle(200);
-    view->mAppearingView = view->mCurrentView;
-    view->gestureEvent(&event2);
-    QVERIFY(view->mAppearingView == LogsServices::ViewCalled);
-    QVERIFY(!event2.isAccepted(Qt::SwipeGesture));
-}
-
-void UT_LogsRecentCallsView::testSwipeAngleToDirection()
-{
-    int delta = 30;
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(61, delta), QSwipeGesture::Up);    
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(119, delta), QSwipeGesture::Up);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(90, delta), QSwipeGesture::Up);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(60, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(120, delta), QSwipeGesture::NoDirection);
-
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(241, delta), QSwipeGesture::Down);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(299, delta), QSwipeGesture::Down);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(270, delta), QSwipeGesture::Down);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(300, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(240, delta), QSwipeGesture::NoDirection);
-    
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(29, delta), QSwipeGesture::Right);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(331, delta), QSwipeGesture::Right);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(0, delta), QSwipeGesture::Right);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(360, delta), QSwipeGesture::Right);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(30, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(330, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(361, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(-1, delta), QSwipeGesture::NoDirection);
-
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(151, delta), QSwipeGesture::Left);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(209, delta), QSwipeGesture::Left);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(180, delta), QSwipeGesture::Left);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(150, delta), QSwipeGesture::NoDirection);
-    QCOMPARE(mRecentCallsView->swipeAngleToDirection(210, delta), QSwipeGesture::NoDirection);
 }
 
 void UT_LogsRecentCallsView::testViewChangeByFlicking()

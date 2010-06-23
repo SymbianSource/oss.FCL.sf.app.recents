@@ -26,6 +26,7 @@ class LogsEvent;
 class LogsDbConnector;
 class LogsCntFinder;
 class LogsCntEntry;
+class LogsCntText;
 class LogsContact;
 class LogsMatchesModelItemContainer;
 class LogsThumbIconManager;
@@ -137,6 +138,8 @@ private:
     QString getFormattedCallerId(const LogsCntEntry& entry) const;
     void getFormattedContactInfo( 
             const LogsCntEntry& entry, QString& contactName, QString& contactNumber ) const;
+    void getFormattedName(QString& formattedName, 
+            const QList<LogsCntText>& list) const;
     
 private:
 

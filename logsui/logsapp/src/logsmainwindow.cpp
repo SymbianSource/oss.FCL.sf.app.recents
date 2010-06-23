@@ -17,7 +17,6 @@
 
 #include "logsmainwindow.h"
 #include "logslogger.h"
-#include "logsforegroundwatcher.h"
 #include <QKeyEvent>
 #include <xqserviceutil.h>
 
@@ -30,9 +29,6 @@ LogsMainWindow::LogsMainWindow() : HbMainWindow(), mForeground(false)
     if ( viewport() ){
         viewport()->grabGesture(Qt::SwipeGesture);
     }
-    mWatcher = new LogsForegroundWatcher(this);
-    connect( mWatcher, SIGNAL(losingForeground()), this, SIGNAL(appFocusLost()) );
-    connect( mWatcher, SIGNAL(gainingForeground()), this, SIGNAL(appFocusGained()) );
 }
 
 // -----------------------------------------------------------------------------

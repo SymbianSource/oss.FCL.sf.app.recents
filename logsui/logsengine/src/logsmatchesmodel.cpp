@@ -675,12 +675,7 @@ QString LogsMatchesModelItemContainer::getFormattedCallerId(
         const LogsCntEntry& entry) const
 {    
     QString callerId;
-    foreach( LogsCntText name, entry.firstName() ) {
-        callerId.append( name.richText() );
-        if ( name.text().length() > 0 ) {
-            callerId.append(" ");
-        }
-    }
+    getFormattedName(callerId, entry.firstName());
     
     if  ( callerId.length() == 0 ) {
         callerId = entry.phoneNumber().richText();
@@ -699,20 +694,25 @@ void LogsMatchesModelItemContainer::getFormattedContactInfo(
         QString& contactNumber ) const
 {
     contactName.clear();
-    foreach( LogsCntText name, entry.firstName() ) {
-        contactName.append( name.richText() );
-        if ( name.text().length() > 0 ) {
-            contactName.append(" ");
-        }
-    }
     
-    foreach( LogsCntText lastname, entry.lastName() ) {
-        contactName.append( lastname.richText() );
-        if ( lastname.text().length() > 0 ) {
-            contactName.append(" ");
-        }
-    }
+    getFormattedName(contactName, entry.firstName());
+    getFormattedName(contactName, entry.lastName());
+
     contactName = contactName.trimmed();
-    
     contactNumber = entry.phoneNumber().text();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void  LogsMatchesModelItemContainer::getFormattedName(QString& formattedName, 
+        const QList<LogsCntText>& list) const
+{
+    foreach( LogsCntText name, list ) {
+        if ( name.text().length() > 0 ) {
+            formattedName.append(name.richText());
+            formattedName.append(" ");
+        }
+    }
 }

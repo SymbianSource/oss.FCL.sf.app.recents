@@ -119,21 +119,21 @@ void UT_LogsCall::testCall()
 {  
     QtHighwayStubHelper::reset();
     mLogsCall->call(LogsCall::TypeLogsVoiceCall);
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     // Video call message is longer than voice call
     QtHighwayStubHelper::reset();
     mLogsCall->call(LogsCall::TypeLogsVideoCall);
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
 
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->call(LogsCall::TypeLogsVoIPCall);
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" ); 
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
@@ -149,7 +149,7 @@ void UT_LogsCall::testInitiateCallback()
 {
     QtHighwayStubHelper::reset();
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
@@ -157,7 +157,7 @@ void UT_LogsCall::testInitiateCallback()
     mLogsCall->mDefaultCall = LogsCall::TypeLogsVideoCall;
     QtHighwayStubHelper::reset();
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
@@ -165,7 +165,7 @@ void UT_LogsCall::testInitiateCallback()
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.telephony" );
+    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.symbian.ICallDial" );
     QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" );  
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
 }

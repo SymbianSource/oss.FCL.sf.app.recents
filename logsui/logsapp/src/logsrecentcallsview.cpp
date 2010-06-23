@@ -42,13 +42,13 @@
 #include <hbgroupbox.h>
 #include <hbmessagebox.h>
 #include <hbmainwindow.h>
+#include <hbswipegesture.h>
 #include <QTimer>
 #include <hbactivitymanager.h>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
 
 const int logsMissedCallsMarkingDelayMs = 1000;
-const int logsSwipeAngleDelta = 30; // angle is from 0 to 360
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::LogsRecentCallsView
@@ -536,52 +536,22 @@ void LogsRecentCallsView::gestureEvent(QGestureEvent *event)
 {
     QGesture* gesture = event->gesture(Qt::SwipeGesture);
     if (gesture) {
-        QSwipeGesture* swipe = static_cast<QSwipeGesture *>(gesture);
-        if (swipe->state() == Qt::GestureFinished) {
-            QSwipeGesture::SwipeDirection direction = swipeAngleToDirection(
-                    swipe->swipeAngle(), logsSwipeAngleDelta);
-            if (mViewManager.mainWindow().orientation() == Qt::Vertical) {
-                if (direction == QSwipeGesture::Left) {
-                    leftFlick();
-                    event->accept(Qt::SwipeGesture);
-                } else if (direction == QSwipeGesture::Right) {
-                    rightFlick();
-                    event->accept(Qt::SwipeGesture);
-                }
-            } else {
-                if (direction == QSwipeGesture::Down) {
-                    rightFlick();
-                    event->accept(Qt::SwipeGesture);
-                } else if (direction == QSwipeGesture::Up) {
-                    leftFlick();
-                    event->accept(Qt::SwipeGesture);
-                }
+        LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::gestureEvent()" );
+        HbSwipeGesture* swipe = static_cast<HbSwipeGesture *>(gesture);
+        if (swipe && swipe->state() == Qt::GestureFinished) {
+            LOGS_QDEBUG_2( "logs [UI] sceneSwipeAngle: ", swipe->sceneSwipeAngle() );
+            LOGS_QDEBUG_2( "logs [UI] swipeAngle: ", swipe->swipeAngle() );
+            
+            QSwipeGesture::SwipeDirection direction = swipe->sceneHorizontalDirection(); 
+            if (direction == QSwipeGesture::Left) {
+                leftFlick();
+                event->accept(Qt::SwipeGesture);
+            } else if (direction == QSwipeGesture::Right) {
+                rightFlick();
+                event->accept(Qt::SwipeGesture);
             }
         }
     }
-}
-
-// -----------------------------------------------------------------------------
-// LogsRecentCallsView::swipeAngleToDirection
-// -----------------------------------------------------------------------------
-//
-QSwipeGesture::SwipeDirection LogsRecentCallsView::swipeAngleToDirection(
-        int angle, int delta)
-{
-    QSwipeGesture::SwipeDirection direction(QSwipeGesture::NoDirection);
-    if ((angle > 90-delta) && (angle < 90+delta)) {
-        direction = QSwipeGesture::Up;
-    } else if ((angle > 270-delta) && (angle < 270+delta)) {
-        direction = QSwipeGesture::Down;
-    } else if (((angle >= 0) && (angle < delta)) 
-            || ((angle > 360-delta) && (angle <= 360))) {
-        direction = QSwipeGesture::Right;
-    } else if ((angle > 180-delta) && (angle < 180+delta)) {
-        direction = QSwipeGesture::Left;
-    }
-    LOGS_QDEBUG_4( "logs [UI] LogsRecentCallsView::swipeAngleToDirection() angle: ",
-            angle, " direction: ", direction );
-    return direction;    
 }
 
 // -----------------------------------------------------------------------------

@@ -70,9 +70,6 @@ LogsViewManager::LogsViewManager(
     connect( &mServiceOld, SIGNAL( activateView(QString) ), 
              this, SLOT( changeMatchesView(QString) ));
     
-    connect( &mMainWindow, SIGNAL(appFocusGained()), this, SLOT(appFocusGained()) );
-    connect( &mMainWindow, SIGNAL(appFocusLost()), this, SLOT(appFocusLost()) );
-    
     QObject::connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(saveActivity()));
 
     handleFirstActivation();
@@ -141,35 +138,6 @@ void LogsViewManager::changeMatchesView(QString dialpadText)
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::changeMatchesView()" );
     doActivateView(LogsMatchesViewId, true, QVariant(), dialpadText);
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::changeMatchesView()" );
-}
-
-// -----------------------------------------------------------------------------
-// LogsViewManager::appFocusGained
-// Activate recent view if gaining focus first time and app was not started
-// via highway service. If app was started by using service request, 
-// wait the request to appear before activating view.
-// -----------------------------------------------------------------------------
-//
-void LogsViewManager::appFocusGained()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appFocusGained()" );
-    
-    foreach ( LogsBaseView* view, mViewStack ){
-        disconnect( view, SIGNAL(exitAllowed()), this, SLOT(proceedExit()) );
-    }
-
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appFocusGained()" );
-}
-
-// -----------------------------------------------------------------------------
-// LogsViewManager::appFocusLost
-// -----------------------------------------------------------------------------
-//
-void LogsViewManager::appFocusLost()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appFocusLost()" );
-    
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appFocusLost()" );
 }
 
 // -----------------------------------------------------------------------------

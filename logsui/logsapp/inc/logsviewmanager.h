@@ -57,8 +57,6 @@ public slots:
 
     void changeRecentView(LogsServices::LogsView view, bool showDialpad);
     void changeMatchesView(QString dialpadText);
-    void appFocusGained();
-    void appFocusLost();
     
 public: // From LogsAbstractViewManager
     

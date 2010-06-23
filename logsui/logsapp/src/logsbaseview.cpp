@@ -744,14 +744,14 @@ void LogsBaseView::saveContact()
         popup->setAttribute(Qt::WA_DeleteOnClose);
         popup->setTimeout( HbPopup::NoTimeout );
         popup->addAction(
-                new HbAction(hbTrId("txt_dial_button_cancel"), popup));
+                new HbAction(hbTrId("txt_common_button_cancel"), popup));
 
         HbWidget* buttonWidget = new HbWidget(popup);
         QGraphicsLinearLayout* layout = new QGraphicsLinearLayout(Qt::Vertical);
         
         HbPushButton* addButton = new HbPushButton(buttonWidget);
         addButton->setStretched(true);
-        addButton->setText(hbTrId("txt_dial_list_save_as_a_new_contact"));
+        addButton->setText(hbTrId("txt_dial_button_save_as_a_new_contact"));
         HbIcon plusIcon("qtg_mono_plus");
         addButton->setIcon(plusIcon);
         connect(addButton, SIGNAL(clicked()), popup, SLOT(close()));
@@ -759,7 +759,7 @@ void LogsBaseView::saveContact()
         
         HbPushButton* updateButton = new HbPushButton(buttonWidget);
         updateButton->setStretched(true);
-        updateButton->setText(hbTrId("txt_dial_list_update_existing_contact"));
+        updateButton->setText(hbTrId("txt_dial_button_update_existing_contact"));
         updateButton->setIcon(plusIcon);
         connect(updateButton, SIGNAL(clicked()), popup, SLOT(close()));
         connect(updateButton, SIGNAL(clicked()),

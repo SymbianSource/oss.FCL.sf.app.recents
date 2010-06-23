@@ -642,18 +642,11 @@ QString LogsEvent::parseContactName(const QContactName& name)
 {
     QString firstName = name.value(QContactName::FieldFirstName);
     QString lastName = name.value(QContactName::FieldLastName);
-    QString parsedName;
-    if (!lastName.isEmpty()) {
-        if (!firstName.isEmpty()) {
-            parsedName = 
-                QString(QLatin1String("%1 %2")).arg(firstName).arg(lastName);
-        } 
-        else {
-            parsedName = lastName;
-        }
-    } else if (!firstName.isEmpty()) {
-        parsedName = firstName;
+    QString parsedName = firstName;    
+    if (!parsedName.isEmpty() && !lastName.isEmpty()) {
+        parsedName.append(" ");
     }
+    parsedName.append(lastName);
     return parsedName;
 }
 

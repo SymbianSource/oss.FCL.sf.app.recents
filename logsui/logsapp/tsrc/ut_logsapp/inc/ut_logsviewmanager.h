@@ -54,7 +54,6 @@ private slots: //test methods
     void testActivateView();
     void testchangeMatchesView();
     void testExitApplication();
-    void testAppFocusGained();
     void testStartingWithService();
     void testHandleOrientationChanged();
     void testCompleteViewActivation();
