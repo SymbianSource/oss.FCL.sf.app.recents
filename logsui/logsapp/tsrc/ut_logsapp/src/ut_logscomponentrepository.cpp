@@ -151,3 +151,19 @@ void UT_LogsComponentRepository::testAddToolbarToObjectList()
     QVERIFY( mRepository->mRecentViewComponents.at(0)->objectName() == logsToolbarId );
     delete view;
 }
+
+void UT_LogsComponentRepository::testLazyInit()
+{
+    QObjectList dummyObjList;
+    mRepository->mCurrentObjectTree = &dummyObjList;
+    QVERIFY( !mRepository->mRecentCallsView );
+    QVERIFY( !mRepository->mDetailsView );
+    QVERIFY( !mRepository->mMatchesView );
+    QVERIFY( !mRepository->model()->mRefreshCalled );
+    mRepository->lazyInit();
+    QVERIFY( mRepository->mRecentCallsView );
+    QVERIFY( mRepository->mDetailsView );
+    QVERIFY( mRepository->mMatchesView );
+    QVERIFY( mRepository->model()->mRefreshCalled );
+    QVERIFY( mRepository->mCurrentObjectTree == &dummyObjList );
+}

@@ -509,10 +509,6 @@ void LogsDbConnector::readCompleted(int readCount)
     }
     
     deleteRemoved(readCount);
-    
-    if ( mCompressionEnabled ){
-        mReader->stop();
-    }    
 
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::readCompleted()" )
 }

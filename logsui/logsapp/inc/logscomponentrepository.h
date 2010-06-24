@@ -31,8 +31,10 @@ class LogsModel;
 /**
  * 
  */
-class LogsComponentRepository : public HbDocumentLoader   
+class LogsComponentRepository : public QObject, public HbDocumentLoader
 {   
+    Q_OBJECT
+    
     friend class UT_LogsComponentRepository;
     friend class UT_LogsViewManager;
     
@@ -43,9 +45,9 @@ public:
 
 public:
     
-    LogsRecentCallsView* recentCallsView();
-    LogsDetailsView* detailsView();
-    LogsMatchesView* matchesView();
+    LogsRecentCallsView* recentCallsView(bool onlyInit = false);
+    LogsDetailsView* detailsView(bool onlyInit = false);
+    LogsMatchesView* matchesView(bool onlyInit = false);
 
     /**
      * Returns dialpad. Must be always a valid pointer.
@@ -63,6 +65,10 @@ public:
     void setObjectTreeToView( LogsAppViewId viewId );
     
     bool loadSection(  LogsAppViewId viewId, const QString& sectionName );
+
+private slots:
+
+    void lazyInit();
     
 private: 
 
@@ -70,6 +76,10 @@ private:
     QObject *createObject(const QString& type, const QString &name);
 
     void addToolbarToObjectList( QObjectList& list );
+    
+    QGraphicsWidget* doLoadView( 
+        const QString &fileName, const QString &viewName, 
+        QObjectList &viewComponents, LogsAppViewId viewId, bool onlyInit );
     
 private:
     
@@ -84,6 +94,7 @@ private:
     Dialpad* mDialpad;
     DialpadKeyHandler* mDialpadKeyHandler;
     LogsModel*  mModel;
+    QObjectList* mCurrentObjectTree;
 };
 
 #endif // LOGSCOMPONENTREPOSITORY_H

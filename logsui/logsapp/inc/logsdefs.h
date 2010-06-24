@@ -39,6 +39,7 @@ const char logsLabelEmptyListId[] = "logs_label_empty_list";
 const char logsToolbarId[] = "logs_toolbar";
 const char logsButtonAddToContactsId[] = "logs_button_addtocontacts";
 const char logsPageIndicatorId[] = "logs_page_indicator";
+const char logsContentId[] = "logs_content";
 
 //action ids
 const char logsCommonVideoCallMenuActionId[] = "logs_act_video_call";
@@ -101,6 +102,7 @@ const char logsActivityIdViewDetails[] = "LogsViewDetails";
 
 const char logsActivityParamShowDialpad[] = "show_dialpad"; // val type bool
 const char logsActivityParamDialpadText[] = "dialpad_text"; // val type string
+const char logsActivityParamInternalViewId[] = "view_id"; // val type int
 
 
 #endif // LOGSDEFS_H

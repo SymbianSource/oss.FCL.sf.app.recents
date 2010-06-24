@@ -64,7 +64,6 @@ private slots: //test methods
     void testOpenDialpad(); 
     void testDialpadEditorTextChanged();
     void testGestureEvent();
-    void testSwipeAngleToDirection();
     void testViewChangeByFlicking();    
     void testModel();
     void testShowListItemMenu();

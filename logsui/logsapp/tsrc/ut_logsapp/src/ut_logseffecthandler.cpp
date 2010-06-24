@@ -77,7 +77,7 @@ void UT_LogsEffectHandler::testStartDissappearAppearByFadingEffect()
 void UT_LogsEffectHandler::testStartDissappearAppearByMovingEffect()
 {
     QVERIFY( mEffect->mMoveGroup->state() == QAbstractAnimation::Stopped );
-    mEffect->startDissappearAppearByMovingEffect(*mLabel, *mLabel2, false, 0);
+    mEffect->startDissappearAppearByMovingEffect(*mLabel, *mLabel2, false, 0, 0);
     QVERIFY( mEffect->mMoveGroup->state() == QAbstractAnimation::Running );
     QVERIFY( mEffect->mMoveGroup2->state() == QAbstractAnimation::Running );
     
@@ -90,7 +90,7 @@ void UT_LogsEffectHandler::testStartDissappearAppearByMovingEffect()
     QVERIFY(spy.count() == 1 );
     
     // When effect is running and new effect is requested, previous effect is stopped
-    mEffect->startDissappearAppearByMovingEffect(*mLabel, *mLabel2, true, 0); 
+    mEffect->startDissappearAppearByMovingEffect(*mLabel, *mLabel2, true, 0, 0); 
 }
 
 void UT_LogsEffectHandler::testStartMoveNotPossibleEffect()

@@ -143,7 +143,8 @@ nameTranslator() - use current" )
     } else { 
         delete mNameTranslator;
         mNameTranslator = new LogsPredictiveLatin12KeyTranslator();
-        if( mNameTranslator->encodes( name ) ) {
+        if( mNameTranslator->mKeyMap && 
+            mNameTranslator->encodes( name ) ) {
             nameTranslator = mNameTranslator;
             LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 nameTranslator() - use latin" )
@@ -151,7 +152,8 @@ nameTranslator() - use latin" )
         }
         delete mNameTranslator;
         mNameTranslator = new LogsPredictiveThai12KeyTranslator();
-        if( mNameTranslator->encodes( name ) ) {
+        if( mNameTranslator->mKeyMap && 
+            mNameTranslator->encodes( name ) ) {
             nameTranslator = mNameTranslator;
             LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::\
 nameTranslator() - use thai" )

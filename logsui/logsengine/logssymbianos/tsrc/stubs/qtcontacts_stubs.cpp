@@ -187,12 +187,6 @@ QContactDetail QContact::detail(const QString& definitionId) const
         QContactPhoneNumber number;
         return number;
     }
-    else if ( definitionId == QContactAvatar::DefinitionName){
-        QContactAvatar avatar;
-        avatar.setSubType(QContactAvatar::SubTypeImage);
-        avatar.setAvatar("c:\\data\\images\\logstest1.jpg");  
-        return avatar;
-    }
     QContactDetail detail;
     return detail;
 }
@@ -263,8 +257,7 @@ QString QContactDetail::value(const QString& key) const
     } else if ( key == QContactPhoneNumber::FieldNumber ) {
         return QString( "12345" );
     }
-    else if ( key == QContactAvatar::FieldAvatar){
-        return QString( "Avatar" );
-    }
     return QString("");
 }
+
+

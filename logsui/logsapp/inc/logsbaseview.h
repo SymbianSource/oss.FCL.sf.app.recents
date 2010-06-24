@@ -47,7 +47,7 @@ class LogsBaseView : public HbView
     friend class UT_LogsBaseView;
     
 public:
-
+    
     virtual ~LogsBaseView();
 
 public:
@@ -74,7 +74,6 @@ public slots:
     
     virtual void handleExit();
     virtual void callKeyPressed();
-    void closeEmptyMenu();
     
 signals:
 
@@ -139,7 +138,7 @@ protected:
     /**
      * Loads appropriate section from *.docml to resize list widget
      */
-    void updateListSize();
+    void updateListSize( HbListView& list );
   
 protected:
     
@@ -190,6 +189,11 @@ protected:
     void updateDialpadCallAndMessagingActions();
     bool tryMatchesViewTransition();
     bool isDialpadInput() const;
+    void ensureListPositioning( HbListView& list );
+    void scrollToTopItem( HbListView* list );
+    
+    void updateMenuVisibility();
+    void setMenuVisible(bool visible);
     
 protected:
     
@@ -214,6 +218,7 @@ protected:
     QString mLayoutSectionName;
     
     QStringList mActivities;
+    HbMenu* mOptionsMenu;
 };
 
 

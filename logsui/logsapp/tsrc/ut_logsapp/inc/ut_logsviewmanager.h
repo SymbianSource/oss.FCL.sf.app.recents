@@ -53,8 +53,8 @@ private slots: //test methods
     void testConstructorDestructor();
     void testActivateView();
     void testchangeMatchesView();
+    void testchangeRecentView();
     void testExitApplication();
-    void testAppFocusGained();
     void testStartingWithService();
     void testHandleOrientationChanged();
     void testCompleteViewActivation();

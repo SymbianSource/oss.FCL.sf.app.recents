@@ -56,6 +56,7 @@ private slots: //test methods
     void testDialpad();
     void testLoadSection();
     void testAddToolbarToObjectList();
+    void testLazyInit();
     
 private:
  

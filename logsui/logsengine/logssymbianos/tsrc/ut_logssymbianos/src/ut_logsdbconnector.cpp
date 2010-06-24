@@ -287,13 +287,13 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( mDbConnector->mEvents.count() == 1 );
     QVERIFY( mEvents.count() == 1 );
 
-    // Read completed when compression is enabled, reader is stopped
+    // Read completed when compression is enabled, reader is not stopped
     QVERIFY( mDbConnector->init() == 0 );
     QVERIFY( mDbConnector->start() == 0 );
     QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
     mDbConnector->mCompressionEnabled = true;
     mDbConnector->readCompleted(0);
-    QVERIFY( mDbConnector->mReader->mLogViewRecent == 0 );
+    QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
 }
 
 void UT_LogsDbConnector::testErrorOccurred()

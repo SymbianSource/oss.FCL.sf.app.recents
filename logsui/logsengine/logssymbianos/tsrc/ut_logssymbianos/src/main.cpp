@@ -23,7 +23,6 @@
 #include "ut_logsreaderstates.h"
 #include "ut_logseventparser.h"
 #include "ut_logseventdataparser.h"
-#include "ut_logsforegroundwatcher.h"
 #include "testresultxmlparser.h"
 #include "ut_logsremove.h"
 
@@ -82,14 +81,6 @@ int main(int argc, char *argv[])
     QT_TRAP_THROWING( QTest::qExec(&ut_logsEventData, args_logsEventData); )
     parser.parseAndPrintResults(resultFileName,true);
     
-    UT_LogsForegroundWatcher ut_logsForegroundWatcher;
-    resultFileName = "c:/ut_logs_logsForegroundWatcher.xml";
-    QStringList args_logsForegroundWatcher( "ut_logsForegroundWatcher");
-    args_logsForegroundWatcher << "-xml" << "-o" << resultFileName;
-    QT_TRAP_THROWING( QTest::qExec(&ut_logsForegroundWatcher, args_logsForegroundWatcher); )
-    parser.parseAndPrintResults(resultFileName,true);
-    
-
 
     if (promptOnExit) {
         printf("Press any key...\n");

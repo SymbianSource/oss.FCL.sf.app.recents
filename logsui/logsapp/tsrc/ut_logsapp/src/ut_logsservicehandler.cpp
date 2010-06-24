@@ -89,7 +89,7 @@ void UT_LogsServiceHandler::testConstructor()
 void UT_LogsServiceHandler::testStart()
 {
     qRegisterMetaType< LogsServices::LogsView >("LogsServices::LogsView");
-    QSignalSpy spy(mServiceOld, SIGNAL(activateView(LogsServices::LogsView, bool)));
+    QSignalSpy spy(mServiceOld, SIGNAL(activateView(LogsServices::LogsView, bool, QString)));
      
     // Wrong view
     QVERIFY( mServiceOld->start( 9999, true ) != 0 );
@@ -121,7 +121,7 @@ void UT_LogsServiceHandler::testStartWithNum()
 void UT_LogsServiceHandler::testShow()
 {
     qRegisterMetaType< LogsServices::LogsView >("LogsServices::LogsView");
-    QSignalSpy spy(mService, SIGNAL(activateView(LogsServices::LogsView, bool)));
+    QSignalSpy spy(mService, SIGNAL(activateView(LogsServices::LogsView, bool, QString)));
     QSignalSpy spy2(mService, SIGNAL(activateView(QString)));
     QVariantMap map;
 

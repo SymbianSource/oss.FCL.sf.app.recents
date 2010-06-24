@@ -66,7 +66,7 @@ SOURCES += ../stubs/qtcontacts_stubs.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE
-    TARGET.UID3 = 0xEfa329b2
+    TARGET.UID3 = 0xEfa329b3
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lflogger -lqtcontacts

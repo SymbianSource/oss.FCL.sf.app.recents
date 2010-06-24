@@ -24,6 +24,8 @@
 #include <QContactName.h>
 #include <QContactPhoneNumber.h>
 
+QString testHighlights;
+
 // -----------------------------------------------------------------------------
 // LogsCntEntry::richText()
 // -----------------------------------------------------------------------------
@@ -39,6 +41,15 @@ QString LogsCntText::richText( QString startTag,
 
     return str;
     
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntEntry::highlights()
+// -----------------------------------------------------------------------------
+//
+int LogsCntText::highlights() const 
+{
+    return testHighlights.length() ;
 }
 
 // -----------------------------------------------------------------------------
@@ -204,6 +215,7 @@ void LogsCntEntry::doSetText( const QString& text, LogsCntTextList& textlist )
 //
 void LogsCntEntry::setHighlights( const QString& pattern )
 {
+    testHighlights = pattern;
 }
 
 // -----------------------------------------------------------------------------

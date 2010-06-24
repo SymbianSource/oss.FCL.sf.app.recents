@@ -55,10 +55,10 @@ public:
 
 public slots:
 
+    void changeRecentViewViaService(
+        LogsServices::LogsView view, bool showDialpad, QString dialpadText);
+    void changeMatchesViewViaService(QString dialpadText);
     void changeRecentView(LogsServices::LogsView view, bool showDialpad);
-    void changeMatchesView(QString dialpadText);
-    void appFocusGained();
-    void appFocusLost();
     
 public: // From LogsAbstractViewManager
     
@@ -77,13 +77,13 @@ private slots:
     
 private:
     
-    void initViews();
     bool doActivateView(LogsAppViewId viewId, bool showDialpad, 
                         QVariant args, const QString& dialpadText = QString());
     bool loadActivity();
     LogsAppViewId checkMatchesViewTransition(
         LogsAppViewId viewId, const QString& dialpadText);
     void handleFirstActivation();
+    LogsBaseView* createView(LogsAppViewId viewId);
     
 private: //data 
     

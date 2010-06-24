@@ -170,9 +170,10 @@ QList<QContactLocalId> QContactManager::contactIds(
     return list;
 }
 
+
 QContact QContactManager::contact( 
-    const QContactLocalId& contactId, 
-    const QStringList& /*definitionRestrictions*/ ) const
+        const QContactLocalId& contactId, 
+        const QContactFetchHint& /*fetchHint*/) const
 {
     QContact contact;
     QContactId id;
@@ -181,6 +182,7 @@ QContact QContactManager::contact(
     contact.setId( id );
     return contact;
 }
+
 
 // ----------------------------------------------------------------------------
 // QContactDetailFilter

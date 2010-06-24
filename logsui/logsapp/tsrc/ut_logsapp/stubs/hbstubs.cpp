@@ -29,6 +29,8 @@
 #include <QApplication>
 #include <QTimer>
 #include <QGesture>
+#include <hblistview.h>
+#include <hblistviewitem.h>
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
@@ -50,6 +52,9 @@ QList<QVariantHash> testActivities;
 HbActivityManager testActivityManager;
 Hb::ActivationReason testActivationReason = Hb::ActivationReasonNormal;
 QString testActivityId = "LogsViewMatches";
+QList<HbListViewItem*> testViewItems;
+bool testEnsureVisibleCalled = false;
+bool testScrollToCalled = false;
 
 void HbStubHelper::reset()
 {
@@ -63,9 +68,11 @@ void HbStubHelper::reset()
     testActivationReason = Hb::ActivationReasonNormal;
     testActivityId = "LogsViewMatches";
     testActivities.clear();
+    qDeleteAll(testViewItems);
+    testViewItems.clear();
+    testScrollToCalled = false;
+    testEnsureVisibleCalled = false;
 }
-
-
 
 int HbStubHelper::widgetActionsCount()
 {
@@ -133,6 +140,21 @@ void HbStubHelper::setActivityReason(Hb::ActivationReason reason)
 void HbStubHelper::setActivityId(QString activityId)
 {
     testActivityId = activityId;
+}
+
+QList<HbListViewItem*>& HbStubHelper::listItems()
+{
+    return testViewItems;
+}
+
+bool HbStubHelper::listScrollToCalled()
+{
+    return testScrollToCalled;
+}
+
+bool HbStubHelper::listEnsureVisibleCalled()
+{
+    return testEnsureVisibleCalled;
 }
 
 // -----------------------------------------------------------------------------
@@ -331,7 +353,6 @@ HbView *HbMainWindow::addView(QGraphicsWidget *widget)
 
 void HbMainWindow::setCurrentView(HbView *view, bool animate, Hb::ViewSwitchFlags flags)
 {
-    Q_UNUSED(animate)
     Q_UNUSED(flags)
     testView = view;
 }
@@ -403,4 +424,40 @@ QColor HbColorScheme::color( const QString &colorRole )
 {
     Q_UNUSED(colorRole);
     return testColor;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void HbListView::scrollTo(const QModelIndex &index, ScrollHint hint)
+{
+    Q_UNUSED(index);
+    Q_UNUSED(hint);
+    testScrollToCalled = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QList<HbAbstractViewItem *> HbAbstractItemView::visibleItems() const
+{
+    QList<HbAbstractViewItem*> visible;
+    foreach ( HbListViewItem* item, testViewItems ){
+        visible.append( item );
+    }
+    return visible;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void HbScrollArea::ensureVisible(const QPointF &position, qreal xMargin, qreal yMargin)
+{
+    Q_UNUSED(position);
+    Q_UNUSED(xMargin);
+    Q_UNUSED(yMargin);
+    testEnsureVisibleCalled = true;
 }

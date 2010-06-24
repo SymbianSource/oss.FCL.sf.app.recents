@@ -67,7 +67,8 @@ private slots: //test methods
     void testPredictiveSearchQueryFullyCached();
     void testPredictiveSearchQueryPartialCachedNoResults();
     void testPredictiveSearchQueryFullyCachedNoResults();
-    void testPredictiveSearchQueryCachedZeroCase();
+    void testPredictiveSearchQueryPartialCachedZeroCase();
+    void testPredictiveSearchQueryFullyCachedZerosCase();
     void testPredictiveSearchQueryLogs();
     void testPredictiveSearchQueryLogsZeroCase();
     void testPredictiveSearchQueryLogsContactsPartialCached();
@@ -76,6 +77,7 @@ private slots: //test methods
     void testPredictiveSearchQueryLogsContactsPhoneNumberMatch();
     void testPredictiveSearchQueryLimit();
     void testQueryOrder();
+    void testContactWithNonMappedChars();
 
 private:
 
@@ -89,6 +91,7 @@ private:
     void createContacts();
     void createContactsForQueryOrder();
     void createContactsForQueryZero();
+    void createContactsWithNonMappedChars();
     void createHistoryEvents();
     void createLogEvent(
         QString firstname, 

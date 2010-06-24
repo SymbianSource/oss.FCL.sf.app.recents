@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) //on HW
     
     PT_LogsCntFinderQwerty pt_LogsCntFinderQwerty( samples );
     resultFileName = "c:/data/others/pt_logscntfinderqwerty.txt";
-    QStringList args_logsCntFinderQwertry( "PT_LogsCntFinderQwerty");
-    args_logsCntFinder << "-o" << resultFileName;
-    QTest::qExec(&pt_LogsCntFinderQwerty, args_logsCntFinderQwertry);
+    QStringList args_logsCntFinderQwerty( "PT_LogsCntFinderQwerty");
+    args_logsCntFinderQwerty << "-o" << resultFileName;
+    QTest::qExec(&pt_LogsCntFinderQwerty, args_logsCntFinderQwerty);
     
     return 0;   
 }

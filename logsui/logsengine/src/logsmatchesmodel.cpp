@@ -165,7 +165,8 @@ QVariant LogsMatchesModel::createMessage(const LogsModelItemContainer& item) con
     }
     const LogsMatchesModelItemContainer& matchItem = 
         static_cast<const LogsMatchesModelItemContainer&>( item ); 
-    LogsMessage* logsMessage = new LogsMessage(matchItem.contact(), matchItem.number(),matchItem.contactName());
+    LogsMessage* logsMessage = new LogsMessage(
+        matchItem.contact(), matchItem.number(),matchItem.contactNameSimple());
     if (!logsMessage->isMessagingAllowed()) {
         delete logsMessage;
         logsMessage = 0;
@@ -298,6 +299,39 @@ void LogsMatchesModel::eventsRemoved(const QModelIndex& parent, int first, int l
 }
 
 // -----------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------
+//
+void LogsMatchesModel::eventsResetted()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::eventsResetted()" );
+    
+    QMap<LogsCntEntryHandle*, LogsEvent*> unusedEvents = mSearchEvents;
+    for ( int i = 0; i < mParentModel.rowCount(); ++i ){
+        LogsEvent* event = qVariantValue<LogsEvent*>( 
+            mParentModel.data( mParentModel.index(i, 0), LogsModel::RoleFullEvent ) );
+        if ( event ){
+            QObject* key = mSearchEvents.key(event);
+            if ( key ){
+                unusedEvents.remove(key);
+            } else {
+                addEventForSearching(i, *event);
+            }
+        }
+    }
+    
+    QMap<LogsCntEntryHandle*, LogsEvent*>::iterator unusedIt;
+    for (unusedIt = unusedEvents.begin(); unusedIt != unusedEvents.end(); ++unusedIt){
+        mLogsCntFinder->deleteEntry(*unusedIt.key());
+        mSearchEvents.remove(unusedIt.key());
+    }
+    
+    forceSearchQuery();
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::eventsResetted()" );
+}
+
+// -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
 //
@@ -315,7 +349,7 @@ void LogsMatchesModel::initPredictiveSearch()
                  this, SLOT(eventsAdded(const QModelIndex&,int,int)));
         connect( &mParentModel, SIGNAL(rowsRemoved(const QModelIndex&,int,int)), 
                  this, SLOT(eventsRemoved(const QModelIndex&,int,int)));
-        connect( &mParentModel, SIGNAL(modelReset()), this, SLOT(doModelReset()));
+        connect( &mParentModel, SIGNAL(modelReset()), this, SLOT(eventsResetted()));
         readEvents(0, mParentModel.rowCount());
         mIconManager = new LogsThumbIconManager();
         connect(mIconManager, SIGNAL(contactIconReady(int)),
@@ -373,11 +407,7 @@ void LogsMatchesModel::readEvents(int first, int last)
         LogsEvent* event = qVariantValue<LogsEvent*>( 
                 mParentModel.data( mParentModel.index(i, 0), LogsModel::RoleFullEvent ) );
         if ( event ){
-            QObject* entryHandle = new QObject(this);
-            LogsCntEntry* entry = new LogsCntEntry(*entryHandle, 0);
-            updateSearchEntry(*entry, *event);
-            mLogsCntFinder->insertEntry(i, entry);
-            mSearchEvents.insert(entryHandle, event);
+            addEventForSearching(i, *event);
         }
     }
 }
@@ -447,10 +477,12 @@ void LogsMatchesModel::doSearchQuery()
 //
 void LogsMatchesModel::doModelReset()
 {
+    LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::doModelReset()" );
     qDeleteAll(mMatches);
     mMatches.clear();
     mResultCount = 0;
     reset();
+    LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::doModelReset()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -506,6 +538,19 @@ QString LogsMatchesModel::stripPhoneNumber(const QString& phoneNumber) const
         return phoneNumber.mid(1);
     }
     return phoneNumber;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMatchesModel::addEventForSearching(int index, LogsEvent& event)
+{
+     QObject* entryHandle = new QObject(this);
+     LogsCntEntry* entry = new LogsCntEntry(*entryHandle, 0);
+     updateSearchEntry(*entry, event);
+     mLogsCntFinder->insertEntry(index, entry);
+     mSearchEvents.insert(entryHandle, &event);
 }
 
 // -----------------------------------------------------------------------------
@@ -594,6 +639,15 @@ QString LogsMatchesModelItemContainer::contactName() const
 //
 // -----------------------------------------------------------------------------
 //
+QString LogsMatchesModelItemContainer::contactNameSimple() const
+{
+   return mContactNameSimple;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 bool LogsMatchesModelItemContainer::isNull() const
 {
     return ( !mEvent && !mContactId );
@@ -651,7 +705,7 @@ void LogsMatchesModelItemContainer::updateData(const LogsCntEntry& entry)
     if ( mEvent ){
         mFormattedCallerId = getFormattedCallerId(entry);
     } else if ( mContactId > 0 ){
-        getFormattedContactInfo(entry, mContactName, mContactNumber);
+        getFormattedContactInfo(entry, mContactName, mContactNameSimple, mContactNumber);
         mAvatarPath.clear();
         mAvatarPath = entry.avatarPath();
     }
@@ -675,12 +729,7 @@ QString LogsMatchesModelItemContainer::getFormattedCallerId(
         const LogsCntEntry& entry) const
 {    
     QString callerId;
-    foreach( LogsCntText name, entry.firstName() ) {
-        callerId.append( name.richText() );
-        if ( name.text().length() > 0 ) {
-            callerId.append(" ");
-        }
-    }
+    getFormattedName(callerId, entry.firstName());
     
     if  ( callerId.length() == 0 ) {
         callerId = entry.phoneNumber().richText();
@@ -695,24 +744,49 @@ QString LogsMatchesModelItemContainer::getFormattedCallerId(
 //
 void LogsMatchesModelItemContainer::getFormattedContactInfo( 
         const LogsCntEntry& entry,
-        QString& contactName, 
+        QString& contactName,
+        QString& contactNameSimple,
         QString& contactNumber ) const
 {
     contactName.clear();
-    foreach( LogsCntText name, entry.firstName() ) {
-        contactName.append( name.richText() );
-        if ( name.text().length() > 0 ) {
-            contactName.append(" ");
-        }
-    }
     
-    foreach( LogsCntText lastname, entry.lastName() ) {
-        contactName.append( lastname.richText() );
-        if ( lastname.text().length() > 0 ) {
-            contactName.append(" ");
-        }
-    }
+    getFormattedName(contactName, contactNameSimple, entry.firstName());
+    getFormattedName(contactName, contactNameSimple, entry.lastName());
+
     contactName = contactName.trimmed();
-    
+    contactNameSimple = contactNameSimple.trimmed();
     contactNumber = entry.phoneNumber().text();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void  LogsMatchesModelItemContainer::getFormattedName(
+    QString& formattedName, const QList<LogsCntText>& list) const
+{
+    foreach( LogsCntText name, list ) {
+        if ( name.text().length() > 0 ) {
+            formattedName.append(name.richText());   
+            formattedName.append(" ");
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void  LogsMatchesModelItemContainer::getFormattedName(
+    QString& formattedName, QString& formattedNameSimple,
+    const QList<LogsCntText>& list) const
+{
+    foreach( LogsCntText name, list ) {
+        if ( name.text().length() > 0 ) {
+            formattedName.append(name.richText());   
+            formattedName.append(" ");
+            formattedNameSimple.append(name.text());
+            formattedNameSimple.append(" ");
+        }
+    }
 }

@@ -35,7 +35,7 @@ class LogsServiceHandlerOld : public XQServiceProvider
         
     signals:
     
-        void activateView(LogsServices::LogsView activatedView, bool showDialpad);
+        void activateView(LogsServices::LogsView activatedView, bool showDialpad, QString dialpadText);
         void activateView(QString dialpadText);
     
     public:

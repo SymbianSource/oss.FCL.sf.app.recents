@@ -21,8 +21,6 @@
 #include <QObject>
 #include <hbmainwindow.h>
 
-class LogsForegroundWatcher;
-
 
 class LogsMainWindow : public HbMainWindow
     {
@@ -45,12 +43,9 @@ protected: // From HbMainWindow
 signals:
         
     void callKeyPressed();
-    void appFocusGained();
-    void appFocusLost();
     
 private:
     
-    LogsForegroundWatcher* mWatcher;
     bool mForeground;
     
     friend class UT_LogsMainWindow;

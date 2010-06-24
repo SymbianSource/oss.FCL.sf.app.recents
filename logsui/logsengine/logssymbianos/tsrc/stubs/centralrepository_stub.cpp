@@ -27,6 +27,7 @@ void CentralRepositoryStubHelper::reset()
     mFailCode = KErrNone;
     mCurrentVal = 0;
 }
+
 void CentralRepositoryStubHelper::setFailCode(TInt err)
 {
     mFailCode = err;
@@ -76,7 +77,7 @@ CRepository::~CRepository()
 //
 // -----------------------------------------------------------------------------
 //
-TInt CRepository::Get(TUint32 aKey, TInt& aValue)
+TInt CRepository::Get(TUint32 /*aKey*/, TInt& aValue)
     {
     aValue = mCurrentVal;
     return mFailCode;
@@ -87,7 +88,7 @@ TInt CRepository::Get(TUint32 aKey, TInt& aValue)
 //
 // -----------------------------------------------------------------------------
 //
-TInt CRepository::Set(TUint32 aKey, TInt aValue)
+TInt CRepository::Set(TUint32 /*aKey*/, TInt aValue)
     {
     if ( mFailCode == KErrNone )
         {

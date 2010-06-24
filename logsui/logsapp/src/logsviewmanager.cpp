@@ -56,22 +56,18 @@ LogsViewManager::LogsViewManager(
             this, SLOT(handleOrientationChanged()) );
 
     mComponentsRepository = new LogsComponentRepository(*this);
-    initViews();
     
-    connect( &mService, SIGNAL( activateView(LogsServices::LogsView, bool) ), 
-             this, SLOT( changeRecentView(LogsServices::LogsView, bool) ) );
+    connect( &mService, SIGNAL( activateView(LogsServices::LogsView, bool, QString) ), 
+             this, SLOT( changeRecentViewViaService(LogsServices::LogsView, bool, QString) ) );
 
     connect( &mService, SIGNAL( activateView(QString) ), 
-             this, SLOT( changeMatchesView(QString) ));
+             this, SLOT( changeMatchesViewViaService(QString) ));
 
-    connect( &mServiceOld, SIGNAL( activateView(LogsServices::LogsView, bool) ), 
-             this, SLOT( changeRecentView(LogsServices::LogsView, bool) ) );
+    connect( &mServiceOld, SIGNAL( activateView(LogsServices::LogsView, bool, QString) ), 
+             this, SLOT( changeRecentViewViaService(LogsServices::LogsView, bool, QString) ) );
 
     connect( &mServiceOld, SIGNAL( activateView(QString) ), 
-             this, SLOT( changeMatchesView(QString) ));
-    
-    connect( &mMainWindow, SIGNAL(appFocusGained()), this, SLOT(appFocusGained()) );
-    connect( &mMainWindow, SIGNAL(appFocusLost()), this, SLOT(appFocusLost()) );
+             this, SLOT( changeMatchesViewViaService(QString) ));
     
     QObject::connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(saveActivity()));
 
@@ -95,81 +91,37 @@ LogsViewManager::~LogsViewManager()
 }
 
 // -----------------------------------------------------------------------------
-// LogsViewManager::initViews
+// LogsViewManager::changeRecentViewViaService
 // -----------------------------------------------------------------------------
 //
-void LogsViewManager::initViews()
+void LogsViewManager::changeRecentViewViaService(
+    LogsServices::LogsView view, bool showDialpad, QString dialpadText)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::initViews()" );
-    
-    // Don't activate any view, app focus gaining or service request
-    // will cause view activation
-    //
-    LogsRecentCallsView* view = mComponentsRepository->recentCallsView();    
-    Q_ASSERT_X(view != 0, "logs [UI] ", "recentCallsView not found!");
-    LOGS_QDEBUG( "logs [UI] adding view" );
-    mViewStack.append(view);
-    mMainWindow.addView(view);
-        
-    LogsDetailsView* detailsView = mComponentsRepository->detailsView();
-    mViewStack.append(detailsView);
-    mMainWindow.addView(detailsView);
-    
-    LogsMatchesView* matchesView = mComponentsRepository->matchesView();
-    mViewStack.append(matchesView);
-    mMainWindow.addView(matchesView);
+    mComponentsRepository->dialpad()->editor().setText(dialpadText);
+    changeRecentView(view, showDialpad);
+}
 
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::initViews()" );
+// -----------------------------------------------------------------------------
+// LogsViewManager::changeMatchesViewViaService
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::changeMatchesViewViaService(QString dialpadText)
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::changeMatchesView()" );
+    mComponentsRepository->dialpad()->editor().setText(dialpadText);
+    doActivateView(LogsMatchesViewId, true, QVariant());
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::changeMatchesView()" );
 }
 
 // -----------------------------------------------------------------------------
 // LogsViewManager::changeRecentView
 // -----------------------------------------------------------------------------
 //
-void LogsViewManager::changeRecentView(LogsServices::LogsView view, bool showDialpad)
+void LogsViewManager::changeRecentView(
+    LogsServices::LogsView view, bool showDialpad)
 {
     QVariant args(view);
     doActivateView(LogsRecentViewId, showDialpad, args);
-}
-
-// -----------------------------------------------------------------------------
-// LogsViewManager::changeMatchesView
-// -----------------------------------------------------------------------------
-//
-void LogsViewManager::changeMatchesView(QString dialpadText)
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::changeMatchesView()" );
-    doActivateView(LogsMatchesViewId, true, QVariant(), dialpadText);
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::changeMatchesView()" );
-}
-
-// -----------------------------------------------------------------------------
-// LogsViewManager::appFocusGained
-// Activate recent view if gaining focus first time and app was not started
-// via highway service. If app was started by using service request, 
-// wait the request to appear before activating view.
-// -----------------------------------------------------------------------------
-//
-void LogsViewManager::appFocusGained()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appFocusGained()" );
-    
-    foreach ( LogsBaseView* view, mViewStack ){
-        disconnect( view, SIGNAL(exitAllowed()), this, SLOT(proceedExit()) );
-    }
-
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appFocusGained()" );
-}
-
-// -----------------------------------------------------------------------------
-// LogsViewManager::appFocusLost
-// -----------------------------------------------------------------------------
-//
-void LogsViewManager::appFocusLost()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appFocusLost()" );
-    
-    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appFocusLost()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -180,11 +132,6 @@ void LogsViewManager::proceedExit()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::proceedExit()" );
     
-    // Instead of compressing data, exit the application for real because
-    // of bug in wk16 platform which prevents bg/fg switching of the app.
-    //
-    
-    //mComponentsRepository->model()->compressData();
     qApp->quit();
     
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::proceedExit()" );
@@ -257,10 +204,9 @@ void LogsViewManager::exitApplication()
 //
 bool LogsViewManager::activatePreviousView()
 {
-    if ( mViewStack.count() < 2 ){
-        return false;
-    }
-    return doActivateView(mViewStack.at(1)->viewId(), false, QVariant());
+    LogsAppViewId viewId = ( mViewStack.count() > 1 ) ? 
+        mViewStack.at(1)->viewId() : LogsRecentViewId;
+    return doActivateView(viewId, false, QVariant());
 }
 
 // -----------------------------------------------------------------------------
@@ -287,6 +233,10 @@ bool LogsViewManager::doActivateView(
         }
     }
     
+    if ( !newView ){
+        newView = createView(viewId);
+    }
+    
     if ( oldView && newView && oldView != newView ){   
         oldView->deactivated();
         disconnect( &mMainWindow, SIGNAL( callKeyPressed() ), oldView, 0 );
@@ -295,6 +245,9 @@ bool LogsViewManager::doActivateView(
     if ( newView ){
         mViewStack.insert(0, newView);
         mMainWindow.setCurrentView(newView);
+        //Setting mainwindow interactive to enable user input during
+        //view switching animation.
+        mMainWindow.setInteractive(true);
         mViewActivationArgs = args;
         mViewActivationShowDialpad = showDialpad;
         completeViewActivation();
@@ -358,11 +311,22 @@ void LogsViewManager::saveActivity()
     }
     
     QVariantHash metaData;
-    metaData.insert("screenshot", QPixmap::grabWidget(&mMainWindow, mMainWindow.rect()));
+    
+    LOGS_QDEBUG( "logs [UI] Start taking screenshot" );
+    QImage* img = new QImage(mMainWindow.rect().size(), QImage::Format_ARGB32_Premultiplied);
+    QPainter p( img );
+    // Use render instead of QPixmap::grabWidget as otherwise screenshot
+    // may become empty.
+    mMainWindow.render( &p, mMainWindow.rect(), mMainWindow.rect() );
+    metaData.insert("screenshot", QPixmap::fromImage(*img));
+    delete img;
+    LOGS_QDEBUG( "logs [UI] End taking screenshot" );
     
     QByteArray serializedActivity;
     QDataStream stream(&serializedActivity, QIODevice::WriteOnly | QIODevice::Append);
     
+    metaData.insert( 
+        logsActivityParamInternalViewId, mViewStack.at(0)->viewId() );
     metaData.insert( 
         logsActivityParamShowDialpad, mComponentsRepository->dialpad()->isOpen() );
     metaData.insert( 
@@ -400,6 +364,16 @@ bool LogsViewManager::loadActivity()
         }
     }
     
+    QList<QVariantHash> allParams = hbApp->activityManager()->activities();  
+    QVariantHash params = allParams.isEmpty() ? QVariantHash() : allParams.at(0);
+    LOGS_QDEBUG_2( "logs [UI] Activity params", params );
+            
+    if ( !matchingView ){
+        // Try if creating such view is possible
+        int viewId = params.value(logsActivityParamInternalViewId).toInt();
+        matchingView = createView(static_cast<LogsAppViewId>(viewId));
+    }
+    
     if ( matchingView ){
         // Should have only one param hash in the list, use first always
         QList<QVariantHash> allParams = hbApp->activityManager()->activities();  
@@ -426,8 +400,7 @@ LogsAppViewId LogsViewManager::checkMatchesViewTransition(
     LogsAppViewId viewId, const QString& dialpadText)
 {
     if ( !dialpadText.isEmpty() ){
-        Dialpad* dialpad = mComponentsRepository->dialpad();
-        dialpad->editor().setText(dialpadText);
+        mComponentsRepository->dialpad()->editor().setText(dialpadText);
     }
     
     if ( viewId == LogsMatchesViewId ){
@@ -466,4 +439,24 @@ void LogsViewManager::handleFirstActivation()
         view->clearActivity(*activityManager);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::handleFirstActivation()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+LogsBaseView* LogsViewManager::createView(LogsAppViewId viewId)
+{
+    LogsBaseView* newView = 0;
+    if ( viewId == LogsRecentViewId ){
+        newView = mComponentsRepository->recentCallsView();
+        mMainWindow.addView(newView);
+    } else if ( viewId == LogsMatchesViewId ) {
+        newView = mComponentsRepository->matchesView();
+        mMainWindow.addView(newView);
+    } else if ( viewId == LogsDetailsViewId ) {
+        newView = mComponentsRepository->detailsView();
+        mMainWindow.addView(newView);
+    }
+    return newView;
 }

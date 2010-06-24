@@ -82,7 +82,7 @@ int LogsServiceHandler::show(const QVariantMap& params)
     if (!dialpadText.isEmpty()) {
         emit activateView(dialpadText);
     } else {
-        emit activateView((LogsServices::LogsView)activatedView, showDialpad);
+        emit activateView((LogsServices::LogsView)activatedView, showDialpad, dialpadText);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::show()" )
     return 0;

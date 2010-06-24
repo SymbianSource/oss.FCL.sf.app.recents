@@ -36,10 +36,14 @@
         
 void ST_LogsCntFinder::initTestCase()
 {
+    //open symbian database
+    m_manager = new QContactManager("symbian");
 }
 
 void ST_LogsCntFinder::cleanupTestCase()
 {
+    delete m_manager;
+    m_manager = 0;
     
 }
 
@@ -50,8 +54,6 @@ void ST_LogsCntFinder::init()
     HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
     
     m_finder = 0;
-    //open symbian database
-    m_manager = new QContactManager("symbian");
     m_finder = new LogsCntFinder(*m_manager);
     QVERIFY(m_finder);
     
@@ -59,7 +61,7 @@ void ST_LogsCntFinder::init()
     QList<QContactLocalId> cnt_ids = m_manager->contactIds();
     qDebug() << "contacts now before deleting" << cnt_ids.count();
 
-    QVERIFY( m_manager->removeContacts(cnt_ids, 0 ) );
+    m_manager->removeContacts(cnt_ids, 0 );
     cnt_ids = m_manager->contactIds();
     QCOMPARE(cnt_ids.count(), 0);
 
@@ -71,8 +73,6 @@ void ST_LogsCntFinder::init()
 
 void ST_LogsCntFinder::cleanup()
 {
-    delete m_manager;
-    m_manager = 0;
     delete m_finder;
     m_finder = 0;
     HbInputLanguage eng( QLocale::English );
@@ -110,8 +110,7 @@ void ST_LogsCntFinder::createContacts()
     createOneContact( QString("Tisha"), QString("Iatzkovits"), QString("932472398") );
     createOneContact( QString("Wilda"), QString("Lazar"), QString("932472398") );
     createOneContact( QString("Una Vivi"), QString("Kantsak"), QString("932472398") );
-    
-   
+
     int contactsCount = m_manager->contactIds().count();
     QCOMPARE(contactsCount, 13);
 
@@ -128,20 +127,27 @@ Jari-Pekka        Baraniktestteste 78945617
 void ST_LogsCntFinder::createContactsForQueryZero()
 {
     createContacts();
-    createOneContact( QString("Dlice 00202"), QString("Qwerty"), QString("45789348") );
+    createOneContact( QString("Dlice 0202"), QString("Qwerty"), QString("45789348") );
     createOneContact( QString("#Paula 2003"), QString("Augustin Ci"), QString("0078945617") );
     createOneContact( QString("Paula 02010"), QString("Ezerty Adam"), QString("78945617") );
-    createOneContact( QString("Ced"), QString("Y,g"), QString("+78945617") );
+    createOneContact( QString("Ced"), QString(",Yg"), QString("+78945617") );
     createOneContact( QString("Jari-Pekka"), QString(" "), QString("78945617") );
 
     int contactsCount = m_manager->contactIds().count();
     QCOMPARE(contactsCount, 18);
 }
 
-
+void ST_LogsCntFinder::createContactsWithNonMappedChars()
+{
+    
+    createOneContact( QString("Hannu%"), QString(""), QString("932472398") );
+    createOneContact( QString("%Hannu"), QString(""), QString("932472398") );
+    
+}
 
 void ST_LogsCntFinder::createHistoryEvents()
-{
+{ 
+  //inserted inreverse order
   createLogEvent( QString("Stefann Albert"), QString("Fedrernn"), QString("932472398") );
   createLogEvent( QString("Jonn"), QString("Lennon"), QString("932472398") );
   createLogEvent( QString("Dim-Petter"), QString("Jones"), QString("932472398") );
@@ -307,7 +313,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryZeroStart()
 {
     createContactsForQueryZero();
     
-    m_finder->predictiveSearchQuery( QString("00202") );
+    m_finder->predictiveSearchQuery( QString("0202") );
     QCOMPARE( m_finder->resultsCount(), 2 );
 }
 
@@ -316,7 +322,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryZeroStartZeroEnd()
     createContactsForQueryZero();
         
     m_finder->predictiveSearchQuery( QString("02010") );
-    QCOMPARE( m_finder->resultsCount(), 1 );
+    QCOMPARE( m_finder->resultsCount(), 2 );
 }
 
 void ST_LogsCntFinder::testPredictiveSearchQueryZeroMiddle()
@@ -464,33 +470,67 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedNoResults()
     
 }
 
-// 6 -> 69 (no match) -> 692 (no match) -> 69 (no match) -> 6 (all cached)
-void ST_LogsCntFinder::testPredictiveSearchQueryCachedZeroCase()
+// 
+void ST_LogsCntFinder::testPredictiveSearchQueryPartialCachedZeroCase()
 {
     createContacts();
     
-    m_finder->predictiveSearchQuery( QString("2") );
+    m_finder->predictiveSearchQuery( QString("2") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
     CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
 
-    m_finder->predictiveSearchQuery( QString("20") );
+    m_finder->predictiveSearchQuery( QString("20") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
     CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
     
-    m_finder->predictiveSearchQuery( QString("209") );
+    m_finder->predictiveSearchQuery( QString("209") );//db
     QCOMPARE( m_finder->resultsCount(), 1 );
     CHECK_RESULTS( 1, "Levis", "Augustin" ); //Augustin Zi
     
-    m_finder->predictiveSearchQuery( QString("20") );
+    m_finder->predictiveSearchQuery( QString("20") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
     CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
     
-    m_finder->predictiveSearchQuery( QString("2") );
+    m_finder->predictiveSearchQuery( QString("2") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
     CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
        
 }
 
+// 
+void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedZerosCase()
+{
+    createContacts();
+    
+    m_finder->predictiveSearchQuery( QString("2") ); //db
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+
+    m_finder->predictiveSearchQuery( QString("20") );//cache
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    
+    m_finder->predictiveSearchQuery( QString("200") );//cache
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    
+    m_finder->predictiveSearchQuery( QString("2009") );//cache
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "Levis", "Augustin" ); //Augustin Zi
+    
+    m_finder->predictiveSearchQuery( QString("200") );//db
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    
+    m_finder->predictiveSearchQuery( QString("20") );//db
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    
+    m_finder->predictiveSearchQuery( QString("2") );//db
+    QCOMPARE( m_finder->resultsCount(), 3 );
+    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+       
+}
 
 //There is recent call in logs, no contacts DB
 void ST_LogsCntFinder::testPredictiveSearchQueryLogs()
@@ -512,7 +552,6 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogs()
     QCOMPARE( m_finder->resultsCount(), 1 );
     CHECK_RESULTS( 1, "Jonn", "Lennon" );
     
-    QCOMPARE( m_finder->resultsCount(), 0 );
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
@@ -536,7 +575,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsZeroCase()
     
     m_finder->predictiveSearchQuery( QString("503") );
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 1, "Dim-Petter", "Jones" );
     
     m_finder->predictiveSearchQuery( QString("50") );
     QCOMPARE( m_finder->resultsCount(), 2 );
@@ -636,11 +675,11 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsContactsPhoneNumberMatch()
 
     m_finder->predictiveSearchQuery( QString("9") );
     QCOMPARE( m_finder->resultsCount(), 6 ); //3 history + 3 contacts
-    CHECK_RESULTS( 5, "Stefann", "Fedrernn" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
 
     m_finder->predictiveSearchQuery( QString("93") );
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 1, "Stefann", "Fedrernn" );
+    CHECK_RESULTS( 1, "Dim-Petter", "Jones" );
     
 }
 
@@ -709,5 +748,26 @@ void ST_LogsCntFinder::testQueryOrder()
 
     QCOMPARE(m_finder->resultAt(7).firstName().at(0).text(), QString("Stefann"));
     QCOMPARE(m_finder->resultAt(7).lastName().at(0).text(), QString("Yadira"));
+}
+
+void ST_LogsCntFinder::testContactWithNonMappedChars()
+{
+    //Hannu%
+    //%Hannu
+    createContactsWithNonMappedChars();
+    
+    m_finder->predictiveSearchQuery( QString("4") );
+    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
+    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
+
+    m_finder->predictiveSearchQuery( QString("42") );//all cached
+    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
+    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
+
+    m_finder->predictiveSearchQuery( QString("") );//empty cache
+    m_finder->predictiveSearchQuery( QString("42") );
+    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
+    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
+    
 }
 
