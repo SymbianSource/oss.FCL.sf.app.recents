@@ -51,6 +51,7 @@ HEADERS += inc/ut_logspageindicatoritem.h
 HEADERS += inc/ut_logsservicehandler.h
 HEADERS += ../../inc/logsmainwindow.h
 HEADERS += ../../inc/logsviewmanager.h
+HEADERS += ../../inc/logscomponentrepository.h
 HEADERS += ../../inc/logsrecentcallsview.h
 HEADERS += ../../inc/logsbaseview.h
 HEADERS += ../../inc/logsdetailsview.h

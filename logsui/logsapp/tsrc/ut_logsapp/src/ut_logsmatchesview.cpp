@@ -90,6 +90,7 @@ void UT_LogsMatchesView::testActivated()
     QVERIFY( mMatchesView->mListView->layoutName() == logsListDefaultLayout );
     QVERIFY( mMatchesView->mLayoutSectionName == logsViewDefaultSection );
     QVERIFY( mMatchesView->mAddToContactsButton );
+    QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
     
     //activate once again, model recreated
     mMatchesView->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
@@ -101,6 +102,7 @@ void UT_LogsMatchesView::testActivated()
     QVERIFY( mMatchesView->mActionMap.count() == 4 );
     QVERIFY( mMatchesView->mListView->layoutName() == logsListLandscapeDialpadLayout );
     QVERIFY( mMatchesView->mLayoutSectionName == logsViewLandscapeDialpadSection );
+    QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
     
     //Pass model as input arg
     LogsDbConnector* dbConnector = 0;
@@ -119,6 +121,7 @@ void UT_LogsMatchesView::testActivated()
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel == model2 );
     QVERIFY( mMatchesView->mModel->mLastCall.isEmpty() );
+    QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
     
     // After passing model as input arg, do not pass model
     mMatchesView->activated( true,QVariant() );
@@ -366,6 +369,12 @@ void UT_LogsMatchesView::testUpdateEmptyListWidgetsVisibility()
     
     QVERIFY( mMatchesView->mEmptyListLabel->isVisible() );
     QVERIFY( mMatchesView->mAddToContactsButton->isVisible() );
+    
+    mMatchesView->mAddToContactsButtonDisabled = true;
+    mMatchesView->updateEmptyListWidgetsVisibility();
+    QVERIFY( mMatchesView->mEmptyListLabel->isVisible() );
+    QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
+    
     delete mMatchesView->mEmptyListLabel;
     mMatchesView->mEmptyListLabel = 0;
     delete mMatchesView->mAddToContactsButton;

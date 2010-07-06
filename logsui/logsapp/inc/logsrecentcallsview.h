@@ -19,6 +19,7 @@
 
 #include "logsfilter.h"
 #include "logsbaseview.h"
+#include <hbscrollarea.h>
 
 class HbListView;
 class HbLabel;
@@ -79,8 +80,8 @@ private slots:
     void rightFlick();
     void dissappearByFadingComplete();
     void dissappearByMovingComplete();
+    void appearByMovingComplete();
     bool markMissedCallsSeen();
-    void scrollToTopItem();
     
 private: // from LogsBaseView
     
@@ -124,10 +125,13 @@ private:
     bool mMoveLeftInList;
     LogsEffectHandler* mEffectHandler;
     int mListViewX;
+    int mEmptyListLabelX;
     LogsMatchesModel* mMatchesModel; 
     bool mMarkingMissedAsSeen;
     LogsPageIndicator* mPageIndicator;
     bool mFirstActivation;
+    
+    HbScrollArea::ScrollBarPolicy mListScrollBarPolicy;
     
 };
 

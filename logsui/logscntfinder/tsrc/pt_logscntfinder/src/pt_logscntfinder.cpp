@@ -145,17 +145,33 @@ void PT_LogsCntFinder::init()
     //open symbian database
     m_manager = new QContactManager("symbian");
     
+    /*
     //qDebug() << "PT_LogsCntFinder::init remove old contacts";
     // Remove all contacts from the database
     
+    QList<QString> firstnamelist;
+    QList<QString> Lastnamelist;
+    firstnamelist<<"Micheal"<<"Evans"<<"Kacris"<<"Xiao";
+    Lastnamelist<<"Ribecca"<<"Tina"<<"Bob"<<"George"<<"Anna";
+
+    for( int z = 0;z<30;z++) {
+    //for( int z = 0;z<10;z++) {
+      for(int i =0; i < firstnamelist.count(); i++) {
+        for(int k =0; k < Lastnamelist.count(); k++) {
+          //emailaddress = firstnamelist[i].Lastnamelist[k]
+          createContact_one_Contact(firstnamelist[i], Lastnamelist[k], QString("03432"));
+        }
+      }
+    }
+    */
+    
     QList<QContactLocalId> cnt_ids = m_manager->contactIds();
     qDebug() << "contacts now in db" << cnt_ids.count();
-    if ( cnt_ids.count() == 600 ) {
+    if ( cnt_ids.count() < 600 ) {
          QString f("Jack");
          QString l("Whatever");
          createContact_one_Contact( f,l, QString("03432"));
     }
-
     cnt_ids = m_manager->contactIds();
     qDebug() << "contacts now " << cnt_ids.count();
     
@@ -175,6 +191,7 @@ void PT_LogsCntFinder::cleanup()
 
 
 
+//void PT_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber, QString& emailaddress)
 void PT_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber)
 {
     //Currenlty we can only fetch firstname,lastname,companyname and sip/email/phone from the databse
@@ -192,6 +209,11 @@ void PT_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& La
     number.setSubTypes("Mobile");
     number.setNumber(phnumber);
     phonecontact.saveDetail(&number);
+    
+    QContactEmailAddress email;
+    QString emailaddress = firstname + "." + Lastname + "@ovi.com";
+    email.setEmailAddress(emailaddress);
+    phonecontact.saveDetail(&email);
     
     m_manager->saveContact(&phonecontact);
    
@@ -298,9 +320,12 @@ void PT_LogsCntFinder::statistics()
 
     QList<PtTest> tests;
     tests.append( PtTest("5") );
+    tests.append( PtTest("05") );    
     tests.append( PtTest("52") );
     tests.append( PtTest("522") );
     tests.append( PtTest("5220") );
+    tests.append( PtTest("05220") );
+    tests.append( PtTest("052207") );
     tests.append( PtTest("522000000000007") );
     tests.append( PtTest("205") );
     tests.append( PtTest("34096") );

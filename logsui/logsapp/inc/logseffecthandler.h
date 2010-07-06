@@ -41,13 +41,15 @@ public:
 
     void startDissappearAppearByFadingEffect(QObject& effectTarget);
     void startDissappearAppearByMovingEffect(
-        QObject& effectTarget, QObject& secondaryEffectTarget, bool dissappearToLeft, int origX);
+        QObject& effectTarget, QObject& secondaryEffectTarget, bool dissappearToLeft, 
+        int origX, int secondaryOrigX);
     void startMoveNotPossibleEffect(QObject& effectTarget, bool moveLeft, int origX);
     
 signals:
 
     void dissappearByMovingComplete();
     void dissappearByFadingComplete();
+    void appearByMovingComplete();
 
 private slots:
 

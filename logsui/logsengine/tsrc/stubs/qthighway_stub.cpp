@@ -106,3 +106,9 @@ bool XQRequestInfo::isBackground() const
 {
     return qtHighwayStubRequestBg;
 }
+
+
+void XQRequestInfo::setForeground(bool on)
+{
+    Q_UNUSED(on)
+}

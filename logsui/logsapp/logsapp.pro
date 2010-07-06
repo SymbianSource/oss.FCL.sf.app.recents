@@ -43,6 +43,7 @@ HEADERS += inc/logsservicehandlerold.h
 HEADERS += inc/logseffecthandler.h
 HEADERS += inc/logspageindicator.h
 HEADERS += inc/logspageindicatoritem.h
+HEADERS += inc/logscomponentrepository.h
 
 SOURCES += src/main.cpp 
 SOURCES += src/logsmainwindow.cpp

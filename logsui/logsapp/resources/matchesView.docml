@@ -46,6 +46,7 @@
                 <icon iconName="qtg_mono_add_to_contact" name="icon"/>
                 <real name="z" value="2"/>
                 <sizehint height="9un" type="PREFERRED" width="22un"/>
+                <bool name="visible" value="FALSE"/>
             </widget>
             <widget name="container" type="HbWidget">
                 <widget name="logs_groupbox_matched_calls" type="HbGroupBox">

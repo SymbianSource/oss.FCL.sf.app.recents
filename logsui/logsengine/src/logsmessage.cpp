@@ -146,6 +146,9 @@ bool LogsMessage::doSendMessageToNumber(
     arguments.append(QVariant(contactId));
     arguments.append(QVariant(displayName));
     request.setArguments(arguments);
+    XQRequestInfo info;
+    info.setForeground(true);
+    request.setInfo(info);
     QVariant retValue;
     bool ret = request.send(retValue);
     LOGS_QDEBUG_2( "logs [ENG] <- LogsMessage::doSendMessageToNumber()", ret )

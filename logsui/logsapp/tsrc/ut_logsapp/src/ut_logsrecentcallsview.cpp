@@ -251,11 +251,15 @@ void UT_LogsRecentCallsView::testChangeFilter()
     HbAction*  action = new HbAction();
     action->setObjectName(logsShowFilterMissedMenuActionId);
     mRecentCallsView->changeFilter(action);
+    // Scrollbar is disbaled while changing the list and is restored when appearByMoving slot is called
+    QVERIFY( mRecentCallsView->mListView->verticalScrollBarPolicy() == HbScrollArea::ScrollBarAlwaysOff );
     
     // Because of effects, filter is not changed immediately, simulate effect completion
     QVERIFY( mRecentCallsView->mAppearingView == LogsServices::ViewMissed );
     mRecentCallsView->dissappearByMovingComplete();
-    QVERIFY( mRecentCallsView->mFilter->filterType() == LogsFilter::Missed );        
+    QVERIFY( mRecentCallsView->mFilter->filterType() == LogsFilter::Missed );   
+    mRecentCallsView->appearByMovingComplete();
+    QVERIFY( mRecentCallsView->mListView->verticalScrollBarPolicy() != HbScrollArea::ScrollBarAlwaysOff );
     
     delete action;
     delete mRecentCallsView->mListView;

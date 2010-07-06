@@ -69,6 +69,7 @@ private: //data
     XQServiceRequest* mService;
 private:
     friend class UT_LogsMessage;
+    friend class UT_LogsMatchesModel;
     
 };
                   

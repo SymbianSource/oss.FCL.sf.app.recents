@@ -26,9 +26,6 @@
 //
 LogsMainWindow::LogsMainWindow() : HbMainWindow(), mForeground(false)
 {
-    if ( viewport() ){
-        viewport()->grabGesture(Qt::SwipeGesture);
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -37,9 +34,6 @@ LogsMainWindow::LogsMainWindow() : HbMainWindow(), mForeground(false)
 //
 LogsMainWindow::~LogsMainWindow()
 {
-    if ( viewport() ){
-        viewport()->ungrabGesture(Qt::SwipeGesture);
-    }
 }
 
 // -----------------------------------------------------------------------------

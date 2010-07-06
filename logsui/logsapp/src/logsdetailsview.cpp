@@ -97,6 +97,8 @@ void LogsDetailsView::activated(bool showDialer, QVariant args)
     
     updateMenu();
     
+    scrollToTopItem(mListView);
+    
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::activated()" );
 }
 
@@ -390,7 +392,7 @@ void LogsDetailsView::updateWidgetsSizeAndLayout()
     if ( mListView ) {
         updateMenu();
         updateListLayoutName(*mListView, true);
-        updateListSize();
+        updateListSize(*mListView);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::updateWidgetsSizeAndLayout()" );
 }

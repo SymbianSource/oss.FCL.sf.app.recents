@@ -69,7 +69,7 @@ int LogsServiceHandlerOld::start(int activatedView, bool showDialpad)
     LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
     mMainWindow.bringAppToForeground();
     
-    emit activateView((LogsServices::LogsView)activatedView, showDialpad);
+    emit activateView((LogsServices::LogsView)activatedView, showDialpad, QString());
 
     LOGS_QDEBUG( "logs [UI] <- LogsServiceHandlerOld::start()" )
     return 0;

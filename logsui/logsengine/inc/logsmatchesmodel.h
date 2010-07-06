@@ -75,6 +75,7 @@ private slots:
     void eventsUpdated(const QModelIndex& first, const QModelIndex& last);
     void eventsAdded(const QModelIndex& parent, int first, int last);
     void eventsRemoved(const QModelIndex& parent, int first, int last);
+    void eventsResetted();
 	
     void doSearchQuery();
     void doModelReset();
@@ -90,6 +91,7 @@ private:
     void getLogsMatches( const QString& pattern, bool async = false, bool force = false );  
     void updateSearchEntry(LogsCntEntry& entry, LogsEvent& event);
     QString stripPhoneNumber(const QString& phoneNumber) const;
+    void addEventForSearching(int index, LogsEvent& event);
     
 private: //data 
     
@@ -126,6 +128,7 @@ public:
     unsigned int contact() const;
     QString number() const;
     QString contactName() const;
+    QString contactNameSimple() const;
     bool isNull() const;
     bool isEventMatch() const;
     QStringList texts();
@@ -137,8 +140,10 @@ private:
     
     QString getFormattedCallerId(const LogsCntEntry& entry) const;
     void getFormattedContactInfo( 
-            const LogsCntEntry& entry, QString& contactName, QString& contactNumber ) const;
-    void getFormattedName(QString& formattedName, 
+            const LogsCntEntry& entry, QString& contactName, 
+            QString& contactNameSimple, QString& contactNumber ) const;
+    void getFormattedName(QString& formattedName, const QList<LogsCntText>& list) const;
+    void getFormattedName(QString& formattedName, QString& formattedNameSimple,
             const QList<LogsCntText>& list) const;
     
 private:
@@ -146,6 +151,7 @@ private:
     LogsAbstractModel& mParentModel;
     unsigned int mContactId;
     QString mContactName;
+    QString mContactNameSimple;
     QString mContactNumber;
     QString mAvatarPath;
     QString mFormattedCallerId;

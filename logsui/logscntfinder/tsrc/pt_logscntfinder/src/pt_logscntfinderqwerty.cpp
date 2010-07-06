@@ -80,7 +80,8 @@ void PT_LogsCntFinderQwerty::statistics()
     tests.append( PtTest("a") );
     tests.append( PtTest("5") );
     tests.append( PtTest("Paul") );
-    tests.append( PtTest("Paul Mes") );
+    tests.append( PtTest("Paul sw") );
+    tests.append( PtTest("P S") );
    
     t.start();
     
