@@ -78,7 +78,7 @@ private slots: //test methods
     void testGetListItemTextWidth();
     void testDialpadClosed();
     void testClearList();
-    void testClearListOkAnswer();
+    void testClearListAnswer();
     void testIsExitAllowed();
     void testContactSearch();
     void testDialpadOpened();

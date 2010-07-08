@@ -25,6 +25,7 @@ bool stubAsyncCallPossible = true;
 int stubViewCount = 1;
 int stubLeaveWithError = KErrNone;
 int stubViewFlagsValue = 0;
+QString stubLastCalledFunc;
 
 // ----------------------------------------------------------------------------
 // LogClientStubsHelper
@@ -35,6 +36,7 @@ void LogClientStubsHelper::reset()
     stubAsyncCallPossible = true;
     stubLeaveWithError = KErrNone;
     stubViewFlagsValue = 0;
+    stubLastCalledFunc.clear();
 }
 
 void LogClientStubsHelper::createEvents(int numEvents)
@@ -60,6 +62,11 @@ void LogClientStubsHelper::setLeaveWithError(int error)
 int LogClientStubsHelper::stubViewFlags()
 {
     return stubViewFlagsValue;
+}
+
+QString LogClientStubsHelper::lastCalledFunc()
+{
+    return stubLastCalledFunc;
 }
 
 // ----------------------------------------------------------------------------
@@ -190,12 +197,14 @@ void CLogClient::DoCancel()
 
 void CLogClient::ClearLog(const TTime& /*aDate*/, TRequestStatus& aStatus)
 {
+    stubLastCalledFunc = "ClearLog";
     aStatus = KRequestPending;
     User::RequestComplete( &aStatus, KErrNone );
 }
 
 void CLogClient::ClearLog(TInt /*aRecentList*/, TRequestStatus& aStatus)
 {
+    stubLastCalledFunc = "ClearLogRecentList";
     aStatus = KRequestPending;
     User::RequestComplete( &aStatus, KErrNone );
 }

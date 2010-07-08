@@ -21,6 +21,7 @@
 #include "logsdbconnector.h"
 #include "logsdbconnector_stub_helper.h"
 #include "qtcontacts_stubs_helper.h"
+#include "qthighway_stub_helper.h"
 
 #include <xqservicerequest.h>
 #include <QtTest/QtTest>
@@ -106,6 +107,7 @@ void UT_LogsContact::testOpen()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
 
     //contact is in phonebook, open is ok
+    QtHighwayStubHelper::reset();
     mLogsEvent->logsEventData()->setContactLocalId(2);
     QtContactsStubsHelper::setContactId(2);
     delete mLogsContact;
@@ -116,15 +118,17 @@ void UT_LogsContact::testOpen()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactOpen );
     QVERIFY( mLogsContact->mService->service() == logsFetchService );
     QVERIFY( mLogsContact->mService->message() == "open(int)" );
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     
     // Same but without using logsevent at construction
+    QtHighwayStubHelper::reset();
     LogsContact contactWithoutEvent("2345", *mDbConnector, 2);
     QVERIFY( contactWithoutEvent.open() );
     QVERIFY( contactWithoutEvent.mService );
     QVERIFY( contactWithoutEvent.mCurrentRequest == LogsContact::TypeLogsContactOpen );
     QVERIFY( contactWithoutEvent.mService->service() == logsFetchService );
     QVERIFY( contactWithoutEvent.mService->message() == "open(int)" );
-    
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
 }
 
 void UT_LogsContact::testAddNew()
@@ -137,6 +141,7 @@ void UT_LogsContact::testAddNew()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
 
     //called ID present, contact not in phonebook => save is ok
+    QtHighwayStubHelper::reset();
     mLogsEvent->setNumber(QString::number(12345));
     mLogsEvent->setEventType(LogsEvent::TypeVoiceCall);
     delete mLogsContact;
@@ -149,8 +154,10 @@ void UT_LogsContact::testAddNew()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mService->service() == logsFetchService );
     QVERIFY( mLogsContact->mService->message() == "editCreateNew(QString,QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
         
     //caller ID present, contact is in phonebook => save is ok
+    QtHighwayStubHelper::reset();
     mLogsEvent->setEventType(LogsEvent::TypeVoIPCall);
     mLogsEvent->setNumber("");
     mLogsEvent->logsEventData()->mRemoteUrl = "someurl@blah";
@@ -165,11 +172,13 @@ void UT_LogsContact::testAddNew()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mService->service() == logsFetchService );
     QVERIFY( mLogsContact->mService->message() == "editCreateNew(QString,QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
 }
 
 void UT_LogsContact::testUpdateExisting()
 {
     //caller ID present, contact is in phonebook => update is ok
+    QtHighwayStubHelper::reset();
     mLogsEvent->setNumber(QString::number(12345));
     mLogsEvent->setEventType(LogsEvent::TypeVoiceCall);
     mLogsEvent->logsEventData()->setContactLocalId(2);
@@ -183,6 +192,7 @@ void UT_LogsContact::testUpdateExisting()
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mService->service() == logsFetchService );
     QVERIFY( mLogsContact->mService->message() == "editUpdateExisting(QString,QString)" );
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
 }
 
 void UT_LogsContact::testIsContactInPhonebook()
@@ -274,4 +284,12 @@ void UT_LogsContact::testHandleRequestCompeted()
     QVERIFY( spyOpened.count() == 0 );
     QVERIFY( spySaved.count() == 1 );
     QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction().isEmpty() );    
+}
+
+void UT_LogsContact::testCancelServiceRequest()
+{
+    QVERIFY( !mLogsContact->mService );
+    mLogsContact->mService = new XQServiceRequest("service", "message", false);
+    mLogsContact->cancelServiceRequest();
+    QVERIFY( !mLogsContact->mService );
 }

@@ -58,7 +58,7 @@ private slots: //test methods
     void testInitiateVoiceCall();
     void testInitiateVideoCall();
     void testUpdateMenu();
-    void testDeleteEventOkAnswer();
+    void testDeleteEventAnswer();
     void testChangeFilter();
     void testContactActionCompleted();
     void testModel();

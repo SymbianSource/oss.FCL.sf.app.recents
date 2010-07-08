@@ -21,16 +21,20 @@
 #include <QList>
 #include <e32base.h>
 #include "logsengdefs.h"
+#include "logsstatebasecontext.h"
 #include "logsreaderstatecontext.h"
 #include "logsreaderobserver.h"
 
 class CLogClient;
 class LogsEvent;
+class CLogView;
 class CLogViewRecent;
 class CLogViewEvent;
 class LogsReaderStateBase;
+class CLogViewDuplicate;
 
 class UT_LogsReaderStates : public QObject, 
+                            public LogsStateBaseContext, 
                             public LogsReaderStateContext, 
                             public LogsReaderObserver              
 {
@@ -70,23 +74,25 @@ private slots: //test methods
     void testStateReadingDuplicatesDone();
     void testStateModifyingDone();
 
-protected: // From LogsReaderStateContext
+protected: // From LogsStateBaseContext
     
-      void setCurrentState(const LogsReaderStateBase& state);
+      void setCurrentState(const LogsStateBase& state);
       CLogView& logView();
       CLogViewDuplicate& duplicatesView();
-      QList<LogsEvent*>& events();
       int& index();
-      LogsEventStrings& strings();
       TRequestStatus& reqStatus();
-      LogsReaderObserver& observer();
-      QHash<QString, ContactCacheEntry>& contactCache();
       int currentEventId();
       CLogClient& logClient();
       bool isRecentView();
+      
+protected: // From LogsReaderStateContext
+      
+      QList<LogsEvent*>& events();
+      LogsEventStrings& strings();
+      LogsReaderObserver& observer();
+      QHash<QString, ContactCacheEntry>& contactCache();
       QList<LogsEvent*>& duplicatedEvents();
       
-
 protected: // From LogsReaderObserver
     
       void readCompleted(int readCount);
@@ -104,7 +110,7 @@ private:
 private:
 
       CLogClient* mLogClient;
-      const LogsReaderStateBase* mCurrentState;
+      const LogsStateBase* mCurrentState;
       CLogViewRecent* mLogView;
       CLogViewEvent* mLogViewEvent;
       CLogViewDuplicate* mDuplicatesView;

@@ -183,6 +183,7 @@ void UT_LogsPredictiveLatin12KeyTranslator::testTranslateChar()
     QCOMPARE( mTranslator->translateChar( QChar('ä'), ok ), QChar('2') );
     QCOMPARE( mTranslator->translateChar( QChar('Ä'), ok ), QChar('2') );
     QCOMPARE( mTranslator->translateChar( QChar('-'), ok ), QChar('1') );
+    QCOMPARE( mTranslator->translateChar( QChar('%'), ok ), QChar('1') );
     // Romanian unicode character "sh"
     QCOMPARE( mTranslator->translateChar( QChar(0x0219), ok ), QChar('7') );
     // Chinese unicode character

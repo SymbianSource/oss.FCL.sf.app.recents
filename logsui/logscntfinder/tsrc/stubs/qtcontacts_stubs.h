@@ -21,6 +21,17 @@
 #include <QObject>
 #include <QStringList>
 
+const QString cntDetailPhoneNumber = "555789987";
+const QString cntPhoneNumberWithActionCall = "98765";
+
+class ContactStubHelper
+{
+public:
+    static void setPreferredNumber(QString number);
+    static QString preferredNumber();
+};
+
+
 class ContactQueryResults : public QObject
 {
     Q_OBJECT

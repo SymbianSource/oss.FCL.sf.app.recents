@@ -195,7 +195,8 @@ QVariant LogsMatchesModel::createContact(const LogsModelItemContainer& item) con
         delete logsContact;
         logsContact = 0;
     } else {
-        connect( logsContact, SIGNAL(saveCompleted(bool)), this, SLOT(forceSearchQuery()) );
+        connect(logsContact, SIGNAL(saveCompleted(bool)), this, SLOT(contactUpdated(bool)));
+        connect(logsContact, SIGNAL(openCompleted(bool)), this, SLOT(contactUpdated(bool)));
     }
     QVariant var = qVariantFromValue(logsContact);
     LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::createContact()" )
@@ -340,7 +341,8 @@ void LogsMatchesModel::initPredictiveSearch()
     int searchStatus = mDbConnector->predictiveSearchStatus();
     //searchStatus equal to 0 means that search should be permanently disabled
     if (searchStatus != 0) {
-        mLogsCntFinder = new LogsCntFinder(LogsCommonData::getInstance().contactManager());
+        mLogsCntFinder = new LogsCntFinder(LogsCommonData::getInstance().contactManager(),
+                true);
         connect(mLogsCntFinder, SIGNAL(queryReady()),this, SLOT(queryReady()));
         
         connect( &mParentModel, SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)), 
@@ -500,6 +502,21 @@ void LogsMatchesModel::forceSearchQuery()
 //
 // -----------------------------------------------------------------------------
 //
+void LogsMatchesModel::contactUpdated(bool /*updated*/)
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::contactUpdated()" )
+    // At the moment phonebook doesnt notify properly when contact was updated
+    // Let's reset all results (to clear cached contacts) for now, in the
+    // future do it only if the contact was changed for real
+    mLogsCntFinder->resetResults();
+    forceSearchQuery();
+    LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::contactUpdated()" )
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsMatchesModel::updateSearchEntry(LogsCntEntry& entry, LogsEvent& event)
 {
     if ( event.remoteParty().length() > 0 ) {
@@ -614,16 +631,13 @@ unsigned int LogsMatchesModelItemContainer::contact() const
 //
 QString LogsMatchesModelItemContainer::number() const
 {
-    QString num;
+    QString number;
     if ( mEvent ){
-        num = mEvent->getNumberForCalling();
+        number = mEvent->getNumberForCalling();
     } else if ( mContactId > 0 ) {
-        QContact contact = LogsCommonData::getInstance().contactManager().contact( mContactId );
-        QContactPhoneNumber contactNum = 
-            contact.detail( QContactPhoneNumber::DefinitionName );
-        num = contactNum.value(QContactPhoneNumber::FieldNumber);   
+        number = mContactNumber;
     }
-    return num;
+    return number;
 }
 
 // -----------------------------------------------------------------------------

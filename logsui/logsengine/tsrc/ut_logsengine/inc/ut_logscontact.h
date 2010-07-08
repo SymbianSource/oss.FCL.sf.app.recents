@@ -55,6 +55,7 @@ private slots: //test methods
 	void testIsContactInPhonebook();
     void testIsContactRequestAllowed();
 	void testHandleRequestCompeted();
+	void testCancelServiceRequest();
     
 private:
  

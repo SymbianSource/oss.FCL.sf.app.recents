@@ -92,8 +92,8 @@ void UT_LogsReaderStates::reset()
 
 void UT_LogsReaderStates::testStateBase()
 {
-    LogsReaderStateBase state(*this);
-    LogsReaderStateBase state2(*this);
+    LogsReaderStateBase state(*this, *this);
+    LogsReaderStateBase state2(*this, *this);
     QVERIFY( state.mNextState == 0 );
     QVERIFY( state2.mNextState == 0 );
     
@@ -233,7 +233,7 @@ void UT_LogsReaderStates::testStateBase()
 
 void UT_LogsReaderStates::testStateInitReading()
 {
-    LogsReaderStateInitReading init(*this);
+    LogsReaderStateInitReading init(*this, *this);
     CLogEvent* logEvent = CLogEvent::NewL();
     CleanupStack::PushL(logEvent);
     logEvent->SetNumber( _L("1234") );
@@ -249,7 +249,7 @@ void UT_LogsReaderStates::testStateInitReading()
 
 void UT_LogsReaderStates::testStateFiltering()
 {
-    LogsReaderStateFiltering state(*this);
+    LogsReaderStateFiltering state(*this, *this);
     QVERIFY( !state.mFilterList );
     
     // State can be used only with recent view
@@ -272,14 +272,14 @@ void UT_LogsReaderStates::testStateFiltering()
     QVERIFY( !state.continueL() );
     
     // Continues as there's next state
-    LogsReaderStateFiltering state2(*this);
+    LogsReaderStateFiltering state2(*this, *this);
     state.setNextState(state2);
     QVERIFY( state.continueL() );
 }
 
 void UT_LogsReaderStates::testStateFilteringAll()
 {
-    LogsReaderStateFilteringAll state(*this);
+    LogsReaderStateFilteringAll state(*this, *this);
     QVERIFY( !state.mFilterList );
     
     // State can be used only with full event view
@@ -301,7 +301,7 @@ void UT_LogsReaderStates::testStateFilteringAll()
 
 void UT_LogsReaderStates::testStateReading()
 {
-    LogsReaderStateReading state(*this);
+    LogsReaderStateReading state(*this, *this);
     
     // Reading starts ok
     QVERIFY( state.enterL() );
@@ -376,7 +376,7 @@ void UT_LogsReaderStates::testStateReading2()
     LogsCommonData::getInstance().configureReadSize(3);
     LogClientStubsHelper::setViewCount(5);
     
-    LogsReaderStateReading state(*this);
+    LogsReaderStateReading state(*this, *this);
     
     // Reading starts ok
     QVERIFY( state.enterL() );
@@ -406,7 +406,7 @@ void UT_LogsReaderStates::testStateReading2()
 
 void UT_LogsReaderStates::testStateFillDetails()
 {
-    LogsReaderStateFillDetails state(*this);
+    LogsReaderStateFillDetails state(*this, *this);
     int contactId = 2;
     
     // No events, nothing to check
@@ -461,7 +461,7 @@ void UT_LogsReaderStates::testStateFillDetails()
 
 void UT_LogsReaderStates::testStateDone()
 {
-    LogsReaderStateDone state(*this);
+    LogsReaderStateDone state(*this, *this);
     mIndex = 3;
     LogClientStubsHelper::setViewCount(3);
     QVERIFY( !state.enterL() );
@@ -479,7 +479,7 @@ void UT_LogsReaderStates::testStateDone()
 void UT_LogsReaderStates::testStateSearchingEvent()
 {
     // Searching starts ok
-    LogsReaderStateSearchingEvent state(*this);
+    LogsStateSearchingEvent state(*this);
     mCurrentEventId = 10;
     QVERIFY( state.enterL() );
     
@@ -508,7 +508,7 @@ void UT_LogsReaderStates::testStateSearchingEvent()
 void UT_LogsReaderStates::testStateFindingDuplicates()
 {
       // Finding starts ok
-    LogsReaderStateFindingDuplicates state(*this);
+    LogsReaderStateFindingDuplicates state(*this, *this);
     QVERIFY( state.enterL() );
     
     // Duplicates cannot be searched for some reason
@@ -527,7 +527,7 @@ void UT_LogsReaderStates::testStateFindingDuplicates()
 void UT_LogsReaderStates::testStateMarkingDuplicates()
 {
     // Marking does not start as no matching event in view
-    LogsReaderStateMarkingDuplicates state(*this);
+    LogsReaderStateMarkingDuplicates state(*this, *this);
     mCurrentEventId = 5;
     const_cast<CLogEvent&>( mLogView->Event() ).SetId( 100 );
     QVERIFY( !state.enterL() );
@@ -563,7 +563,7 @@ void UT_LogsReaderStates::testStateReadingDuplicates()
 {
     // Duplicates view empty, cannot start
     LogClientStubsHelper::setViewCount(0);
-    LogsReaderStateReadingDuplicates state(*this);
+    LogsReaderStateReadingDuplicates state(*this, *this);
     
     QVERIFY( !state.enterL() );
     
@@ -588,7 +588,7 @@ void UT_LogsReaderStates::testStateReadingDuplicates()
 
 void UT_LogsReaderStates::testStateReadingDuplicatesDone()
 {
-    LogsReaderStateReadingDuplicatesDone state(*this);
+    LogsReaderStateReadingDuplicatesDone state(*this, *this);
     
     // No duplicates was found
     QVERIFY( !state.enterL() );
@@ -606,7 +606,7 @@ void UT_LogsReaderStates::testStateReadingDuplicatesDone()
 
 void UT_LogsReaderStates::testStateModifyingDone()
 {
-    LogsReaderStateModifyingDone state(*this);
+    LogsReaderStateModifyingDone state(*this, *this);
     
     // Modified event not found for some reason
     LogsEvent* logsEvent = new LogsEvent;
@@ -627,18 +627,14 @@ void UT_LogsReaderStates::testStateModifyingDone()
 }
 
 // ----------------------------------------------------------------------------
-// From LogsReaderStateContext
+// From LogsStateBaseContext
 // ----------------------------------------------------------------------------
 //
-void UT_LogsReaderStates::setCurrentState(const LogsReaderStateBase& state)
+void UT_LogsReaderStates::setCurrentState(const LogsStateBase& state)
 {
     mCurrentState = &state;
 }
 
-// ----------------------------------------------------------------------------
-// From LogsReaderStateContext
-// ----------------------------------------------------------------------------
-//
 CLogView& UT_LogsReaderStates::logView()
 {
     if ( mIsRecentView ){
@@ -652,19 +648,9 @@ CLogViewDuplicate& UT_LogsReaderStates::duplicatesView()
     return *mDuplicatesView;
 }
 
-QList<LogsEvent*>& UT_LogsReaderStates::events()
-{
-    return mEvents;
-}
-
 int& UT_LogsReaderStates::index()
 {
     return mIndex;
-}
-
-LogsEventStrings& UT_LogsReaderStates::strings()
-{
-    return mStrings;
 }
 
 TRequestStatus& UT_LogsReaderStates::reqStatus()
@@ -672,15 +658,6 @@ TRequestStatus& UT_LogsReaderStates::reqStatus()
     return mReqStatus;
 }
 
-LogsReaderObserver& UT_LogsReaderStates::observer()
-{
-    return *this;
-}
-
-QHash<QString, ContactCacheEntry>& UT_LogsReaderStates::contactCache()
-{
-    return mContactCache;
-}
 
 int UT_LogsReaderStates::currentEventId()
 {
@@ -695,6 +672,31 @@ CLogClient& UT_LogsReaderStates::logClient()
 bool UT_LogsReaderStates::isRecentView()
 {
     return mIsRecentView;
+}
+
+// ----------------------------------------------------------------------------
+// From LogsReaderStateContext
+// ----------------------------------------------------------------------------
+//
+
+LogsEventStrings& UT_LogsReaderStates::strings()
+{
+    return mStrings;
+}
+
+LogsReaderObserver& UT_LogsReaderStates::observer()
+{
+    return *this;
+}
+
+QHash<QString, ContactCacheEntry>& UT_LogsReaderStates::contactCache()
+{
+    return mContactCache;
+}
+
+QList<LogsEvent*>& UT_LogsReaderStates::events()
+{
+    return mEvents;
 }
 
 QList<LogsEvent*>& UT_LogsReaderStates::duplicatedEvents()

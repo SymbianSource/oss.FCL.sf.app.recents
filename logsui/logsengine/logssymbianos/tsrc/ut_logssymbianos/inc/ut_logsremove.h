@@ -60,8 +60,6 @@ private slots: //test methods
     void testConstructor();
     void testclearList();
     void testClearEvents();
-    void testDoCancel();
-    void testRunL();
     void testRunError();
     void testInit();
         

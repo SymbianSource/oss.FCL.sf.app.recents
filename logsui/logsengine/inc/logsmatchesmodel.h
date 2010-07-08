@@ -80,6 +80,7 @@ private slots:
     void doSearchQuery();
     void doModelReset();
     void forceSearchQuery();
+    void contactUpdated(bool updated);
     
 private:
 

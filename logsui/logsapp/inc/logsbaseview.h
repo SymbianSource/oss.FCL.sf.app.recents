@@ -45,6 +45,7 @@ class LogsBaseView : public HbView
 {
     Q_OBJECT
     friend class UT_LogsBaseView;
+    friend class UT_LogsViewManager;
     
 public:
     
@@ -68,7 +69,7 @@ public:
     virtual QVariant loadActivity(
         const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData);
     virtual bool matchWithActivityId(const QString& activityId);
-    
+    virtual void cancelServiceRequest();
 
 public slots:
     
@@ -80,7 +81,7 @@ signals:
     void exitAllowed();
 
 protected slots:
-
+    
     virtual void handleBackSoftkey();
     virtual void dialpadOpened();
     virtual void dialpadClosed();
@@ -108,7 +109,7 @@ protected slots:
     void showCallDetails();
     
     void deleteEvent();
-    virtual void deleteEventOkAnswer();
+    virtual void deleteEventAnswer(int action);
     
     void videoCallToCurrentNum();
     void sendMessageToCurrentNum();
@@ -179,9 +180,6 @@ protected:
     
     void addViewSwitchingEffects();
     void toggleActionAvailability( HbAction* action, bool available );
-
-    void askConfirmation( QString heading , QString text, QObject* receiver,
-            const char* okSlot = 0, const char* cancelSlot = 0 );
 
     void updateContactSearchAction();
     bool isContactSearchEnabled() const;

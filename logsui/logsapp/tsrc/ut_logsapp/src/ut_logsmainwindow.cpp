@@ -79,10 +79,10 @@ void UT_LogsMainWindow::testBringAppToForeground()
     QVERIFY( HbStubHelper::isWidgetRaised() ); 
     QVERIFY( mMainWindow->isForeground() );
     
-    // Subsequent call does not raise more
+    // Subsequent call raise tries to raise regardless of current state
     HbStubHelper::reset();
     mMainWindow->bringAppToForeground();
-    QVERIFY( !HbStubHelper::isWidgetRaised() ); 
+    QVERIFY( HbStubHelper::isWidgetRaised() ); 
     QVERIFY( mMainWindow->isForeground() );
 }
  

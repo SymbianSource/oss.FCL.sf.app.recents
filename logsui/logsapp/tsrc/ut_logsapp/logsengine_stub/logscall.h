@@ -75,6 +75,7 @@ public: // test data & methods
     
     static bool isCallToNumberCalled();
     static QString lastCalledFunction();
+    static QString lastCalledNumber();
     static void resetTestData();
     
 };

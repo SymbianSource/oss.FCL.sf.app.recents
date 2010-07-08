@@ -17,6 +17,7 @@
 #include "ut_logscntfinder.h"
 #include "logscntfinder.h"
 #include "qtcontacts_stubs.h"
+#include <qcontact.h>
 #include <QtTest/QtTest>
 #include <QSignalSpy>
 
@@ -551,9 +552,40 @@ void UT_LogsCntFinder::testGetEntry()
     LogsCntEntry* entry3 = mFinder->getEntry( *handle1 );
     QVERIFY( entry3 == entry1 );
     QVERIFY( entry3->firstName()[0].text() == QString("foo") );
-    QVERIFY( entry3->lastName()[0].text() == QString("bar") );
-    
+    QVERIFY( entry3->lastName()[0].text() == QString("bar") );   
 }
 
+void UT_LogsCntFinder::testPhoneNumber()
+{
+    QContact contact;
+    
+    //Prefer default is not set, first number from the list returned
+    QVERIFY( !mFinder->mPreferDefaultNumber );
+    QCOMPARE( mFinder->phoneNumber(contact), cntDetailPhoneNumber );
+    
+    //Prefer default is set
+    mFinder->mPreferDefaultNumber = true;
+    QCOMPARE( mFinder->phoneNumber(contact), ContactStubHelper::preferredNumber() );
+    
+    //Prefer default is set, but no preferred number
+    ContactStubHelper::setPreferredNumber("");
+    QCOMPARE( mFinder->phoneNumber(contact), cntPhoneNumberWithActionCall );
+}
 
-
+void UT_LogsCntFinder::testSetPreferDefaultNumber()
+{
+    LogsCntEntryHandle* handle = (LogsCntEntryHandle*)1;
+    LogsCntEntry* entry = new LogsCntEntry(*handle, 0);
+    mFinder->mResults.append(entry);
+    
+    // Search results exist, mPreferDefaultNumber not changed
+    QVERIFY( !mFinder->mPreferDefaultNumber );
+    mFinder->setPreferDefaultNumber(false);
+    QVERIFY( !mFinder->mPreferDefaultNumber );
+    QCOMPARE( mFinder->mResults.count(), 1 );
+    
+    // Search results exist, mPreferDefaultNumber is changed => results are reset
+    mFinder->setPreferDefaultNumber(true);
+    QVERIFY( mFinder->mPreferDefaultNumber );
+    QCOMPARE( mFinder->mResults.count(), 0 );
+} 

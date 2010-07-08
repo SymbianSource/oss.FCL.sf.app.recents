@@ -626,6 +626,11 @@ void UT_LogsCntEntry::testMatch_latin12k()
     mEntry->setLastName( QString( "Ming" ) );
     QVERIFY( mEntry->match( PATTERN( "02806" ) ) );
     QVERIFY( mEntry->match( PATTERN( "0280" ) ) );//not supported
+
+    mEntry->setFirstName( QString("Ali") + QString( QChar(3) ) + QString("ce") );
+    QVERIFY( mEntry->match( PATTERN( "2" ) ) );//A
+    QVERIFY( mEntry->match( PATTERN( "254" ) ) );//Ali
+    QVERIFY( !mEntry->match( PATTERN( "25423" ) ) );//Alice
     
     mEntry->mType = LogsCntEntry::EntryTypeContact;
     QVERIFY( !mEntry->match( PATTERN( "+202" ) ) );

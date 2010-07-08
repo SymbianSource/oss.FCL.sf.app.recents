@@ -73,6 +73,8 @@ public slots:
      */
     bool updateExisting();
     
+    void cancelServiceRequest();
+    
 signals:
 
     void openCompleted(bool modified);
@@ -84,7 +86,7 @@ public: //stub data
     static void reset();
     
     QString mNumber;
-    
+    static bool mServiceRequestCanceled;
 };
                   
 #endif // LOGSCONTACT_H

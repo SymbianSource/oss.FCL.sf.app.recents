@@ -157,6 +157,18 @@ bool LogsContact::updateExisting()
 //
 // ----------------------------------------------------------------------------
 //
+void LogsContact::cancelServiceRequest()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsContact::cancelServiceRequest()" )
+    delete mService;
+    mService = 0;
+    LOGS_QDEBUG( "logs [ENG] <- LogsContact::cancelServiceRequest()" )
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
 bool LogsContact::save(QString message)
 {
     QList<QVariant> arguments;
@@ -191,17 +203,15 @@ bool LogsContact::save(QString message)
 bool LogsContact::requestFetchService( QString message, 
         const QList<QVariant> &arguments, bool sync )
 {
-    QString service("com.nokia.services.phonebookservices.Fetch");  
-
-    delete mService;
-    mService = 0;
+    QString service("com.nokia.services.phonebookservices.Fetch");
+    cancelServiceRequest();
     mService = new XQServiceRequest(service, message, sync);
     connect(mService, SIGNAL(requestCompleted(QVariant)), this, 
             SLOT(handleRequestCompleted(QVariant)));
 
     mService->setArguments(arguments);
     XQRequestInfo info;
-    info.setForeground(true);
+    info.setEmbedded(true);
     mService->setInfo(info);
     
     QVariant retValue;
@@ -218,6 +228,8 @@ bool LogsContact::requestFetchService( QString message,
 //
 void LogsContact::handleRequestCompleted(const QVariant& result)
 {
+    delete mService;
+    mService = 0;
     bool retValOk = false;
     int serviceRetVal = result.toInt(&retValOk);
     LOGS_QDEBUG_3( "logs [ENG] -> LogsContact::handleRequestCompleted(), (retval, is_ok)", 

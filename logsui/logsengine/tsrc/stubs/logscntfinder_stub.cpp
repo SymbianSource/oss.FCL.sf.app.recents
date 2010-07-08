@@ -272,7 +272,7 @@ LogsCntEntry::EntryType LogsCntEntry::type() const
 // LogsCntFinder::LogsCntFinder()
 // -----------------------------------------------------------------------------
 //
-LogsCntFinder::LogsCntFinder()
+LogsCntFinder::LogsCntFinder(bool /*preferDefaultNumber*/)
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::LogsCntFinder()" )
     
@@ -288,7 +288,7 @@ LogsCntFinder::LogsCntFinder()
 // LogsCntFinder::LogsCntFinder()
 // -----------------------------------------------------------------------------
 //
-LogsCntFinder::LogsCntFinder(QContactManager& contactManager)
+LogsCntFinder::LogsCntFinder(QContactManager& contactManager,bool /*preferDefaultNumber*/)
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::LogsCntFinder(), cntmgr from client" )
     
@@ -473,9 +473,17 @@ void LogsCntFinder::deleteEntry( const LogsCntEntryHandle& handle )
     delete toRemoveHistoryEv;
     
     LOGS_QDEBUG( "logs [FINDER] <- LogsCntFinder::deleteEntry()" )
-    
 }
 
+// -----------------------------------------------------------------------------
+// LogsCntFinder::resetResults
+// -----------------------------------------------------------------------------
+//
+void LogsCntFinder::resetResults()
+{
+    qDeleteAll( mResults );
+    mResults.clear();
+}
 
 
 

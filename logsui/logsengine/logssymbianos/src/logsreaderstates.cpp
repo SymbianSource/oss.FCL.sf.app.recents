@@ -20,6 +20,7 @@
 #include <logview.h>
 #include <logwraplimits.h>
 #include "logsreaderstates.h"
+#include "logsstatebasecontext.h"
 #include "logsreaderstatecontext.h"
 #include "logsevent.h"
 #include "logseventdata.h"
@@ -35,9 +36,9 @@
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateBase::LogsReaderStateBase(
-    LogsReaderStateContext& context) 
- : mContext(context),
-   mNextState(0)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext) 
+ : LogsStateBase(context),
+   mContext(readerContext)
 {
 }
 
@@ -49,67 +50,6 @@ LogsReaderStateBase::~LogsReaderStateBase()
 {
 
 }
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateFiltering::setNextState
-// ----------------------------------------------------------------------------
-//
-void LogsReaderStateBase::setNextState(LogsReaderStateBase& nextState)
-{
-    mNextState = &nextState;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateFiltering::enterNextStateL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateBase::enterNextStateL()
-{
-    if ( mNextState ){
-        mContext.setCurrentState(*mNextState);
-        return mNextState->enterL();
-    }
-    return false;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateBase::enterL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateBase::enterL()
-{
-    return false;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateBase::continueL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateBase::continueL()
-{
-    return false;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateBase::viewCount
-// ----------------------------------------------------------------------------
-//
-int LogsReaderStateBase::viewCountL() const
-    {
-    return mContext.logView().CountL();
-    }
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateBase::event
-// ----------------------------------------------------------------------------
-//
-CLogEvent& LogsReaderStateBase::event() const
-    {
-    //The RVCT compiler provides warnings "type qualifier on return type is meaningless"
-    //for functions that return const values. In order to avoid these numerous warnings and 
-    //const cascading, the CLogEvent is const_casted here.
-    return const_cast<CLogEvent&>( mContext.logView().Event() );
-    }
 
 // ----------------------------------------------------------------------------
 // LogsReaderStateBase::updateAndInsertEventL
@@ -191,32 +131,12 @@ LogsEvent* LogsReaderStateBase::eventById(int eventId)
 }
 
 // ----------------------------------------------------------------------------
-// LogsReaderStateBase::duplicatesL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateBase::duplicatesL(const CLogFilter* aFilter){
-    bool gettingDuplicates( false );
-    if ( mContext.isRecentView() ){
-        if ( aFilter ){
-            gettingDuplicates = 
-                static_cast<CLogViewRecent&>( mContext.logView() ).DuplicatesL( 
-                        mContext.duplicatesView(), *aFilter, mContext.reqStatus() ); 
-        } else {
-            gettingDuplicates = 
-                static_cast<CLogViewRecent&>( mContext.logView() ).DuplicatesL( 
-                        mContext.duplicatesView(), mContext.reqStatus() ); 
-        }
-    }
-    return gettingDuplicates;
-}
-
-// ----------------------------------------------------------------------------
 // LogsReaderStateInitReading::LogsReaderStateInitReading
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateInitReading::LogsReaderStateInitReading(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 }
 
@@ -236,8 +156,8 @@ bool LogsReaderStateInitReading::enterL()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateFiltering::LogsReaderStateFiltering(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context),
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext),
    mFilterList(0)
 {
 }
@@ -303,9 +223,9 @@ bool LogsReaderStateFiltering::continueL()
 // ----------------------------------------------------------------------------
 //
 bool LogsReaderStateFiltering::setFilterL(CLogFilterList& filterList){
-    __ASSERT_ALWAYS( mContext.isRecentView(), User::Leave( KErrNotFound ) );
-    return static_cast<CLogViewRecent&>( mContext.logView() ).SetRecentListL( 
-            KLogNullRecentList, filterList, mContext.reqStatus() );
+    __ASSERT_ALWAYS( mBaseContext.isRecentView(), User::Leave( KErrNotFound ) );
+    return static_cast<CLogViewRecent&>( mBaseContext.logView() ).SetRecentListL( 
+            KLogNullRecentList, filterList, mBaseContext.reqStatus() );
 }
     
 // ----------------------------------------------------------------------------
@@ -313,8 +233,8 @@ bool LogsReaderStateFiltering::setFilterL(CLogFilterList& filterList){
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateFilteringAll::LogsReaderStateFilteringAll(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateFiltering(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateFiltering(context, readerContext)
 {
 }
 
@@ -331,9 +251,9 @@ LogsReaderStateFilteringAll::~LogsReaderStateFilteringAll()
 // ----------------------------------------------------------------------------
 //
 bool LogsReaderStateFilteringAll::setFilterL(CLogFilterList& filterList){
-    __ASSERT_ALWAYS( !mContext.isRecentView(), User::Leave( KErrNotFound ) );
-    return static_cast<CLogViewEvent&>( mContext.logView() ).SetFilterL( 
-            filterList, mContext.reqStatus() );
+    __ASSERT_ALWAYS( !mBaseContext.isRecentView(), User::Leave( KErrNotFound ) );
+    return static_cast<CLogViewEvent&>( mBaseContext.logView() ).SetFilterL( 
+            filterList, mBaseContext.reqStatus() );
 }
 
 // ----------------------------------------------------------------------------
@@ -341,8 +261,8 @@ bool LogsReaderStateFilteringAll::setFilterL(CLogFilterList& filterList){
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateReading::LogsReaderStateReading(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context),
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext),
    mDuplicateMissedFilter(0),
    mCheckingMissed(false),
    mEventIndex(0),
@@ -376,7 +296,7 @@ bool LogsReaderStateReading::enterL()
         mDuplicateMissedFilter->SetNullFields(ELogFlagsField);
     }
     
-    if ( viewCountL() > 0 && mContext.logView().FirstL( mContext.reqStatus() ) ){
+    if ( viewCountL() > 0 && mBaseContext.logView().FirstL( mBaseContext.reqStatus() ) ){
         return true;
     }
     
@@ -390,12 +310,12 @@ bool LogsReaderStateReading::enterL()
 //
 bool LogsReaderStateReading::continueL()
 {
-    int& index = mContext.index();  
+    int& index = mBaseContext.index();  
     QList<LogsEvent*> &events = mContext.events();
         
     if ( mCheckingMissed ) {
         events.at(mEventIndex-1)->setDuplicates( 
-                mContext.duplicatesView().CountL() );
+            mBaseContext.duplicatesView().CountL() );
         mCheckingMissed = false;
     } 
     else {
@@ -424,7 +344,7 @@ bool LogsReaderStateReading::continueL()
 
     index++;    
     if ( canContinueReadingL(index) ){
-        return mContext.logView().NextL( mContext.reqStatus() );
+        return mBaseContext.logView().NextL( mBaseContext.reqStatus() );
     }           
     return enterNextStateL();
 }
@@ -476,8 +396,8 @@ bool LogsReaderStateReading::canContinueReadingL(int index) const
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateFillDetails::LogsReaderStateFillDetails(
-    LogsReaderStateContext& context) 
- : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 }
 
@@ -539,8 +459,8 @@ void LogsReaderStateFillDetails::fillDetails()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateDone::LogsReaderStateDone(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 }
 
@@ -560,65 +480,21 @@ bool LogsReaderStateDone::enterL()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateDone::enterL" );
     
-    int numRead = qMin(mContext.index(),viewCountL());
+    int numRead = qMin(mBaseContext.index(),viewCountL());
     mContext.observer().readCompleted(numRead);
 
     LOGS_QDEBUG( "logs [ENG] <- LogsReaderStateDone::enterL" );
     
     return false;
-}
-
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateSearchingEvent::LogsReaderStateSearchingEvent
-// ----------------------------------------------------------------------------
-//
-LogsReaderStateSearchingEvent::LogsReaderStateSearchingEvent(
-    LogsReaderStateContext& context ) 
-  : LogsReaderStateBase(context)
-{
-}
-
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateSearchingEvent::enterL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateSearchingEvent::enterL()
-{
-    LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateSearchingEvent::enterL" );
-    if ( viewCountL() > 0 && mContext.logView().FirstL( mContext.reqStatus() ) ){
-        return true;
-    }    
-    return enterNextStateL();    
-}
-
-
-// ----------------------------------------------------------------------------
-// LogsReaderStateSearchingEvent::continueL
-// ----------------------------------------------------------------------------
-//
-bool LogsReaderStateSearchingEvent::continueL()
-{
-    LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateSearchingEvent::continueL" );
-    int& index = mContext.index();
-    if ( event().Id() != mContext.currentEventId() ) {
-        index++;            
-        if ( index < viewCountL() ){
-            return mContext.logView().NextL( mContext.reqStatus() );
-        }
-    }
-    
-    return enterNextStateL();
-}    
+} 
 
 // ----------------------------------------------------------------------------
 // LogsReaderStateFindingDuplicates::LogsReaderStateFindingDuplicates
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateFindingDuplicates::LogsReaderStateFindingDuplicates(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context),
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext),
    mDuplicateFilter(0)
 {
 }
@@ -673,8 +549,8 @@ bool LogsReaderStateFindingDuplicates::continueL()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateMarkingDuplicates::LogsReaderStateMarkingDuplicates(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 }
     
@@ -687,10 +563,10 @@ bool LogsReaderStateMarkingDuplicates::enterL()
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateMarkingDuplicates::enterL" );
     
     mGettingDuplicates = false;
-    if ( event().Id() == mContext.currentEventId() ) {
+    if ( event().Id() == mBaseContext.currentEventId() ) {
         // Mark event read
         event().SetFlags( event().Flags() | KLogEventRead ); 
-        mContext.logClient().ChangeEvent(event(), mContext.reqStatus());
+        mBaseContext.logClient().ChangeEvent(event(), mBaseContext.reqStatus());
         return true;
     }
     
@@ -714,8 +590,8 @@ bool LogsReaderStateMarkingDuplicates::continueL()
         }
     } else {
         // Mark duplicate events read
-        mContext.duplicatesView().SetFlagsL(
-                mContext.duplicatesView().Event().Flags() | KLogEventRead ); 
+        mBaseContext.duplicatesView().SetFlagsL(
+            mBaseContext.duplicatesView().Event().Flags() | KLogEventRead ); 
     }
 
     LOGS_QDEBUG( "logs [ENG] <- LogsReaderStateMarkingDuplicates::continueL" );
@@ -728,8 +604,8 @@ bool LogsReaderStateMarkingDuplicates::continueL()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateReadingDuplicates::LogsReaderStateReadingDuplicates(
-    LogsReaderStateContext& context ) 
- : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 }
 
@@ -740,8 +616,8 @@ LogsReaderStateReadingDuplicates::LogsReaderStateReadingDuplicates(
 bool LogsReaderStateReadingDuplicates::enterL()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateReadingDuplicates::enterL" );
-    if ( mContext.duplicatesView().CountL() > 0 && 
-         mContext.duplicatesView().FirstL(mContext.reqStatus()) ){
+    if ( mBaseContext.duplicatesView().CountL() > 0 && 
+        mBaseContext.duplicatesView().FirstL(mBaseContext.reqStatus()) ){
          LOGS_QDEBUG( "logs [ENG] duplicates exist!");
          return true;
     }
@@ -759,11 +635,11 @@ bool LogsReaderStateReadingDuplicates::continueL()
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateReadingDuplicates::continueL" );
 
     int nextIndex = mContext.duplicatedEvents().count();
-    const CLogEvent& sourceEvent = mContext.duplicatesView().Event();
+    const CLogEvent& sourceEvent = mBaseContext.duplicatesView().Event();
     LogsEvent* event = new LogsEvent;
     constructAndInsertEventL( 
             sourceEvent, event, nextIndex, mContext.duplicatedEvents() );
-    if ( mContext.duplicatesView().NextL(mContext.reqStatus()) ) {
+    if ( mBaseContext.duplicatesView().NextL(mBaseContext.reqStatus()) ) {
         return true;
     } 
 
@@ -777,7 +653,8 @@ bool LogsReaderStateReadingDuplicates::continueL()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateModifyingDone::LogsReaderStateModifyingDone(
-    LogsReaderStateContext& context) : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 
 }
@@ -790,7 +667,7 @@ bool LogsReaderStateModifyingDone::enterL()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateModifyingDone::enterL" );
     
-    LogsEvent* modifiedEvent = eventById(mContext.currentEventId());
+    LogsEvent* modifiedEvent = eventById(mBaseContext.currentEventId());
     if ( modifiedEvent ){
         // Update modified event to know that it has been marked. Real
         // update of the event happens soon when db notifies the change.
@@ -808,7 +685,8 @@ bool LogsReaderStateModifyingDone::enterL()
 // ----------------------------------------------------------------------------
 //
 LogsReaderStateReadingDuplicatesDone::LogsReaderStateReadingDuplicatesDone(
-    LogsReaderStateContext& context) : LogsReaderStateBase(context)
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
 {
 
 }

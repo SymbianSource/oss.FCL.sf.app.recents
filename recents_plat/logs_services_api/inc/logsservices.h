@@ -26,11 +26,18 @@
 *  Service name: "logs",
 *  Interface name: "com.nokia.symbian.ILogsView"
 *  Operation signature: "show(QVariantMap)" 
+*  
+*  @deprecated don't use parameters below, they will be replaced (see xqaiwdecl.h mcl_w28-30)  
 *  Operation parameters: 
 *     "view_index": int, 0 - all recent, 1 - received, 2 - called, 3 - missed
 *     "show_dialpad": bool, if true view is shown with dialpad opened on top
 *     "dialpad_text": QString, number to be prefilled into dialpad
-*     
+*          
+*  New params:
+*     "ViewIndex": int, 0 - all recent, 1 - received, 2 - called, 3 - missed
+*     "ShowDialpad": bool, if true view is shown with dialpad opened on top
+*     "DialpadText": QString, number to be prefilled into dialpad      
+*            
 *  Example usage:
 *  XQApplicationManager appMgr;
 *  QScopedPointer<XQAiwRequest> request(appMgr.create(QString("logs"),
@@ -40,9 +47,9 @@
 *      int retValue = -1; 
 *      QList<QVariant> arglist;
 *      QVariantMap map;
-*      map.insert("view_index", QVariant(0));
-*      map.insert("show_dialpad", QVariant(true));
-*      map.insert("dialpad_text", QVariant(QString()));
+*      map.insert("ViewIndex", QVariant(0));
+*      map.insert("ShowDialpad", QVariant(true));
+*      map.insert("DialpadText", QVariant(QString()));
 *      arglist.append(QVariant(map));
 *      request->setArguments(arglist);
 *      QVariant ret(retValue);        

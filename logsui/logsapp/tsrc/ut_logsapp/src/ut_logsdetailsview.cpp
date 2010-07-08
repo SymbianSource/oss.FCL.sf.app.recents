@@ -222,19 +222,23 @@ void UT_LogsDetailsView::testUpdateMenu()
     LogsContact::reset();
 }
 
-void UT_LogsDetailsView::testDeleteEventOkAnswer()
+void UT_LogsDetailsView::testDeleteEventAnswer()
 {
     // No model, nothing happens
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
     QVERIFY( !mDetailsView->mDetailsModel );
-    mDetailsView->deleteEventOkAnswer();
+    mDetailsView->deleteEventAnswer(HbMessageBox::Ok);
+    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
+
+    // Model exists, cancel button pressed
+    LogsDetailsModel* model = new LogsDetailsModel();
+    mDetailsView->mDetailsModel = model;
+    mDetailsView->deleteEventAnswer(HbMessageBox::Cancel);
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
 
     // Model exists, call to delete event made and view is closed
     mViewManager->reset();
-    LogsDetailsModel* model = new LogsDetailsModel();
-    mDetailsView->mDetailsModel = model;
-    mDetailsView->deleteEventOkAnswer();
+    mDetailsView->deleteEventAnswer(HbMessageBox::Ok);
     QVERIFY( LogsDetailsModel::mLastCallName == QLatin1String("clearEvent") );
     QVERIFY( mViewManager->mPreviousActivated );
 }

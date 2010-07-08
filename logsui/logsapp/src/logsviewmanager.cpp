@@ -97,6 +97,8 @@ LogsViewManager::~LogsViewManager()
 void LogsViewManager::changeRecentViewViaService(
     LogsServices::LogsView view, bool showDialpad, QString dialpadText)
 {
+    closeEmbeddedApplication();
+    mMainWindow.bringAppToForeground();
     mComponentsRepository->dialpad()->editor().setText(dialpadText);
     changeRecentView(view, showDialpad);
 }
@@ -108,6 +110,8 @@ void LogsViewManager::changeRecentViewViaService(
 void LogsViewManager::changeMatchesViewViaService(QString dialpadText)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::changeMatchesView()" );
+    closeEmbeddedApplication();
+    mMainWindow.bringAppToForeground();
     mComponentsRepository->dialpad()->editor().setText(dialpadText);
     doActivateView(LogsMatchesViewId, true, QVariant());
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::changeMatchesView()" );
@@ -311,7 +315,6 @@ void LogsViewManager::saveActivity()
     }
     
     QVariantHash metaData;
-    
     LOGS_QDEBUG( "logs [UI] Start taking screenshot" );
     QImage* img = new QImage(mMainWindow.rect().size(), QImage::Format_ARGB32_Premultiplied);
     QPainter p( img );
@@ -459,4 +462,17 @@ LogsBaseView* LogsViewManager::createView(LogsAppViewId viewId)
         mMainWindow.addView(newView);
     }
     return newView;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::closeEmbeddedApplication()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::closeEmbeddedApplication()" );
+    if (mViewStack.count()) {
+        mViewStack.at(0)->cancelServiceRequest();
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::closeEmbeddedApplication()" );
 }

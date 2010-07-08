@@ -18,7 +18,6 @@
 #include "logsservicehandler.h"
 #include "logslogger.h"
 #include "logsdefs.h"
-#include "logsmainwindow.h"
 #include <xqserviceutil.h>
 
 //SYSTEM
@@ -27,9 +26,8 @@
 // LogsServiceHandler::LogsServiceHandler
 // -----------------------------------------------------------------------------
 //
-LogsServiceHandler::LogsServiceHandler(LogsMainWindow& mainWindow)
-    : XQServiceProvider(QLatin1String("logs.com.nokia.symbian.ILogsView"),0), 
-      mMainWindow(mainWindow)
+LogsServiceHandler::LogsServiceHandler()
+    : XQServiceProvider(QLatin1String("logs.com.nokia.symbian.ILogsView"),0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsServiceHandler::LogsServiceHandler(), ILogsView" )
     
@@ -63,10 +61,23 @@ int LogsServiceHandler::show(const QVariantMap& params)
                             QVariant(false)).toBool();
     QString dialpadText = params.value(logsDialpadTextParam, 
                             QVariant(QString())).toString();
-    
+
     LOGS_QDEBUG_2( "logs [UI] activatedView:", activatedView )
     LOGS_QDEBUG_2( "logs [UI] showDialpad:", showDialpad )
     LOGS_QDEBUG_2( "logs [UI] dialpadText:", dialpadText )
+    
+    if (params.contains(logsViewIndexParamNew)) {
+        activatedView = params.value(logsViewIndexParamNew).toInt();
+        LOGS_QDEBUG_2( "logs [UI] new activatedView:", activatedView )        
+    }
+    if (params.contains(logsShowDialpadParamNew)) {
+        showDialpad = params.value(logsShowDialpadParamNew).toBool();
+        LOGS_QDEBUG_2( "logs [UI] new showDialpad:", showDialpad )        
+    }
+    if (params.contains(logsDialpadTextParamNew)) {
+        dialpadText = params.value(logsDialpadTextParamNew).toString();
+        LOGS_QDEBUG_2( "logs [UI] new dialpadText:", dialpadText )        
+    }
     
     if ( activatedView < LogsServices::ViewAll || 
          activatedView > LogsServices::ViewMissed ){
@@ -75,9 +86,6 @@ int LogsServiceHandler::show(const QVariantMap& params)
     }
     
     mIsAppStartedUsingService = true;
-    
-    LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
-    mMainWindow.bringAppToForeground();
     
     if (!dialpadText.isEmpty()) {
         emit activateView(dialpadText);

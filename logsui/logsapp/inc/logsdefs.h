@@ -88,9 +88,16 @@ const char logsServiceName[] = "logs";
 const char logsInterfaceName[] = "com.nokia.symbian.ILogsView";
 const char logsOperationName[] = "show(QVariantMap)";
 
+//param names below are deprecated
 const char logsViewIndexParam[] = "view_index";
 const char logsShowDialpadParam[] = "show_dialpad";
 const char logsDialpadTextParam[] = "dialpad_text";
+
+//new params
+const char logsViewIndexParamNew[] = "ViewIndex";
+const char logsShowDialpadParamNew[] = "ShowDialpad";
+const char logsDialpadTextParamNew[] = "DialpadText";
+
 
 // Activity related constants
 const char logsActivityIdViewRecent[] = "LogsViewRecent";

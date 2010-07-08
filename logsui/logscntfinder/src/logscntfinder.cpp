@@ -34,8 +34,8 @@ const int MaxPredSearchPatternLen = 15;
 // LogsCntFinder::LogsCntFinder()
 // -----------------------------------------------------------------------------
 //
-LogsCntFinder::LogsCntFinder()
-    : mCachedCounter(0)
+LogsCntFinder::LogsCntFinder(bool preferDefaultNumber)
+    : mPreferDefaultNumber(preferDefaultNumber), mCachedCounter(0)
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::LogsCntFinder()" )
     
@@ -51,8 +51,8 @@ LogsCntFinder::LogsCntFinder()
 // LogsCntFinder::LogsCntFinder()
 // -----------------------------------------------------------------------------
 //
-LogsCntFinder::LogsCntFinder(QContactManager& contactManager)
-    : mCachedCounter(0)
+LogsCntFinder::LogsCntFinder(QContactManager& contactManager, bool preferDefaultNumber)
+    : mPreferDefaultNumber(preferDefaultNumber), mCachedCounter(0)
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::LogsCntFinder(), cntmgr from client" )
     
@@ -273,8 +273,33 @@ void LogsCntFinder::setCurrentPattern( const QString& pattern )
             LogsPredictiveTranslator::instance();
     
     mCurrentInputPattern = pattern;
-    mCurrentPredictivePattern = translator->translatePattern( mCurrentInputPattern );
+    mCurrentPredictivePattern = translator->translatePattern( mCurrentInputPattern );    
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntFinder::phoneNumber
+// -----------------------------------------------------------------------------
+//
+QString LogsCntFinder::phoneNumber(const QContact& contact) const
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::phoneNumber()" )
+    QString number;
+    if (mPreferDefaultNumber) {
+        number = contact.preferredDetail("call").value(
+                                    QContactPhoneNumber::FieldNumber );
+        if (number.isEmpty()) {
+            number = contact.detailWithAction("call").value(
+                                    QContactPhoneNumber::FieldNumber );
+        }
+    }
     
+    if (number.isEmpty()) {
+        QContactPhoneNumber contactPhoneNumber = 
+            contact.detail( QContactPhoneNumber::DefinitionName );
+        number = contactPhoneNumber.value( QContactPhoneNumber::FieldNumber );
+    }
+    LOGS_QDEBUG_2( "logs [FINDER] -> LogsCntFinder::phoneNumber(): ", number )
+    return number;
 }
 
 // -----------------------------------------------------------------------------
@@ -302,20 +327,16 @@ const LogsCntEntry& LogsCntFinder::resultAt( int index )
         QContactName contactName = contact.detail( QContactName::DefinitionName );
         entry->setFirstName( contactName.value( QContactName::FieldFirstName ) );
         entry->setLastName( contactName.value( QContactName::FieldLastName ) );
-        QContactPhoneNumber contactPhoneNumber = 
-              contact.detail( QContactPhoneNumber::DefinitionName );
-        entry->setPhoneNumber( 
-              contactPhoneNumber.value( QContactPhoneNumber::FieldNumber ) );
+        entry->setPhoneNumber(phoneNumber(contact)); 
         QContactAvatar contactAvatar = contact.detail<QContactAvatar>();
         QString avatar = contactAvatar.value( QContactAvatar::FieldImageUrl );
         entry->setAvatarPath( avatar );
         
-        updateResult( entry );      
+        updateResult( entry );
     }
     LOGS_QDEBUG( "logs [FINDER] <- LogsCntFinder::resultAt()" )
     return *entry;
 }
-
 
 // -----------------------------------------------------------------------------
 // LogsCntFinder::insertEntry
@@ -338,7 +359,7 @@ void LogsCntFinder::insertEntry( int index, LogsCntEntry* entry )
 LogsCntEntry* LogsCntFinder::getEntry( const LogsCntEntryHandle& handle ) const
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::getEntry()" )
-    return doGetEntry( mHistoryEvents, handle );      
+    return doGetEntry( mHistoryEvents, handle );
 }
 
 // -----------------------------------------------------------------------------
@@ -381,6 +402,38 @@ void LogsCntFinder::deleteEntry( const LogsCntEntryHandle& handle )
     
 }
 
+// -----------------------------------------------------------------------------
+// LogsCntFinder::setPreferDefaultNumber
+// -----------------------------------------------------------------------------
+//
+void LogsCntFinder::setPreferDefaultNumber(bool preferDefault)
+{
+    if (mPreferDefaultNumber != preferDefault) {
+        resetResults();
+        mPreferDefaultNumber = preferDefault;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// LogsCntFinder::setPreferDefaultNumber
+// -----------------------------------------------------------------------------
+//
+bool LogsCntFinder::preferDefaultNumber() const
+{
+    return mPreferDefaultNumber;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsCntFinder::resetResults
+// -----------------------------------------------------------------------------
+//
+void LogsCntFinder::resetResults()
+{
+    qDeleteAll( mResults );
+    mResults.clear();
+    mCachedCounter = 0;
+}
 
 
 

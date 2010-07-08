@@ -68,12 +68,14 @@ public: // From LogsAbstractViewManager
     virtual HbMainWindow& mainWindow();
     virtual void exitApplication();
     
+    
 private slots:
 
     void proceedExit();
     void handleOrientationChanged();
     void completeViewActivation();
-    void saveActivity();  
+    void saveActivity();
+    void closeEmbeddedApplication();
     
 private:
     

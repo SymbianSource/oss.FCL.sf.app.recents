@@ -52,6 +52,8 @@ private slots: //test methods
     //with latin 12 keys
     void testPredictiveSearchQuery_latin12k();
     void testResultAt_latin12k();
+    void testPhoneNumber();
+    void testSetPreferDefaultNumber();
     
 private:
  

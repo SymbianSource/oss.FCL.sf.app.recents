@@ -26,6 +26,7 @@
 
 QTM_BEGIN_NAMESPACE
 class QContactManager;
+class QContact;
 QTM_END_NAMESPACE
 
 QTM_USE_NAMESPACE
@@ -44,8 +45,9 @@ class LogsCntFinder : public QObject
     
 public: // The exported API
 
-    LOGSCNTFINDER_EXPORT LogsCntFinder();
-    LOGSCNTFINDER_EXPORT LogsCntFinder(QContactManager& contactManager);
+    LOGSCNTFINDER_EXPORT LogsCntFinder(bool preferDefaultNumber = false);
+    LOGSCNTFINDER_EXPORT LogsCntFinder(QContactManager& contactManager,
+            bool preferDefaultNumber = false);
     LOGSCNTFINDER_EXPORT ~LogsCntFinder();
 
     /**
@@ -92,6 +94,30 @@ public: // The exported API
     */
     LOGSCNTFINDER_EXPORT 
         void deleteEntry( const LogsCntEntryHandle& handle );
+
+    
+    /**
+     * Used to define which phone number will be returned in search result
+     * in case a contact has multiple numbers
+     * @param preferDefault if set true, the number set as default for calling
+     *        will be used, otherwise the first number from the number list
+     *        will be used
+     */
+    LOGSCNTFINDER_EXPORT void setPreferDefaultNumber(bool preferDefault);
+
+    /**
+     * Used for checking whether default number for calling will be used in
+     * search results, if contact has multiple phone numbers set
+     * @return whether default number is used in search results
+     */
+    LOGSCNTFINDER_EXPORT bool preferDefaultNumber() const;
+
+    
+    /**
+     * Used for resetting search results
+     */
+    LOGSCNTFINDER_EXPORT void resetResults();
+    
     
 signals:
 
@@ -99,6 +125,7 @@ signals:
     * emitted when query is ready
     */
     void queryReady();
+    
     
 private:
 
@@ -114,8 +141,7 @@ private:
     void updateResult( LogsCntEntry* entry );
     bool isProgressivePattern( const QString& pattern ) const;
     void setCurrentPattern( const QString& pattern );
-    
-    
+    QString phoneNumber(const QContact& contact) const;
     
 private:
     
@@ -124,6 +150,7 @@ private:
     LogsCntEntryList mResults;
     QContactManager* mContactManager;
     LogsCntEntryList mHistoryEvents;
+    bool mPreferDefaultNumber;
     int mCachedCounter;
     
     friend class UT_LogsCntFinder;

@@ -504,6 +504,7 @@ void UT_LogsMatchesModel::testCreateCall()
     // With contact, calling supported
     LogsMatchesModelItemContainer item3(*mModel, *mMatchesModel->mIconManager, 2);  
     item3.setContact(2);
+    item3.mContactNumber = "12345";
     var = mMatchesModel->createCall(item3);
     call = qVariantValue<LogsCall *>( var );
     QVERIFY( call );
@@ -538,6 +539,7 @@ void UT_LogsMatchesModel::testCreateMessage()
     item3.setContact(2);
     item3.mContactName = "<b>so</b>mename";
     item3.mContactNameSimple = "somename";
+    item3.mContactNumber = "12345";
     var = mMatchesModel->createMessage(item3);
     message = qVariantValue<LogsMessage *>( var );
     QVERIFY( message );

@@ -195,7 +195,7 @@ void UT_LogsReader::testStateContext()
     QVERIFY( mReader->mCurrentStateIndex == 1 );
     
     //wrong state machine is set as current, state isn't changed
-    LogsReaderStateBase* unknownState = new LogsReaderStateBase( *mReader );
+    LogsReaderStateBase* unknownState = new LogsReaderStateBase( *mReader, *mReader );
     mReader->mModifyingStates.append(unknownState);
     QVERIFY( mReader->mCurrentStateMachine == &mReader->mReadStates );
     mReader->setCurrentState(*mReader->mModifyingStates[0]);

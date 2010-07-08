@@ -17,7 +17,6 @@
 //USER
 #include "logsservicehandlerold.h"
 #include "logslogger.h"
-#include "logsmainwindow.h"
 #include <xqserviceutil.h>
 
 //SYSTEM
@@ -25,12 +24,11 @@
 // -----------------------------------------------------------------------------
 // LogsServiceHandlerOld::LogsServiceHandlerOld
 // deprecated Use "logs.com.nokia.symbian.ILogsView" interface and 
-//            "show(int,bool,QString)" operation instead
+//            "show(QVariantMap)" operation instead
 // -----------------------------------------------------------------------------
 //
-LogsServiceHandlerOld::LogsServiceHandlerOld(LogsMainWindow& mainWindow)
-    : XQServiceProvider(QLatin1String("com.nokia.services.logsservices.starter"),0), 
-      mMainWindow(mainWindow)
+LogsServiceHandlerOld::LogsServiceHandlerOld()
+    : XQServiceProvider(QLatin1String("com.nokia.services.logsservices.starter"),0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsServiceHandlerOld::LogsServiceHandlerOld()" )
     
@@ -66,9 +64,6 @@ int LogsServiceHandlerOld::start(int activatedView, bool showDialpad)
     }
     mIsAppStartedUsingService = true;
     
-    LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
-    mMainWindow.bringAppToForeground();
-    
     emit activateView((LogsServices::LogsView)activatedView, showDialpad, QString());
 
     LOGS_QDEBUG( "logs [UI] <- LogsServiceHandlerOld::start()" )
@@ -91,9 +86,6 @@ int LogsServiceHandlerOld::startWithNum(int activatedView, bool showDialpad, QSt
         return -1;
     }
     mIsAppStartedUsingService = true;
-    
-    LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
-    mMainWindow.bringAppToForeground();
     
     emit activateView(dialpadText);
 

@@ -24,6 +24,7 @@
 #include <e32base.h>
 #include <logclientchangeobserver.h>
 #include <logviewchangeobserver.h>
+#include "logsworker.h"
 #include "logsreaderstatecontext.h"
 #include "logsreaderstates.h"
 
@@ -44,7 +45,7 @@ class LogsReaderStateFiltering;
 /**
  * LogsReader is used to read events from database
  */
-class LogsReader : public CActive,
+class LogsReader : public LogsWorker,
                    public MLogClientChangeObserver,
                    public MLogViewChangeObserver,
                    public LogsReaderStateContext
@@ -117,8 +118,6 @@ class LogsReader : public CActive,
 
     protected: // From CActive
 
-        void RunL();
-        void DoCancel();
         TInt RunError(TInt error);
 
     private: // From MLogClientChangeObserver
@@ -142,19 +141,11 @@ class LogsReader : public CActive,
                 TInt aChangeIndex, TInt aTotalChangeCount);
     
     private: // From LogsReaderStateContext
-        
-        inline void setCurrentState(const LogsReaderStateBase& state);
-        inline CLogView& logView();
-        inline CLogViewDuplicate& duplicatesView();
+
         inline QList<LogsEvent*>& events();
-        inline int& index();
         inline LogsEventStrings& strings();
-        inline TRequestStatus& reqStatus();
         inline LogsReaderObserver& observer();
         inline QHash<QString, ContactCacheEntry>& contactCache();
-        inline int currentEventId();
-        inline CLogClient& logClient();
-        inline bool isRecentView();
         inline QList<LogsEvent*>& duplicatedEvents();
         
     private:
@@ -168,7 +159,6 @@ class LogsReader : public CActive,
          * in progress, it will leave with error
          */
         void cancelCurrentRequestL();
-        LogsReaderStateBase& currentState();
         void initializeReadStates();
         void initializeModifyingStates();
         void initializeDuplicateReadingStates();
@@ -183,28 +173,18 @@ class LogsReader : public CActive,
         
     private: // data
         
-        CLogViewRecent* mLogViewRecent;
-        CLogViewEvent* mLogViewEvent;
-        CLogViewDuplicate* mDuplicatesView;
-        
         RFs& mFsSession;
-        CLogClient& mLogClient;
         LogsEventStrings& mStrings;
         QList<LogsEvent*>& mEvents;
         LogsReaderObserver& mObserver;
-        bool mReadAllEvents;
-        
-        int mIndex;
-        QList<LogsReaderStateBase*> mReadStates;
-        QList<LogsReaderStateBase*> mModifyingStates;
-        QList<LogsReaderStateBase*> mDuplicateReadingStates;
-        int mCurrentStateIndex;
-        QList<LogsReaderStateBase*>* mCurrentStateMachine;
-        
+
+        QList<LogsStateBase*> mReadStates;
+        QList<LogsStateBase*> mModifyingStates;
+        QList<LogsStateBase*> mDuplicateReadingStates;
+    
         QHash<QString, ContactCacheEntry> mContactCache;
         QList<LogsEvent*> mDuplicatedEvents;
 
-        int mCurrentEventId;
         bool mGlobalObserverSet;
     };
 

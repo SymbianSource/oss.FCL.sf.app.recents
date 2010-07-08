@@ -55,11 +55,9 @@ void LogsMainWindow::sendAppToBackground()
 void LogsMainWindow::bringAppToForeground()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMainWindow::bringAppToForeground" );
-    if ( !mForeground ){
-        mForeground = true;
-        show();
-        raise();
-    }
+    mForeground = true;
+    show();
+    raise();
     LOGS_QDEBUG( "logs [UI] <- LogsMainWindow::bringAppToForeground" );
 }
 

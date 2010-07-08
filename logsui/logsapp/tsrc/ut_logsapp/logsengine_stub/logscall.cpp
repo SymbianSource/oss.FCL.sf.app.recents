@@ -25,6 +25,7 @@
 
 bool logsCallToNumberCalled = false;
 QString logsLastCalledFunction = QString();
+QString logsLastCalledNumber = QString();
 
 bool LogsCall::isCallToNumberCalled()
 {
@@ -36,10 +37,16 @@ QString LogsCall::lastCalledFunction()
     return logsLastCalledFunction;
 }
 
+QString LogsCall::lastCalledNumber()
+{
+    return logsLastCalledNumber;
+}
+
 void LogsCall::resetTestData()
 {
     logsCallToNumberCalled = false;
     logsLastCalledFunction = QString();
+    logsLastCalledNumber = QString();
 }
 
 // -----------------------------------------------------------------------------
@@ -93,6 +100,7 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
     Q_UNUSED(serviceId);
     logsCallToNumberCalled = true;
     logsLastCalledFunction = QString("callToNumber");
+    logsLastCalledNumber = number;
 }
 
 // ----------------------------------------------------------------------------

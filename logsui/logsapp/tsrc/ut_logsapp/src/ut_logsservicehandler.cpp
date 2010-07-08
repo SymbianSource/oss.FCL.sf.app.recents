@@ -44,8 +44,8 @@ void UT_LogsServiceHandler::cleanupTestCase()
 void UT_LogsServiceHandler::init()
 {
     mMainWindow =  new LogsMainWindow();
-    mService = new LogsServiceHandler(*mMainWindow);
-    mServiceOld = new LogsServiceHandlerOld(*mMainWindow);
+    mService = new LogsServiceHandler();
+    mServiceOld = new LogsServiceHandlerOld();
     
     mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld);
     
@@ -77,11 +77,11 @@ void UT_LogsServiceHandler::testConstructor()
 
     
     QtHighwayStubHelper::setIsService(true);
-    LogsServiceHandler serviceHandler(*mMainWindow);
+    LogsServiceHandler serviceHandler;
     QVERIFY( serviceHandler.mIsAppStartedUsingService );
     QVERIFY( serviceHandler.isStartedUsingService() );
     
-    LogsServiceHandlerOld serviceHandlerOld(*mMainWindow);
+    LogsServiceHandlerOld serviceHandlerOld;
     QVERIFY( serviceHandlerOld.mIsAppStartedUsingService );
     QVERIFY( serviceHandlerOld.isStartedUsingService() );
 }
@@ -96,13 +96,11 @@ void UT_LogsServiceHandler::testStart()
     QVERIFY( spy.count() == 0 );
 
     // Correct view
-    mServiceOld->mMainWindow.mForeground = false;
     QVERIFY( mServiceOld->start( (int)LogsServices::ViewReceived, true  ) == 0 );
     QVERIFY( spy.count() == 1 );
     LogsServices::LogsView view = 
         qvariant_cast< LogsServices::LogsView >(spy.at(0).at(0));
     QVERIFY( view == LogsServices::ViewReceived );
-    QVERIFY( mServiceOld->mMainWindow.mForeground );  
 }
 
 void UT_LogsServiceHandler::testStartWithNum()
@@ -110,12 +108,10 @@ void UT_LogsServiceHandler::testStartWithNum()
     qRegisterMetaType< LogsServices::LogsView >("LogsServices::LogsView");
     QSignalSpy spy2(mServiceOld, SIGNAL(activateView(QString)));
 
-    mServiceOld->mMainWindow.mForeground = false;
     QVERIFY( mServiceOld->startWithNum( (int)LogsServices::ViewReceived, true,
             QString("+123456")  ) == 0 );
     QVERIFY( spy2.count() == 1 );
     QVERIFY( spy2.at(0).at(0).toString() == QString("+123456"));
-    QVERIFY( mServiceOld->mMainWindow.mForeground );  
 }
 
 void UT_LogsServiceHandler::testShow()
@@ -134,37 +130,54 @@ void UT_LogsServiceHandler::testShow()
     // Correct view, dialpad text is empty
     map.clear();
     map.insert(logsViewIndexParam, QVariant((int)LogsServices::ViewReceived));
-    mService->mMainWindow.mForeground = false;
+    map.insert(logsShowDialpadParam, QVariant(true));
     QVERIFY( mService->show(map) == 0 );
     QVERIFY( spy.count() == 1 );
     QVERIFY( spy2.count() == 0 );
     LogsServices::LogsView view = 
             qvariant_cast< LogsServices::LogsView >(spy.at(0).at(0));
-    QVERIFY( view == LogsServices::ViewReceived );
-    QVERIFY( mServiceOld->mMainWindow.mForeground );
+    QCOMPARE( view, LogsServices::ViewReceived );
+    QCOMPARE( spy.at(0).at(1).toBool(), true );
+    QCOMPARE( spy.at(0).at(2).toString(), QString(""));
     
     // Correct view, dialpad text not empty
     spy.clear();
     map.clear();
     map.insert(logsViewIndexParam, QVariant((int)LogsServices::ViewReceived));
     map.insert(logsDialpadTextParam, QVariant(QString("+123456")));
-    mService->mMainWindow.mForeground = false;
     QVERIFY( mService->show(map) == 0 );
     QVERIFY( spy.count() == 0 );
     QVERIFY( spy2.count() == 1 );
-    QVERIFY( spy2.at(0).at(0).toString() == QString("+123456"));
-    QVERIFY( mServiceOld->mMainWindow.mForeground );
+    QCOMPARE( spy2.at(0).at(0).toString(), QString("+123456"));
     
     // Some completly dummy parameters or no params at all
     spy.clear();
     spy2.clear();
     map.clear();
     map.insert("dummy_param", QVariant(666));
-    mService->mMainWindow.mForeground = false;
     QVERIFY( mService->show(map) == 0 );
     QVERIFY( spy.count() == 1 );
     QVERIFY( spy2.count() == 0 );
     view = qvariant_cast< LogsServices::LogsView >(spy.at(0).at(0));
-    QVERIFY( view == LogsServices::ViewAll );
-    QVERIFY( mServiceOld->mMainWindow.mForeground );
+    QCOMPARE( view, LogsServices::ViewAll );
+    QCOMPARE( spy.at(0).at(1).toBool(), false );
+    QCOMPARE( spy.at(0).at(2).toString(), QString(""));    
+    
+    // Both new and deprecated params present, new params will be used
+    spy.clear();
+    map.clear();
+    map.insert(logsViewIndexParam, QVariant((int)LogsServices::ViewReceived));
+    map.insert(logsShowDialpadParam, QVariant(false));
+    map.insert(logsDialpadTextParam, QVariant(QString("+123456")));
+    
+    map.insert(logsViewIndexParamNew, QVariant((int)LogsServices::ViewCalled));
+    map.insert(logsShowDialpadParamNew, QVariant(true));
+    map.insert(logsDialpadTextParamNew, QVariant(QString("")));
+    QVERIFY( mService->show(map) == 0 );
+    QVERIFY( spy.count() == 1 );
+    QVERIFY( spy2.count() == 0 );
+    view = qvariant_cast< LogsServices::LogsView >(spy.at(0).at(0));
+    QCOMPARE( view, LogsServices::ViewCalled );
+    QCOMPARE( spy.at(0).at(1).toBool(), true );
+    QCOMPARE( spy.at(0).at(2).toString(), QString(""));
 }

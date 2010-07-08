@@ -23,12 +23,14 @@
 QString qtHighwayStubService;
 QString qtHighwayStubMessage;
 bool qtHighwayStubRequestBg = false;
+bool qtHighwayStubRequestEmbedded = false;
 
 void QtHighwayStubHelper::reset()
 {
     qtHighwayStubService.clear();
     qtHighwayStubMessage.clear();
     qtHighwayStubRequestBg = false;
+    qtHighwayStubRequestEmbedded = false;
 }
 
 QString QtHighwayStubHelper::service()
@@ -44,6 +46,11 @@ QString QtHighwayStubHelper::message()
 bool QtHighwayStubHelper::isRequestBg()
 {
     return qtHighwayStubRequestBg;
+}
+
+bool QtHighwayStubHelper::isRequestEmbedded()
+{
+    return qtHighwayStubRequestEmbedded;
 }
 
 XQServiceRequest::XQServiceRequest(
@@ -110,5 +117,10 @@ bool XQRequestInfo::isBackground() const
 
 void XQRequestInfo::setForeground(bool on)
 {
-    Q_UNUSED(on)
+    qtHighwayStubRequestBg = !on;
+}
+
+void XQRequestInfo::setEmbedded(bool embedded)
+{
+    qtHighwayStubRequestEmbedded = embedded;
 }

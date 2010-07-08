@@ -19,7 +19,9 @@
 
 #include <QObject>
 #include <e32base.h>
+#include "logsworker.h"
 #include "logsmodel.h"
+#include "logsremovestatecontext.h"
 
 // FORWARDS DECLARATIONS
 class CLogClient;
@@ -31,7 +33,7 @@ class LogsRemoveObserver;
 /**
  *	Clearing class.
  */
-class LogsRemove : public CActive
+class LogsRemove : public LogsWorker, public LogsRemoveStateContext
     {
     public:
         friend class UT_LogsRemove;
@@ -55,25 +57,34 @@ class LogsRemove : public CActive
         int clearEvents(const QList<int>& eventIds, bool& async);
         
     protected: // from CActive
-
-        void DoCancel();
-        void RunL();
+        
         TInt RunError(TInt aError);
 
+    private: // From LogsRemoveStateContext
+        
+        inline LogsRemoveObserver& observer();
+        inline QList<int>& removedEvents();
+        inline int clearType();
+        
     private:
         
         void initL();
+        bool clearListL(LogsModel::ClearType cleartype);
         void clearEventsL(const QList<int>& eventIds, bool& async);
-        bool DeleteNextEvent();
+        void initializeClearAllL();
+        void initializeIdBasedRemovalL();
+        bool startClearingL();
         
     private: // data
         LogsRemoveObserver& mObserver;
-        bool mReadingAllEvents;
-        
         QList<int> mRemovedEvents;
-        CLogClient* mLogClient;
-        CLogViewRecent* mRecentView;
+     
         RFs* mFsSession;
+        
+        int mClearType;
+        QList<LogsStateBase*> mRemoveStates;
+        QList<LogsStateBase*> mClearAllStates;
+        
     };
 
                   

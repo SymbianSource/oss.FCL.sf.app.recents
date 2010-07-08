@@ -73,7 +73,7 @@ protected slots: // from LogsBaseView
 private slots:
 
     void clearList();
-    void clearListOkAnswer();
+    void clearListAnswer(int action);
     void toggleContactSearch();
     void updateView(LogsServices::LogsView view);
     void leftFlick();

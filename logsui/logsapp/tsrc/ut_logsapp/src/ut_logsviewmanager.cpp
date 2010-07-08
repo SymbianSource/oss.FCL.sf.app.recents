@@ -26,6 +26,7 @@
 #include "logsmatchesview.h"
 #include "logsdetailsview.h"
 #include "hbstubs_helper.h"
+#include "logscontact.h"
 
 //SYSTEM
 #include <HbMainWindow.h>
@@ -47,8 +48,8 @@ void UT_LogsViewManager::cleanupTestCase()
 void UT_LogsViewManager::init()
 {
     mMainWindow =  new LogsMainWindow();
-    mService = new LogsServiceHandler(*mMainWindow);
-    mServiceOld = new LogsServiceHandlerOld(*mMainWindow);
+    mService = new LogsServiceHandler();
+    mServiceOld = new LogsServiceHandlerOld();
     mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld);
 }
 
@@ -125,33 +126,73 @@ void UT_LogsViewManager::testActivateView()
 
 void UT_LogsViewManager::testchangeMatchesView()
 {
+    mLogsViewManager->mMainWindow.mForeground = false;
     //Open Matches view, dialpad visible with predefined number
     mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->matchesView() );
-             
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    
     // Contact search disabled, go to recent calls view instead
+    mLogsViewManager->mMainWindow.mForeground = false;
     mLogsViewManager->mComponentsRepository->mModel->mPredectiveSearchStatus = 0;
     QString dialString("+123456777");
     mLogsViewManager->changeMatchesViewViaService(dialString);
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+        
+    //Open Matches view, view stack not empty, embedded service canceled
+    mLogsViewManager->mMainWindow.mForeground = false;
+    QVERIFY( mLogsViewManager->mViewStack.count() );
+    mLogsViewManager->mViewStack.at(0)->mContact = new LogsContact();
+    mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
+    QVERIFY( LogsContact::mServiceRequestCanceled );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    
+    //Open Matches view, view stack is empty, embedded service not canceled
+    mLogsViewManager->mMainWindow.mForeground = false;
+    LogsContact::reset();
+    mLogsViewManager->mViewStack.clear();
+    mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
+    QVERIFY( !LogsContact::mServiceRequestCanceled );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
 }
 
 void UT_LogsViewManager::testchangeRecentView()
 {
+    mLogsViewManager->mMainWindow.mForeground = false;
     QString dialString("+123456777");
     mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, dialString);
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
     
     // Empty string clears dialpad input
+    mLogsViewManager->mMainWindow.mForeground = false;
     mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text().isEmpty() );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    
+    //Open recent view, view stack not empty, embedded service canceled    
+    mLogsViewManager->mMainWindow.mForeground = false;
+    QVERIFY( mLogsViewManager->mViewStack.count() );
+    mLogsViewManager->mViewStack.at(0)->mContact = new LogsContact();
+    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
+    QVERIFY( LogsContact::mServiceRequestCanceled );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    
+    //Open recentt view, view stack is empty, embedded service not canceled
+    mLogsViewManager->mMainWindow.mForeground = false;
+    LogsContact::reset();
+    mLogsViewManager->mViewStack.clear();
+    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
+    QVERIFY( !LogsContact::mServiceRequestCanceled );
+    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
 }
 
 void UT_LogsViewManager::testExitApplication()
@@ -185,8 +226,8 @@ void UT_LogsViewManager::testStartingWithService()
     // before service method call comes.
     LogsMainWindow window;
     window.setCurrentView(0); // clear stub static data
-    LogsServiceHandler service(*mMainWindow);
-    LogsServiceHandlerOld serviceOld(*mMainWindow);
+    LogsServiceHandler service;
+    LogsServiceHandlerOld serviceOld;
     service.mIsAppStartedUsingService = true;
     LogsViewManager vm(window, service, serviceOld);
     QVERIFY( vm.mComponentsRepository );

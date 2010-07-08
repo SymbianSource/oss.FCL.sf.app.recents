@@ -16,11 +16,11 @@
 */
 
 #include <QDebug>
-#include <HbListView.h>
-#include <HbMenu.h>
-#include <HbAction.h>
-#include <HbLabel.h>
-#include <HbMessageBox.h>
+#include <hblistview.h>
+#include <hbmenu.h>
+#include <hbaction.h>
+#include <hblabel.h>
+#include <hbmessagebox.h>
 #include <QGraphicsLinearLayout>
 #include <logsmodel.h>
 #include <logsevent.h>
@@ -208,16 +208,12 @@ void TestView::updateMissedCallsLabel()
 
 void TestView::markingCompleted(int err)
 {
-     HbMessageBox box(HbMessageBox::MessageTypeInformation);
-     box.setText( QString("Marking completed, err:%1").arg(err) );
-     box.exec();
+     HbMessageBox::information( QString("Marking completed, err:%1").arg(err) );
 }
 
 void TestView::clearingCompleted(int err)
 {
-     HbMessageBox box(HbMessageBox::MessageTypeInformation);
-     box.setText( QString("Clearing completed, err:%1").arg(err) );
-     box.exec();
+    HbMessageBox::information( QString("Clearing completed, err:%1").arg(err) );
 }
 
 TestModel::TestModel(QAbstractItemModel& logsModel) : mLogsModel(logsModel)
@@ -237,6 +233,7 @@ TestModel::~TestModel()
 }
 int TestModel::rowCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
     return mEvents.count();
 }
 QVariant TestModel::data(const QModelIndex &index, int role) const

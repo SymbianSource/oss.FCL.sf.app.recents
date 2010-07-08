@@ -25,4 +25,5 @@ class QtHighwayStubHelper{
         static QString service();
         static QString message();
         static bool isRequestBg();
+        static bool isRequestEmbedded();
 };

@@ -65,4 +65,5 @@ EXPORTS
 	?getLogsEvent@LogsDetailsModel@@QBE?AVLogsEvent@@XZ @ 64 NONAME ; class LogsEvent LogsDetailsModel::getLogsEvent(void) const
 	?serialize@LogsEvent@@QAE_NAAVQDataStream@@@Z @ 65 NONAME ; bool LogsEvent::serialize(class QDataStream &)
 	??0LogsEvent@@QAE@AAVQDataStream@@@Z @ 66 NONAME ; LogsEvent::LogsEvent(class QDataStream &)
+	?cancelServiceRequest@LogsContact@@QAEXXZ @ 67 NONAME ; void LogsContact::cancelServiceRequest(void)
 

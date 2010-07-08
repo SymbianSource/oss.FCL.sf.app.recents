@@ -91,4 +91,5 @@ EXPORTS
 	_ZN9LogsEventC2ER11QDataStream @ 90 NONAME
 	_ZN9LogsModel16logsDetailsModelER9LogsEvent @ 91 NONAME
 	_ZNK16LogsDetailsModel12getLogsEventEv @ 92 NONAME
+	_ZN11LogsContact20cancelServiceRequestEv @ 93 NONAME
 

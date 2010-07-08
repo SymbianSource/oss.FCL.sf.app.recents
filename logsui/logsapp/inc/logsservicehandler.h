@@ -20,14 +20,12 @@
 #include <xqserviceprovider.h>
 #include <logsservices.h>
 
-class LogsMainWindow;
-
 class LogsServiceHandler : public XQServiceProvider
     {
         Q_OBJECT
     public:
         
-        explicit LogsServiceHandler(LogsMainWindow& mainWindow);
+        explicit LogsServiceHandler();
         ~LogsServiceHandler();
     
     public slots:
@@ -43,9 +41,9 @@ class LogsServiceHandler : public XQServiceProvider
         
         bool isStartedUsingService() const;
         
+        
     private:
 
-        LogsMainWindow& mMainWindow;
         bool mIsAppStartedUsingService;
         
     private:

@@ -77,7 +77,7 @@ private slots: //test methods
     void testPredictiveSearchQueryLogsContactsPhoneNumberMatch();
     void testPredictiveSearchQueryLimit();
     void testQueryOrder();
-    void testContactWithNonMappedChars();
+    void testContactWithSpecialChars();
 
 private:
 
@@ -91,13 +91,15 @@ private:
     void createContacts();
     void createContactsForQueryOrder();
     void createContactsForQueryZero();
-    void createContactsWithNonMappedChars();
+    void createContactsWithSpecialChars();
     void createHistoryEvents();
     void createLogEvent(
         QString firstname, 
         QString Lastname, 
         QString phnumber);
 
+    bool checkHighlights( int index, int expected );
+    
 private:
     QContactManager *m_manager;
     LogsCntFinder   *m_finder;

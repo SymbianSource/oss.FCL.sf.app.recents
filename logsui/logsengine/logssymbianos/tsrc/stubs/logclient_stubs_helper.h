@@ -15,6 +15,8 @@
 *
 */
 
+#include <QString>
+
 /**
 * Helper class to control logcli stub behavior
 *
@@ -27,4 +29,6 @@ class LogClientStubsHelper{
         static void setViewCount(int viewCount);
         static void setLeaveWithError(int error);
         static int stubViewFlags();
+        static QString lastCalledFunc();
+        
 };

@@ -37,6 +37,7 @@
 #include <hblineedit.h>
 #include <hblistviewitem.h>
 #include <hblistview.h>
+#include <hbmessagebox.h>
 #include <QStringListModel>
 #include <hbapplication.h>
 #include <hbactivitymanager.h>
@@ -547,34 +548,25 @@ void UT_LogsBaseView::testDeleteEvent()
     QVERIFY( HbStubHelper::dialogShown() );
 }
 
-void UT_LogsBaseView::testDeleteEventOkAnswer()
+void UT_LogsBaseView::testDeleteEventAnswer()
 {
     // No model, nothing happens
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
     QVERIFY( !mBaseView->mDetailsModel );
-    mBaseView->deleteEventOkAnswer();
+    mBaseView->deleteEventAnswer(HbMessageBox::Ok);
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
 
-    // Model exists, call to delete event made and view is closed
-    mViewManager->reset();
+    // Model exists, cancel button pressed
     LogsDetailsModel* model = new LogsDetailsModel();
     mBaseView->mDetailsModel = model;
-    mBaseView->deleteEventOkAnswer();
+    mBaseView->deleteEventAnswer(HbMessageBox::Cancel);
+    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
+    
+    // Model exists, call to delete event made and view is closed
+    mViewManager->reset();
+    mBaseView->deleteEventAnswer(HbMessageBox::Ok);
     QVERIFY( LogsDetailsModel::mLastCallName == QLatin1String("clearEvent") );
     QVERIFY( !mViewManager->mPreviousActivated );    
-}
-
-void UT_LogsBaseView::testAskConfirmation()
-{
-    // No receiver and slots specified
-    mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), 0);
-    QVERIFY( HbStubHelper::dialogShown() );
-    
-    // Receiver and slots specified
-    HbStubHelper::reset();
-    mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), this,
-            SLOT("dummy()"), SLOT("dummy()"));
-    QVERIFY( HbStubHelper::dialogShown() );
 }
 
 void UT_LogsBaseView::testMatchWithActivityId()
@@ -683,6 +675,19 @@ void UT_LogsBaseView::testEnsureListPositioning()
     delete HbStubHelper::listItems().takeLast();
     mBaseView->ensureListPositioning(list);
     QVERIFY( HbStubHelper::listEnsureVisibleCalled() );
-    QVERIFY( HbStubHelper::listScrollToCalled() );
+    // TODO: stub does not work due it uses virtual table inside hbcore. Whole
+    // list should be stubbed.
+    //QVERIFY( HbStubHelper::listScrollToCalled() );
+}
 
+void UT_LogsBaseView::testCancelServiceRequest()
+{
+    QVERIFY( !mBaseView->mContact );
+    QVERIFY( !LogsContact::mServiceRequestCanceled );
+    mBaseView->cancelServiceRequest();
+    QVERIFY( !LogsContact::mServiceRequestCanceled );
+
+    mBaseView->mContact = new LogsContact();
+    mBaseView->cancelServiceRequest();
+    QVERIFY( LogsContact::mServiceRequestCanceled );
 }

@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 {
     LOGS_QDEBUG( "logs [UI] -> main()" )
   
-    HbApplication app(argc, argv, Hb::NoSplash);
+    HbApplication app(argc, argv);
     LogsMainWindow window;
     HbTranslator translator("dialer");
     translator.loadCommon();
@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
     // Servicehandler cannot be created before HbApplication creation.
     // This can cause problem of service request not coming through if
     // HbApplication creation takes long time.
-    LogsServiceHandler service(window);
-    LogsServiceHandlerOld serviceOld(window);
+    LogsServiceHandler service;
+    LogsServiceHandlerOld serviceOld;
     LogsViewManager viewManager(window, service, serviceOld);
     
     // Don't show window yet as app might be started at background

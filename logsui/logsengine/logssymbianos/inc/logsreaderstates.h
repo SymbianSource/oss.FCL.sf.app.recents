@@ -19,6 +19,7 @@
 #define LOGSREADERSTATES_H
 
 //  INCLUDES
+#include "logsstatebase.h"
 #include <e32std.h>
 #include <logclientchangeobserver.h>
 #include <logviewchangeobserver.h>
@@ -36,7 +37,7 @@ class CLogEvent;
 /**
  * Reader state base
  */
-class LogsReaderStateBase {
+class LogsReaderStateBase : public LogsStateBase {
 
     friend class UT_LogsReaderStates;
     friend class UT_LogsReader;
@@ -47,49 +48,13 @@ class LogsReaderStateBase {
          * Destructor
          */
         virtual ~LogsReaderStateBase();
-        
-        /**
-         * Set next state to be used once this state has completed.
-         * @param nextState
-         */
-        void setNextState(LogsReaderStateBase& nextState);
-
-        /**
-         * Enter to the state, may proceed immediately to next state.
-         * @return true if entering started async operation,  false if not
-         */
-        virtual bool enterL();
-        
-        /**
-         * Continue running in the state, may proceed to next state
-         * @return true if continue started async operation,  false if not
-         */
-        virtual bool continueL();
     
     protected:
         
         /**
          * Constructor
          */
-        LogsReaderStateBase(LogsReaderStateContext& context);
-        
-        /**
-         * Proceed to next state if such exists.
-         * @return true if entering started async operation,  false if not 
-         */
-        virtual bool enterNextStateL();
-        
-        /**
-         * Get number of events in view
-         * @return view count
-         */
-        int viewCountL() const;
-        
-        /**
-         * Get current event
-         * @return event
-         */
-        CLogEvent& event() const;
+        LogsReaderStateBase(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         
         /**
          * Fill dest event with source event data and insert to specified
@@ -133,18 +98,9 @@ class LogsReaderStateBase {
          * @return pointer to event or 0 if not found
          */
         LogsEvent* eventById(int eventId);
-        
-        /**
-         * Try to search duplicates for current event in the view
-         * @param aFilter, filter to be used for searching duplicates
-         * @return true, if duplicates are searched
-         */
-        bool duplicatesL(const CLogFilter* aFilter = 0);
 
     protected:   
         LogsReaderStateContext& mContext;
-        LogsReaderStateBase* mNextState;
-        int mStateIndex;
 };
 
 /**
@@ -155,7 +111,7 @@ class LogsReaderStateInitReading : public LogsReaderStateBase {
      friend class UT_LogsReaderStates;
      
     public:
-     LogsReaderStateInitReading(LogsReaderStateContext& context);
+     LogsReaderStateInitReading(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateInitReading(){}
 
     public: // From LogsReaderStateBase
@@ -170,7 +126,7 @@ class LogsReaderStateFiltering : public LogsReaderStateBase {
      friend class UT_LogsReaderStates;
      
     public:
-        LogsReaderStateFiltering(LogsReaderStateContext& context);
+        LogsReaderStateFiltering(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateFiltering();
 
     public: // From LogsReaderStateBase
@@ -196,7 +152,7 @@ class LogsReaderStateFilteringAll : public LogsReaderStateFiltering {
      friend class UT_LogsReaderStates;
      
     public:
-        LogsReaderStateFilteringAll(LogsReaderStateContext& context);
+        LogsReaderStateFilteringAll(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateFilteringAll();
 
     protected: // From LogsReaderStateFiltering
@@ -211,7 +167,7 @@ class LogsReaderStateReading : public LogsReaderStateBase {
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateReading(LogsReaderStateContext& context);
+        LogsReaderStateReading(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateReading();
 
     public: // From LogsReaderStateBase
@@ -235,7 +191,7 @@ class LogsReaderStateReading : public LogsReaderStateBase {
  */
 class LogsReaderStateFillDetails : public LogsReaderStateBase {
     public:
-        LogsReaderStateFillDetails(LogsReaderStateContext& context);
+        LogsReaderStateFillDetails(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateFillDetails();
         
         /**
@@ -252,28 +208,11 @@ class LogsReaderStateFillDetails : public LogsReaderStateBase {
  */
 class LogsReaderStateDone : public LogsReaderStateBase {
     public:
-        LogsReaderStateDone(LogsReaderStateContext& context);
+        LogsReaderStateDone(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateDone();
         
     public: // From LogsReaderStateBase
         virtual bool enterL();
-};
-
-
-/**
- * Searching event state
- */
-class LogsReaderStateSearchingEvent : public LogsReaderStateBase 
-{
-    friend class UT_LogsReaderStates;
-    
-    public:
-        LogsReaderStateSearchingEvent(LogsReaderStateContext& context);
-        virtual ~LogsReaderStateSearchingEvent(){}
-
-    public: // From LogsReaderStateBase
-        virtual bool enterL();
-        virtual bool continueL();
 };
 
 /**
@@ -284,7 +223,7 @@ class LogsReaderStateFindingDuplicates : public LogsReaderStateBase
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateFindingDuplicates(LogsReaderStateContext& context);
+        LogsReaderStateFindingDuplicates(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateFindingDuplicates();
 
     public: // From LogsReaderStateBase
@@ -303,7 +242,7 @@ class LogsReaderStateMarkingDuplicates : public LogsReaderStateBase
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateMarkingDuplicates(LogsReaderStateContext& context);
+        LogsReaderStateMarkingDuplicates(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateMarkingDuplicates(){}
 
     public: // From LogsReaderStateBase
@@ -322,7 +261,7 @@ class LogsReaderStateReadingDuplicates : public LogsReaderStateBase
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateReadingDuplicates(LogsReaderStateContext& context);
+        LogsReaderStateReadingDuplicates(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateReadingDuplicates(){}
 
     public: // From LogsReaderStateBase
@@ -338,7 +277,7 @@ class LogsReaderStateModifyingDone : public LogsReaderStateBase
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateModifyingDone(LogsReaderStateContext& context);
+        LogsReaderStateModifyingDone(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateModifyingDone(){}
 
     public: // From LogsReaderStateBase
@@ -353,7 +292,7 @@ class LogsReaderStateReadingDuplicatesDone : public LogsReaderStateBase
     friend class UT_LogsReaderStates;
     
     public:
-        LogsReaderStateReadingDuplicatesDone(LogsReaderStateContext& context);
+        LogsReaderStateReadingDuplicatesDone(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
         virtual ~LogsReaderStateReadingDuplicatesDone(){}
 
     public: // From LogsReaderStateBase

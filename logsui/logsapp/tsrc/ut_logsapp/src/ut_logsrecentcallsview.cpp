@@ -319,7 +319,17 @@ void UT_LogsRecentCallsView::testCallKeyPressed()
     view->mDialpad->editor().setText( dial );
     view->callKeyPressed();
     QVERIFY( LogsCall::isCallToNumberCalled() );
+    QCOMPARE( LogsCall::lastCalledNumber(), dial );
     QVERIFY( LogsCall::lastCalledFunction() != "initiateCallback" );
+    
+    // Make sure that SS numbers are left untouched when calling
+    LogsCall::resetTestData();
+    dial = "*#7370#";
+    view->mDialpad->editor().setText( dial );
+    view->callKeyPressed();
+    QVERIFY( LogsCall::isCallToNumberCalled() );
+    QCOMPARE( LogsCall::lastCalledNumber(), dial );
+    LogsCall::resetTestData();
     
     // Dialpad closed but contains text, call to first item in the list
     LogsCall::resetTestData();
@@ -770,16 +780,21 @@ void UT_LogsRecentCallsView::testClearList()
 
 }
 
-void UT_LogsRecentCallsView::testClearListOkAnswer()
+void UT_LogsRecentCallsView::testClearListAnswer()
 {
     // No filter ,list is not cleared
     mRecentCallsView->mModel->mIsCleared = false;
-    mRecentCallsView->clearListOkAnswer();
+    mRecentCallsView->clearListAnswer(HbMessageBox::Ok);
+    QVERIFY( !mRecentCallsView->mModel->mIsCleared );
+
+    // Filter exists, cancel button pressed
+    mRecentCallsView->mFilter = new LogsFilter(LogsFilter::Missed);
+    mRecentCallsView->clearListAnswer(HbMessageBox::Cancel);
     QVERIFY( !mRecentCallsView->mModel->mIsCleared );
     
+
     // Filter exists, list is cleared
-    mRecentCallsView->mFilter = new LogsFilter( LogsFilter::Missed );
-    mRecentCallsView->clearListOkAnswer();
+    mRecentCallsView->clearListAnswer(HbMessageBox::Ok);
     QVERIFY( mRecentCallsView->mModel->mIsCleared );
 }
 

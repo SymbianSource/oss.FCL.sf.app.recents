@@ -45,6 +45,7 @@
 #include <hbactivitymanager.h>
 #include <hbmodeliterator.h>
 #include <hbscrollbar.h>
+#include <hbstringutil.h>
 
 Q_DECLARE_METATYPE(LogsCall*)
 Q_DECLARE_METATYPE(LogsMessage*)
@@ -223,6 +224,19 @@ void LogsBaseView::deactivated()
             SLOT( dialpadOpened() ) );
     disconnect( &mDialpad->editor(), SIGNAL( contentsChanged() ), this,
             SLOT( dialpadEditorTextChanged() ) );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::cancelServiceRequest()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::cancelServiceRequest()" );
+    if (mContact) {
+        mContact->cancelServiceRequest();
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::cancelServiceRequest()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -643,7 +657,9 @@ bool LogsBaseView::tryCallToDialpadNumber( LogsCall::CallType callType )
     bool called = false;
     if ( isDialpadInput() ){
         // Call to inputted number
-        LogsCall::callToNumber( callType, mDialpad->editor().text() );
+        QString phoneNumber = 
+            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
+        LogsCall::callToNumber( callType, phoneNumber );
         called = true;
     }
     LOGS_QDEBUG_2( "logs [UI] <- LogsBaseView::tryCallToDialpadNumber(), called",
@@ -921,10 +937,12 @@ void LogsBaseView::deleteEvent()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::deleteEvent()" );
     if ( mDetailsModel ) {
-        askConfirmation(hbTrId("txt_dialer_ui_title_delete_event"),
+        HbMessageBox::question(
                 hbTrId("txt_dialer_info_call_event_will_be_removed_from"),
                 this,
-                SLOT(deleteEventOkAnswer()));
+                SLOT(deleteEventAnswer(int)),
+                HbMessageBox::Ok | HbMessageBox::Cancel,
+                new HbLabel(hbTrId("txt_dialer_ui_title_delete_event")));
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::deleteEvent()" );
 }
@@ -933,13 +951,13 @@ void LogsBaseView::deleteEvent()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::deleteEventOkAnswer()
+void LogsBaseView::deleteEventAnswer(int action)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::deleteEventOkAnswer()" );
-    if (mDetailsModel) {
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::deleteEventAnswer()" );
+    if ((action == HbMessageBox::Ok) && mDetailsModel) {
         mDetailsModel->clearEvent();
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::deleteEventOkAnswer()" );
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::deleteEventAnswer()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -1065,37 +1083,6 @@ void LogsBaseView::toggleActionAvailability( HbAction* action, bool available )
     if ( action ){
         action->setVisible( available );
     }
-}
-
-// -----------------------------------------------------------------------------
-// 
-// -----------------------------------------------------------------------------
-//
-void LogsBaseView::askConfirmation( QString heading , QString text,
-        QObject* receiver, const char* okSlot, const char* cancelSlot )
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::askConfirmation()" );
-    HbMessageBox* note = new HbMessageBox(text, HbMessageBox::MessageTypeQuestion);
-    note->setAttribute(Qt::WA_DeleteOnClose);
-    note->setHeadingWidget(new HbLabel(heading));
-    note->setDismissPolicy(HbPopup::TapOutside);    
-    
-    if (note->actions().count() > 0 && note->actions().at(0)) {
-        note->actions().at(0)->setText(hbTrId("txt_common_button_ok"));
-        
-        if (receiver && okSlot) {
-            connect(note->actions().at(0), SIGNAL(triggered()), receiver, okSlot);
-        }
-    }
-    if (note->actions().count() > 1 && note->actions().at(1)) {
-        note->actions().at(1)->setText(hbTrId("txt_common_button_cancel"));
-    
-        if (receiver && cancelSlot) {
-            connect(note->actions().at(1), SIGNAL(triggered()), receiver, cancelSlot);
-        }
-    }
-    note->open();
-    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::askConfirmation()" );
 }
 
 // -----------------------------------------------------------------------------

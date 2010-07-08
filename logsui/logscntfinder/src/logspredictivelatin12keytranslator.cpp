@@ -25,8 +25,8 @@
 #include "logslogger.h"
 
 //mapping char,key(name)
-const QChar SpecialMapping[] = {'+', '*', '*', '*','#','#'};
-const int SpecialsCount = 3;
+const QChar SpecialMapping[] = {'+', '*', '*', '*','#','#','%','1'};
+const int SpecialsCount = 4;
 const QChar SpaceSepar(' ');
 
 

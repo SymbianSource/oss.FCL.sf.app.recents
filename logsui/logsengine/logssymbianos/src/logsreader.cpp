@@ -37,28 +37,17 @@ LogsReader::LogsReader(
     QList<LogsEvent*>& events,
     LogsReaderObserver& observer,
     bool readAllEvents) 
- : CActive( EPriorityStandard ),
-   mLogViewRecent(0),
-   mLogViewEvent(0),
-   mDuplicatesView(0),
+ : LogsWorker(readAllEvents),
    mFsSession(fsSession), 
-   mLogClient(logClient),
    mStrings(strings), 
    mEvents(events), 
    mObserver(observer),
-   mReadAllEvents(readAllEvents),
-   mIndex(0),
-   mCurrentStateIndex(0),
-   mCurrentStateMachine(0),
-   mCurrentEventId(-1),
    mGlobalObserverSet(false)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReader::LogsReader()" )
-    
-    CActiveScheduler::Add( this ); 
-    
-    initializeReadStates();
-    
+        
+    mLogClient = &logClient; 
+    initializeReadStates();   
     setGlobalObserver();
     
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::LogsReader()" )
@@ -77,8 +66,11 @@ LogsReader::~LogsReader()
     qDeleteAll( mModifyingStates );
     qDeleteAll( mDuplicateReadingStates );
     delete mLogViewRecent;
+    mLogViewRecent = 0;
     delete mLogViewEvent;
+    mLogViewEvent = 0;
     delete mDuplicatesView;
+    mDuplicatesView = 0;
     qDeleteAll( mDuplicatedEvents );
     
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::~LogsReader()" )
@@ -127,7 +119,7 @@ void LogsReader::updateDetails(bool clearCached)
         mContactCache.clear();
     }
     LogsReaderStateFillDetails* fillDetailsState = 
-                new LogsReaderStateFillDetails(*this);
+                new LogsReaderStateFillDetails(*this, *this);
     fillDetailsState->fillDetails();
     delete fillDetailsState;
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::updateDetails()" )
@@ -158,25 +150,6 @@ int LogsReader::readDuplicates(int eventId)
 }
 
 // ----------------------------------------------------------------------------
-// LogsReader::RunL
-// ----------------------------------------------------------------------------
-//
-void LogsReader::RunL()
-{
-    LOGS_QDEBUG_3( "logs [ENG] -> LogsReader::RunL(), (state, status):", 
-                   mCurrentStateIndex, iStatus.Int() )
-    
-    // Error handling in RunError
-    __ASSERT_ALWAYS( iStatus.Int() == KErrNone, User::Leave( iStatus.Int() ) );
-    
-    if ( currentState().continueL() ){
-        SetActive();
-    }
-    
-    LOGS_QDEBUG( "logs [ENG] <- LogsReader::RunL()" )
-}
-
-// ----------------------------------------------------------------------------
 // LogsReader::RunError
 // ----------------------------------------------------------------------------
 //
@@ -188,17 +161,6 @@ TInt LogsReader::RunError(TInt error)
     
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::RunError()" )
     return KErrNone;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::DoCancel
-// ----------------------------------------------------------------------------
-//
-void LogsReader::DoCancel()
-{
-    logView().Cancel();
-    mDuplicatesView->Cancel();    
-    mLogClient.Cancel();
 }
 
 // ----------------------------------------------------------------------------
@@ -375,44 +337,6 @@ if ( aChangeIndex == ( aTotalChangeCount - 1 ) )
 }
 
 // ----------------------------------------------------------------------------
-// LogsReader::setCurrentState
-// ----------------------------------------------------------------------------
-//
-void LogsReader::setCurrentState(const LogsReaderStateBase& state)
-{
-    bool found(false);
-    for( int i = 0; i < mCurrentStateMachine->count() && !found; i++ ){
-        if ( mCurrentStateMachine->at(i) == &state ){
-            mCurrentStateIndex = i;
-            found = true;
-            LOGS_QDEBUG_2( "logs [ENG] <-> LogsReader::setCurrentState, index:", 
-                           mCurrentStateIndex )
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::logView
-// ----------------------------------------------------------------------------
-//
-CLogView& LogsReader::logView()
-{
-    if ( mLogViewRecent ){
-        return *mLogViewRecent;
-    }
-    return *mLogViewEvent;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::duplicatesView
-// ----------------------------------------------------------------------------
-//
-CLogViewDuplicate& LogsReader::duplicatesView()
-{
-    return *mDuplicatesView;
-}
-
-// ----------------------------------------------------------------------------
 // LogsReader::events
 // ----------------------------------------------------------------------------
 //
@@ -422,30 +346,12 @@ QList<LogsEvent*>& LogsReader::events()
 }
 
 // ----------------------------------------------------------------------------
-// LogsReader::index
-// ----------------------------------------------------------------------------
-//
-int& LogsReader::index()
-{
-    return mIndex;
-}
-
-// ----------------------------------------------------------------------------
 // LogsReader::strings
 // ----------------------------------------------------------------------------
 //
 LogsEventStrings& LogsReader::strings()
 {
     return mStrings;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::reqStatus
-// ----------------------------------------------------------------------------
-//
-TRequestStatus& LogsReader::reqStatus()
-{
-    return iStatus;
 }
 
 // ----------------------------------------------------------------------------
@@ -467,48 +373,12 @@ QHash<QString, ContactCacheEntry>& LogsReader::contactCache()
 }
 
 // ----------------------------------------------------------------------------
-// LogsReader::currentEventId
-// ----------------------------------------------------------------------------
-//
-int LogsReader::currentEventId()
-{
-    return mCurrentEventId;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::logClient
-// ----------------------------------------------------------------------------
-//
-CLogClient& LogsReader::logClient()
-{
-    return mLogClient;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::isRecentView
-// ----------------------------------------------------------------------------
-//
-bool LogsReader::isRecentView()
-{
-    return ( mLogViewRecent != 0 );
-}
-
-// ----------------------------------------------------------------------------
 // LogsReader::duplicatedEvents
 // ----------------------------------------------------------------------------
 //
 QList<LogsEvent*>& LogsReader::duplicatedEvents()
 {
     return mDuplicatedEvents;
-}
-
-// ----------------------------------------------------------------------------
-// LogsReader::currentState
-// ----------------------------------------------------------------------------
-//
-LogsReaderStateBase& LogsReader::currentState()
-{
-    return *(mCurrentStateMachine->at(mCurrentStateIndex));
 }
 
 // ----------------------------------------------------------------------------
@@ -519,11 +389,11 @@ void LogsReader::initializeReadStates()
 {
     if ( mReadStates.count() == 0 ){
         
-        LogsReaderStateInitReading* init = new LogsReaderStateInitReading(*this);
+        LogsReaderStateInitReading* init = new LogsReaderStateInitReading(*this, *this);
         LogsReaderStateFiltering* filtering = createFilteringState();
-        LogsReaderStateReading* reading = new LogsReaderStateReading(*this);
-        LogsReaderStateFillDetails* fillDetails = new LogsReaderStateFillDetails(*this);
-        LogsReaderStateDone* done = new LogsReaderStateDone(*this);
+        LogsReaderStateReading* reading = new LogsReaderStateReading(*this, *this);
+        LogsReaderStateFillDetails* fillDetails = new LogsReaderStateFillDetails(*this, *this);
+        LogsReaderStateDone* done = new LogsReaderStateDone(*this, *this);
         init->setNextState(*filtering);
         filtering->setNextState(*reading);
         reading->setNextState(*fillDetails);
@@ -546,14 +416,14 @@ void LogsReader::initializeDuplicateReadingStates()
 {
     if ( mDuplicateReadingStates.count() == 0 ){
         LogsReaderStateFiltering* filtering = createFilteringState();
-        LogsReaderStateSearchingEvent* searching = 
-                    new LogsReaderStateSearchingEvent(*this);
+        LogsStateSearchingEvent* searching = 
+                    new LogsStateSearchingEvent(*this);
         LogsReaderStateFindingDuplicates* findingDuplicates = 
-                    new LogsReaderStateFindingDuplicates(*this);
+                    new LogsReaderStateFindingDuplicates(*this, *this);
         LogsReaderStateReadingDuplicates* readingDuplicates = 
-                    new LogsReaderStateReadingDuplicates(*this);
+                    new LogsReaderStateReadingDuplicates(*this, *this);
         LogsReaderStateReadingDuplicatesDone* done = 
-                    new LogsReaderStateReadingDuplicatesDone(*this);
+                    new LogsReaderStateReadingDuplicatesDone(*this, *this);
         filtering->setNextState(*searching);
         searching->setNextState(*findingDuplicates);
         findingDuplicates->setNextState(*readingDuplicates);
@@ -576,11 +446,11 @@ void LogsReader::initializeModifyingStates()
 {
     if ( mModifyingStates.count() == 0 ){
         LogsReaderStateFiltering* filtering = createFilteringState();
-        LogsReaderStateSearchingEvent* searching = 
-                    new LogsReaderStateSearchingEvent(*this);
+        LogsStateSearchingEvent* searching = 
+                    new LogsStateSearchingEvent(*this);
         LogsReaderStateMarkingDuplicates* duplicates = 
-                    new LogsReaderStateMarkingDuplicates(*this);
-        LogsReaderStateModifyingDone* done = new LogsReaderStateModifyingDone(*this);
+                    new LogsReaderStateMarkingDuplicates(*this, *this);
+        LogsReaderStateModifyingDone* done = new LogsReaderStateModifyingDone(*this, *this);
         filtering->setNextState(*searching);
         searching->setNextState(*duplicates);
         duplicates->setNextState(*done);
@@ -629,15 +499,15 @@ void LogsReader::createLogViewsL()
 {
     if ( mReadAllEvents ){
         if ( !mLogViewEvent ){
-            mLogViewEvent = CLogViewEvent::NewL( mLogClient, *this );
+            mLogViewEvent = CLogViewEvent::NewL( *mLogClient, *this );
         }
     }
     else if ( !mLogViewRecent ) {
-        mLogViewRecent = CLogViewRecent::NewL( mLogClient, *this );
+        mLogViewRecent = CLogViewRecent::NewL( *mLogClient, *this );
     }
     
     if ( !mDuplicatesView ){
-        mDuplicatesView = CLogViewDuplicate::NewL( mLogClient, *this );
+        mDuplicatesView = CLogViewDuplicate::NewL( *mLogClient, *this );
     }   
 }
 
@@ -663,10 +533,10 @@ LogsReaderStateFiltering* LogsReader::createFilteringState()
 {
     LogsReaderStateFiltering* filtering = 0;
     if ( mReadAllEvents ) {
-        filtering = new LogsReaderStateFilteringAll(*this);
+        filtering = new LogsReaderStateFilteringAll(*this, *this);
     } 
     else {
-        filtering = new LogsReaderStateFiltering(*this);
+        filtering = new LogsReaderStateFiltering(*this, *this);
     }
     return filtering;
 }
@@ -695,7 +565,7 @@ void LogsReader::setGlobalObserver()
     // Have to ensure that same observer is not set twice, otherwise
     // causes crash at later point inside eventlogger
     if ( !mGlobalObserverSet ){
-        TRAP_IGNORE( mLogClient.SetGlobalChangeObserverL( this ) )
+        TRAP_IGNORE( mLogClient->SetGlobalChangeObserverL( this ) )
         mGlobalObserverSet = true;
     }
 }
@@ -707,7 +577,7 @@ void LogsReader::setGlobalObserver()
 void LogsReader::clearGlobalObserver()
 {
     if ( mGlobalObserverSet ){
-        TRAP_IGNORE( mLogClient.SetGlobalChangeObserverL( 0 ) )
+        TRAP_IGNORE( mLogClient->SetGlobalChangeObserverL( 0 ) )
         mGlobalObserverSet = false;
     }
 }

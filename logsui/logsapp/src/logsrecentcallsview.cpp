@@ -40,9 +40,9 @@
 #include <dialpad.h>
 #include <hblineedit.h>
 #include <hbgroupbox.h>
-#include <hbmessagebox.h>
 #include <hbmainwindow.h>
 #include <hbswipegesture.h>
+#include <hbmessagebox.h>
 #include <QTimer>
 #include <hbactivitymanager.h>
 
@@ -316,23 +316,24 @@ void LogsRecentCallsView::clearList()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearList()->" );
     if ( mFilter ) {
-        askConfirmation(hbTrId("txt_dialer_ui_title_clear_list"),
+        HbMessageBox::question(
                 hbTrId("txt_dialer_ui_info_all_call_events_will_be_remo"),
                 this,
-                SLOT(clearListOkAnswer()));
-
+                SLOT(clearListAnswer(int)),
+                HbMessageBox::Ok | HbMessageBox::Cancel,
+                new HbLabel(hbTrId("txt_dialer_ui_title_clear_list")));
     }
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearList()<-" );
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::clearListOkAnswer
+// LogsRecentCallsView::clearListAnswer
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::clearListOkAnswer()
+void LogsRecentCallsView::clearListAnswer(int action)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearListOkAnswer()" );
-    if (mFilter) {
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::clearListAnswer()" );
+    if ((action == HbMessageBox::Ok) && mFilter) {
         mModel->clearList( mFilter->clearType() );
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::clearListAnswer()" );

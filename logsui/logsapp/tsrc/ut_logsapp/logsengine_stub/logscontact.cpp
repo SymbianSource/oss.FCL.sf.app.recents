@@ -21,6 +21,7 @@
 //SYSTEM
 
 static LogsContact::RequestType logstTestRequestType = LogsContact::TypeLogsContactSave;
+bool LogsContact::mServiceRequestCanceled = false;
 
 // -----------------------------------------------------------------------------
 //
@@ -89,4 +90,10 @@ void LogsContact::setNextRequestType(LogsContact::RequestType type)
 void LogsContact::reset()
 {
     logstTestRequestType = LogsContact::TypeLogsContactSave;
+    mServiceRequestCanceled = false;
+}
+
+void LogsContact::cancelServiceRequest()
+{
+    mServiceRequestCanceled = true;
 }

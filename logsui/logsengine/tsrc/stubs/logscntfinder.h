@@ -117,8 +117,8 @@ class LogsCntFinder : public QObject
     
 public: // The exported API
 
-    LogsCntFinder();
-    LogsCntFinder(QContactManager& contactManager);
+    LogsCntFinder(bool preferDefaultNumber = false);
+    LogsCntFinder(QContactManager& contactManager, bool preferDefaultNumber = false);
     ~LogsCntFinder();
 
     /**
@@ -159,6 +159,8 @@ public: // The exported API
     * @param entry the entry
     */
     void deleteEntry( const LogsCntEntryHandle& handle );
+    
+    void resetResults();
     
 signals:
 

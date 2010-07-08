@@ -60,7 +60,7 @@ private slots:
     
     //from LogsBaseView
     virtual void handleBackSoftkey();
-    virtual void deleteEventOkAnswer();
+    virtual void deleteEventAnswer(int action);
     
 private: // from LogsBaseView
     

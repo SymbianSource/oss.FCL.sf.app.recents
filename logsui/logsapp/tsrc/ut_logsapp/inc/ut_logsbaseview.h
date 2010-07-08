@@ -84,13 +84,13 @@ private slots: //test methods
     void testAddToContacts();
     void testSendMessageToCurrentNum();
     void testDeleteEvent();
-    void testDeleteEventOkAnswer();
-    void testAskConfirmation();
+    void testDeleteEventAnswer();
     void testMatchWithActivityId();
     void testSaveActivity();
     void testLoadActivity();
     void testClearActivity();
     void testEnsureListPositioning();
+    void testCancelServiceRequest();
     
 private:
  

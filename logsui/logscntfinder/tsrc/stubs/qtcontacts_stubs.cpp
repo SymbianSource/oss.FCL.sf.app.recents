@@ -28,6 +28,17 @@
 #include "qtcontacts_stubs.h"
 
 ContactQueryResults* ContactQueryResults::mInstance = 0;
+QString cntPreferredPhoneNumber = "123456";
+
+void ContactStubHelper::setPreferredNumber(QString number)
+{
+    cntPreferredPhoneNumber = number;
+}
+
+QString ContactStubHelper::preferredNumber()
+{
+    return cntPreferredPhoneNumber;
+}
 
 // -----------------------------------------------------------------------------
 // ContactsDB::instance()
@@ -250,8 +261,7 @@ QContactDetail QContact::detail(const QString& definitionId) const
     }
     if ( definitionId == QContactPhoneNumber::DefinitionName ){
         QContactPhoneNumber number;
-        QString n( "555789987" );
-        number.setValue(QContactPhoneNumber::FieldNumber, n );
+        number.setValue(QContactPhoneNumber::FieldNumber, cntDetailPhoneNumber );
         return number;
     }
     if ( definitionId == QContactAvatar::DefinitionName){
@@ -263,6 +273,21 @@ QContactDetail QContact::detail(const QString& definitionId) const
     return detail;
 }
 
+QContactDetail QContact::preferredDetail(const QString& actionName) const
+{
+    Q_UNUSED(actionName)
+    QContactPhoneNumber number;
+    number.setValue(QContactPhoneNumber::FieldNumber, cntPreferredPhoneNumber );
+    return number;
+}
+
+QContactDetail QContact::detailWithAction(const QString& actionName) const
+{
+    Q_UNUSED(actionName)
+    QContactPhoneNumber number;
+    number.setValue(QContactPhoneNumber::FieldNumber, cntPhoneNumberWithActionCall );
+    return number;
+}
 
 // ----------------------------------------------------------------------------
 // QContactDetail

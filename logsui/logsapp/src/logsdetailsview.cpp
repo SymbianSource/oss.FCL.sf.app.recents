@@ -248,14 +248,14 @@ void LogsDetailsView::handleBackSoftkey()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsDetailsView::deleteEventOkAnswer()
+void LogsDetailsView::deleteEventAnswer(int action)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::deleteEventOkAnswer()" );
-    if (mDetailsModel) {
-        mDetailsModel->clearEvent();
+    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::deleteEventAnswer()" );
+    LogsBaseView::deleteEventAnswer(action);
+    if (action == HbMessageBox::Ok) {
         handleBackSoftkey(); 
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::deleteEventOkAnswer()" );
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::deleteEventAnswer()" );
 }
 
 // -----------------------------------------------------------------------------

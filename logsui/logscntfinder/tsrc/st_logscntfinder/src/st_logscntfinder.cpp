@@ -22,18 +22,43 @@
 #include <QtTest/QtTest>
 #include <hbinputsettingproxy.h>
 
+#define CHECK_HIGHLIGHTS( index, expected )\
+        QVERIFY( checkHighlights( index, expected ) )
 
-#define CHECK_RESULTS( count, first, last )\
+#define CHECK_RESULTS( count, first, last, highlights )\
     for(int i=0;i<count; i++ ) {\
         if ( i == 0 ) {\
             QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString(first));\
             QCOMPARE(m_finder->resultAt(0).lastName().at(0).text(), QString(last));\
+            CHECK_HIGHLIGHTS( 0,highlights );\
         } else {\
             m_finder->resultAt(i);\
         }\
     }
 
-        
+
+
+bool ST_LogsCntFinder::checkHighlights( int index,int expected )
+{
+    bool foundOne = false;
+    const LogsCntEntry& entry = m_finder->resultAt( index );
+    int ndx = 0;
+    while( !foundOne && ndx < entry.firstName().count() ) {
+        foundOne = entry.firstName().at( ndx++ ).highlights() == expected;
+    }
+    
+    ndx = 0;
+    while( !foundOne && ndx < entry.lastName().count() ) {
+        foundOne = entry.lastName().at( ndx++ ).highlights() == expected;
+    }
+    
+    foundOne = !foundOne ? entry.phoneNumber().highlights() == expected : foundOne;
+    
+    
+    return foundOne;
+}
+
+             
 void ST_LogsCntFinder::initTestCase()
 {
     //open symbian database
@@ -137,7 +162,7 @@ void ST_LogsCntFinder::createContactsForQueryZero()
     QCOMPARE(contactsCount, 18);
 }
 
-void ST_LogsCntFinder::createContactsWithNonMappedChars()
+void ST_LogsCntFinder::createContactsWithSpecialChars()
 {
     
     createOneContact( QString("Hannu%"), QString(""), QString("932472398") );
@@ -369,21 +394,21 @@ void ST_LogsCntFinder::testPredictiveSearchQueryPartialCached()
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 5 );
     //see half of matched results
-    CHECK_RESULTS( 3, "Jonn", "Ennon" );
+    CHECK_RESULTS( 3, "Jonn", "Ennon", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     //see half of matched results
-    CHECK_RESULTS( 1, "Jonn", "Ennon" );
+    CHECK_RESULTS( 1, "Jonn", "Ennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 5 );
-    CHECK_RESULTS( 3, "Jonn", "Ennon" );
+    CHECK_RESULTS( 3, "Jonn", "Ennon", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
 
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     //see half of matched results
-    CHECK_RESULTS( 1, "Jonn", "Ennon" );
+    CHECK_RESULTS( 1, "Jonn", "Ennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
 }
 
@@ -396,22 +421,22 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCached()
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 5 );
     //see all matched results
-    CHECK_RESULTS( 5, "Jonn", "Ennon" );
+    CHECK_RESULTS( 5, "Jonn", "Ennon", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     //see all of matched results
-    CHECK_RESULTS( 2, "Jonn", "Ennon" );
+    CHECK_RESULTS( 2, "Jonn", "Ennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 5 );
     //see all of matched results
-    CHECK_RESULTS( 5, "Jonn", "Ennon" );
+    CHECK_RESULTS( 5, "Jonn", "Ennon", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
 
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 2 );
     //see all of matched results
-    CHECK_RESULTS( 2, "Jonn", "Ennon" );
+    CHECK_RESULTS( 2, "Jonn", "Ennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
 }
 
@@ -423,7 +448,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryPartialCachedNoResults()
     m_finder->predictiveSearchQuery( QString("6") );
     QCOMPARE( m_finder->resultsCount(), 3 );
     //see half of matched results
-    CHECK_RESULTS( 2, "Maria-Zola", "Jones" );
+    CHECK_RESULTS( 2, "Maria-Zola", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("69") );
     QCOMPARE( m_finder->resultsCount(), 0 );
@@ -435,7 +460,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryPartialCachedNoResults()
     m_finder->predictiveSearchQuery( QString("6") );
     QCOMPARE( m_finder->resultsCount(), 3 );
     //see half of matched results
-    CHECK_RESULTS( 2, "Maria-Zola", "Jones" );
+    CHECK_RESULTS( 2, "Maria-Zola", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("69") );
     QCOMPARE( m_finder->resultsCount(), 0 );
@@ -450,7 +475,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedNoResults()
     m_finder->predictiveSearchQuery( QString("6") );
     QCOMPARE( m_finder->resultsCount(), 3 );
     //see all of matched results
-    CHECK_RESULTS( 3, "Maria-Zola", "Jones" );
+    CHECK_RESULTS( 3, "Maria-Zola", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("69") );
     QCOMPARE( m_finder->resultsCount(), 0 );
@@ -462,7 +487,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedNoResults()
     m_finder->predictiveSearchQuery( QString("6") );
     QCOMPARE( m_finder->resultsCount(), 3 );
     //see all of matched results
-    CHECK_RESULTS( 3, "Maria-Zola", "Jones" );
+    CHECK_RESULTS( 3, "Maria-Zola", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
     
     m_finder->predictiveSearchQuery( QString("69") );
     QCOMPARE( m_finder->resultsCount(), 0 );
@@ -477,23 +502,31 @@ void ST_LogsCntFinder::testPredictiveSearchQueryPartialCachedZeroCase()
     
     m_finder->predictiveSearchQuery( QString("2") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
+    //Augustin Zi
+    CHECK_RESULTS( 2, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("20") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
+    //Augustin Zi
+    CHECK_RESULTS( 2, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+
     
     m_finder->predictiveSearchQuery( QString("209") );//db
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 1, "Levis", "Augustin" ); //Augustin Zi
+    //Augustin Zi
+    CHECK_RESULTS( 1, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+
     
     m_finder->predictiveSearchQuery( QString("20") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
+    //Augustin Zi
+    CHECK_RESULTS( 2, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("2") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 2, "Levis", "Augustin" );//Augustin Zi
+    //Augustin Zi
+    CHECK_RESULTS( 2, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+
        
 }
 
@@ -504,31 +537,31 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedZerosCase()
     
     m_finder->predictiveSearchQuery( QString("2") ); //db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("20") );//cache
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("200") );//cache
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("2009") );//cache
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 1, "Levis", "Augustin" ); //Augustin Zi
+    CHECK_RESULTS( 1, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("200") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("20") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("2") );//db
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 3, "Levis", "Augustin" );//Augustin Zi
+    CHECK_RESULTS( 3, "Levis", "Augustin", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
        
 }
 
@@ -539,26 +572,26 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogs()
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("53") );
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 1, "Jonn", "Lennon" );
+    CHECK_RESULTS( 1, "Jonn", "Lennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("539") );
     QCOMPARE( m_finder->resultsCount(), 0 );
 
     m_finder->predictiveSearchQuery( QString("53") );
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 1, "Jonn", "Lennon" );
+    CHECK_RESULTS( 1, "Jonn", "Lennon", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 }
 
 void ST_LogsCntFinder::testPredictiveSearchQueryLogsZeroCase()
@@ -567,23 +600,23 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsZeroCase()
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("50") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("503") );
     QCOMPARE( m_finder->resultsCount(), 1 );
-    CHECK_RESULTS( 1, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 1, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("50") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
         
 }
 
@@ -595,22 +628,22 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsContactsPartialCached()
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 4 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("569") );
     QCOMPARE( m_finder->resultsCount(), 0 );
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 4 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     
 }
@@ -622,22 +655,22 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsContactsFullyCached()
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 7, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 7, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 4 );
-    CHECK_RESULTS( 4, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 4, "Dim-Petter", "Jones", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("569") );
     QCOMPARE( m_finder->resultsCount(), 0 );
     
     m_finder->predictiveSearchQuery( QString("56") );
     QCOMPARE( m_finder->resultsCount(), 4 );
-    CHECK_RESULTS( 4, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 4, "Dim-Petter", "Jones", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 7, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 7, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
 }
 
@@ -648,23 +681,23 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsContactsZeroCase()
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("50") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("503") );
     QCOMPARE( m_finder->resultsCount(), 2 );
-    CHECK_RESULTS( 2, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 2, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
     m_finder->predictiveSearchQuery( QString("50") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("5") );
     QCOMPARE( m_finder->resultsCount(), 7 );
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
 }
 
@@ -675,11 +708,11 @@ void ST_LogsCntFinder::testPredictiveSearchQueryLogsContactsPhoneNumberMatch()
 
     m_finder->predictiveSearchQuery( QString("9") );
     QCOMPARE( m_finder->resultsCount(), 6 ); //3 history + 3 contacts
-    CHECK_RESULTS( 5, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 5, "Dim-Petter", "Jones", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
 
     m_finder->predictiveSearchQuery( QString("93") );
     QCOMPARE( m_finder->resultsCount(), 3 );
-    CHECK_RESULTS( 1, "Dim-Petter", "Jones" );
+    CHECK_RESULTS( 1, "Dim-Petter", "Jones", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
 }
 
@@ -750,24 +783,39 @@ void ST_LogsCntFinder::testQueryOrder()
     QCOMPARE(m_finder->resultAt(7).lastName().at(0).text(), QString("Yadira"));
 }
 
-void ST_LogsCntFinder::testContactWithNonMappedChars()
+void ST_LogsCntFinder::testContactWithSpecialChars()
 {
     //Hannu%
     //%Hannu
-    createContactsWithNonMappedChars();
+    createContactsWithSpecialChars();
     
     m_finder->predictiveSearchQuery( QString("4") );
-    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
-    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
-
-    m_finder->predictiveSearchQuery( QString("42") );//all cached
-    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
-    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
-
-    m_finder->predictiveSearchQuery( QString("") );//empty cache
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "Hannu%", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
     m_finder->predictiveSearchQuery( QString("42") );
-    QCOMPARE( m_finder->resultsCount(), 1 );//Hannu%
-    QCOMPARE(m_finder->resultAt(0).firstName().at(0).text(), QString("Hannu%"));
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "Hannu%", "", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("4") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "Hannu%", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("") );
+    QCOMPARE( m_finder->resultsCount(), 0 );
+    
+    m_finder->predictiveSearchQuery( QString("1") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "%Hannu", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("14") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "%Hannu", "", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("1") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    CHECK_RESULTS( 1, "%Hannu", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
     
 }
 

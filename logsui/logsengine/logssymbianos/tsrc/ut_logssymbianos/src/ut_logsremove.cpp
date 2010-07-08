@@ -64,7 +64,7 @@ void UT_LogsRemove::cleanup()
 void UT_LogsRemove::testConstructor()
 {
     QVERIFY( mLogsRemove );
-    QVERIFY( mLogsRemove->mFsSession );
+    QVERIFY( !mLogsRemove->mFsSession );
     QVERIFY( !mLogsRemove->mLogClient );
 }
 
@@ -93,13 +93,15 @@ void UT_LogsRemove::testClearEvents()
     QVERIFY( mLogsRemove->clearEvents(events, async) == 0 );
     QVERIFY( !async );
     QVERIFY( mLogsRemove->mRemovedEvents.count() == 0 );
+    QVERIFY( !mLogsRemove->IsActive() );
     
     // Clearing with recent view (ids)
     events.append(2);
     events.append(100);
     QVERIFY( mLogsRemove->clearEvents(events, async) == 0 );
-    QVERIFY( !async );
-    QVERIFY( mLogsRemove->mRemovedEvents.count() == 0 );
+    QVERIFY( async );
+    QVERIFY( mLogsRemove->mRemovedEvents.count() == 2 );
+    QVERIFY( mLogsRemove->IsActive() );
     
     // Clearing with all events (no ids)
     events.clear();
@@ -107,56 +109,24 @@ void UT_LogsRemove::testClearEvents()
     QVERIFY( removeWithAllEvents.clearEvents(events, async) == 0 );
     QVERIFY( !async );
     QVERIFY( removeWithAllEvents.mRemovedEvents.count() == 0 );
+    QVERIFY( !removeWithAllEvents.IsActive() );
     
     // Clearing with all events (ids)
     events.append(99);
     events.append(100);
     QVERIFY( removeWithAllEvents.clearEvents(events, async) == 0 );
     QVERIFY( async );
-    QVERIFY( removeWithAllEvents.mRemovedEvents.count() == 1 );
-    QVERIFY( removeWithAllEvents.mRemovedEvents.at(0) == 100 );
+    QVERIFY( removeWithAllEvents.mRemovedEvents.count() == 2 );
+    QVERIFY( removeWithAllEvents.mRemovedEvents.at(0) == 99 );  
+    QVERIFY( removeWithAllEvents.mRemovedEvents.at(1) == 100 );   
+    QVERIFY( removeWithAllEvents.IsActive() );
     
-}
-
-void UT_LogsRemove::testDoCancel()
-{
-    mLogsRemove->DoCancel();
-}
-
-void UT_LogsRemove::testRunL()
-{
-   // Test ok scenario
-    mLogsRemove->init();
-    mLogsRemove->Cancel();
-    mLogsRemove->iStatus = KErrNone;
-    mLogsRemove->RunL();
-    QVERIFY( mRemoveCompleted );
-    
-    // Ok scenario when more events to delete
-    mRemoveCompleted = false;
-    mLogsRemove->mRemovedEvents.append(2);
-    mLogsRemove->mRemovedEvents.append(4);
-    mLogsRemove->Cancel();
-    mLogsRemove->RunL();
-    QVERIFY( !mRemoveCompleted );
-    QVERIFY( mLogsRemove->mRemovedEvents.count() == 1 );
-    
-    mLogsRemove->Cancel();
-    mLogsRemove->RunL();
-    QVERIFY( !mRemoveCompleted );
-    QVERIFY( mLogsRemove->mRemovedEvents.count() == 0 );
-    
-    // Ok scenario when no more events to delete
-    mLogsRemove->Cancel();
-    mLogsRemove->RunL();
-    QVERIFY( mRemoveCompleted );
-    QVERIFY( mLogsRemove->mRemovedEvents.count() == 0 );
-    
-    // Test failure
-    mLogsRemove->Cancel();
-    mLogsRemove->iStatus = KErrNotFound;
-    TRAPD( err, mLogsRemove->RunL() );
-    QVERIFY( err == KErrNotFound );
+    // Clearing not allowed while previous is active
+    events.append(200);
+    QVERIFY( removeWithAllEvents.clearEvents(events, async) != 0 );
+    QVERIFY( mLogsRemove->mRemovedEvents.count() == 2 );
+    QVERIFY( !async );
+    QVERIFY( removeWithAllEvents.IsActive() );
 }
 
 void UT_LogsRemove::testRunError()
@@ -177,11 +147,13 @@ void UT_LogsRemove::testInit()
     //initializing for the first time
     QVERIFY( mLogsRemove->init() == KErrNone );
     QVERIFY( mLogsRemove->mLogClient );
+    QVERIFY( mLogsRemove->mFsSession );
     CLogClient* oldClient = mLogsRemove->mLogClient;
     
     //2d time should be also ok
     QVERIFY( mLogsRemove->init() == KErrNone );
     QVERIFY( mLogsRemove->mLogClient );
+    QVERIFY( mLogsRemove->mFsSession );
     QVERIFY( oldClient == mLogsRemove->mLogClient );    
 }
 

@@ -20,7 +20,7 @@
 #include <hbmainwindow.h>
 #include <hbinstance.h>
 #include "hbstubs_helper.h"
-#include <hbmessagebox.h>
+#include <hbdialog.h>
 #include <hbapplication.h>
 #include <hbcolorscheme.h>
 #include <hbview.h>
@@ -31,6 +31,7 @@
 #include <QGesture>
 #include <hblistview.h>
 #include <hblistviewitem.h>
+#include <hbmessagebox.h>
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
@@ -296,6 +297,27 @@ void HbDialog::open(QObject *receiver, const char *member)
    testDialogShown = true;
 }
 
+void HbDialog::open()
+{
+   testDialogShown = true;
+}
+
+void HbMessageBox::question(const QString &questionText,
+                            QObject *receiver ,
+                            const char *member,
+                            HbMessageBox::StandardButtons buttons,
+                            QGraphicsWidget *headingWidget,
+                            QGraphicsScene *scene,
+                            QGraphicsItem *parent)
+{
+    Q_UNUSED(questionText)
+    Q_UNUSED(receiver)
+    Q_UNUSED(member)
+    Q_UNUSED(buttons)
+    Q_UNUSED(scene)
+    Q_UNUSED(parent)
+    testDialogShown = true;
+}
 
 // -----------------------------------------------------------------------------
 //
@@ -392,15 +414,6 @@ QList<HbMainWindow *> HbInstance::allMainWindows() const
     QList<HbMainWindow *> list;
     list.append(testWindow);
     return list;
-}
-
-void HbMessageBox::setText(const QString &string)
-{
-    if (string == "Ok") {
-    	selectedActionString = "primary";
-    } else if (string == "Cancel") {
-    	selectedActionString = "secondary";
-    }
 }
 
 void QTimer::singleShot(int msec, QObject *receiver, const char *member)

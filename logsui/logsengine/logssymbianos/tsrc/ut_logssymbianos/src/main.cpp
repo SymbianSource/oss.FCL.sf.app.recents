@@ -25,6 +25,7 @@
 #include "ut_logseventdataparser.h"
 #include "testresultxmlparser.h"
 #include "ut_logsremove.h"
+#include "ut_logsremovestates.h"
 
 
 int main(int argc, char *argv[]) 
@@ -51,6 +52,13 @@ int main(int argc, char *argv[])
     QStringList args_logsRemove( "ut_logsRemove");
     args_logsRemove << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsRemove, args_logsRemove);
+    parser.parseAndPrintResults(resultFileName,true); 
+    
+    UT_LogsRemoveStates ut_logsRemoveStates;
+    resultFileName = "c:/ut_logs_logsRemoveStates.xml";
+    QStringList args_logsRemoveStates( "ut_logsRemoveStates");
+    args_logsRemoveStates << "-xml" << "-o" << resultFileName;
+    QTest::qExec(&ut_logsRemoveStates, args_logsRemoveStates);
     parser.parseAndPrintResults(resultFileName,true); 
 	
     UT_LogsReader ut_logsReader;
