@@ -25,6 +25,7 @@ class LogsEvent;
 class LogsDbConnector;
 class LogsMatchesModel;
 class LogsConfigurationParams;
+class LogsDetailsModel;
 
 /**
  * Model for log events.
@@ -112,6 +113,12 @@ public: // The exported API
      * @return 0 if configured succesfully
      */
     LOGSENGINE_EXPORT int updateConfiguration(LogsConfigurationParams& params);
+    
+    /**
+     * Get details model.
+     * @return details model
+     */
+    LOGSENGINE_EXPORT LogsDetailsModel* logsDetailsModel(LogsEvent& event);
 
 public: // From QAbstractItemModel
     

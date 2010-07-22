@@ -42,12 +42,13 @@
 #include <hbgroupbox.h>
 #include <hbmessagebox.h>
 #include <hbmainwindow.h>
+#include <hbswipegesture.h>
 #include <QTimer>
+#include <hbactivitymanager.h>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
 
 const int logsMissedCallsMarkingDelayMs = 1000;
-const int logsSwipeAngleDelta = 30; // angle is from 0 to 360
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::LogsRecentCallsView
@@ -64,10 +65,12 @@ LogsRecentCallsView::LogsRecentCallsView(
       mMoveLeftInList(false),
       mEffectHandler(0),
       mListViewX(0),
+      mEmptyListLabelX(0),
       mMatchesModel(0),
       mMarkingMissedAsSeen(false),
       mPageIndicator(0),
-      mResetted(false)
+      mFirstActivation(true),
+      mListScrollBarPolicy(HbScrollArea::ScrollBarAutoHide)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::LogsRecentCallsView()" );
     mModel = mRepository.model();
@@ -75,6 +78,13 @@ LogsRecentCallsView::LogsRecentCallsView(
     //TODO: taking away due to toolbar bug. If toolbar visibility changes on view
     //activation, there will be a crash due to previous view effect is playing
     //addViewSwitchingEffects();
+    
+    // Important to add in the same order as mCurrentView enums as correct
+    // activity id is taken directly from the array based on the enum
+    mActivities.append( logsActivityIdViewRecent );
+    mActivities.append( logsActivityIdViewReceived );
+    mActivities.append( logsActivityIdViewCalled );
+    mActivities.append( logsActivityIdViewMissed );
 }
     
 // -----------------------------------------------------------------------------
@@ -105,7 +115,11 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     // base class handling first
     LogsBaseView::activated(showDialer, args);
     
-    LogsServices::LogsView view = static_cast<LogsServices::LogsView>( args.toInt() );
+    int internalViewId = args.toInt();
+    if ( internalViewId < 0 || internalViewId > LogsServices::ViewMissed ){
+        internalViewId = LogsServices::ViewAll;
+    }
+    LogsServices::LogsView view = static_cast<LogsServices::LogsView>( internalViewId );
 
     // View update is needed when we activate view for the first time (!mFilter)
     // or if view has to be changed
@@ -115,14 +129,13 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     activateEmptyListIndicator(mFilter);
     
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mCurrentView));
-    
-    if ( mResetted ){
-        // After reset, first data addition should cause scrolling to topitem
-        connect( mFilter, SIGNAL(rowsInserted(const QModelIndex&,int,int)), 
-                 this, SLOT(scrollToTopItem()) );
-        mResetted = false;
-    }
 
+    mFirstActivation = false;
+    
+    if (mEmptyListLabel) {
+        mEmptyListLabelX = mEmptyListLabel->pos().x();
+    }
+  
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::activated()" );  
 }
 
@@ -161,13 +174,29 @@ bool LogsRecentCallsView::isExitAllowed()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::resetView()
+QString LogsRecentCallsView::saveActivity(
+    QDataStream& serializedActivity, QVariantHash& metaData)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::resetView()" );
-    LogsBaseView::resetView();
-    mResetted = true;
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::resetView()" );
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    if ( mCurrentView >= 0 && mCurrentView < mActivities.count() ){
+        return mActivities.at( mCurrentView );
+    }
+    return QString();
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QVariant LogsRecentCallsView::loadActivity(
+    const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return mActivities.indexOf(activityId);
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::initView
@@ -190,7 +219,8 @@ void LogsRecentCallsView::initView()
             this, SLOT(dissappearByMovingComplete()));
     connect(mEffectHandler, SIGNAL(dissappearByFadingComplete()), 
             this, SLOT(dissappearByFadingComplete()));
-    
+    connect(mEffectHandler, SIGNAL(appearByMovingComplete()), 
+            this, SLOT(appearByMovingComplete()));
     mPageIndicator = qobject_cast<LogsPageIndicator*>
                         (mRepository.findWidget(logsPageIndicatorId));
     
@@ -412,12 +442,13 @@ void LogsRecentCallsView::initListWidget()
             this,
             SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)));
     
-    mListView->setScrollingStyle(HbScrollArea::PanOrFlick); 
     mListView->setFrictionEnabled(true);
     
     mListViewX = mListView->pos().x();
     
     grabGesture(Qt::SwipeGesture);
+    
+    mListScrollBarPolicy = mListView->verticalScrollBarPolicy();
 
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::initListWidget() " );
 }
@@ -442,7 +473,7 @@ void LogsRecentCallsView::updateFilter(LogsFilter::FilterType type)
         
         mListView->setModel( mFilter );//ownership not transferred
         
-        scrollToTopItem();
+        scrollToTopItem(mListView);
         
         activateEmptyListIndicator(mFilter);
          
@@ -514,52 +545,22 @@ void LogsRecentCallsView::gestureEvent(QGestureEvent *event)
 {
     QGesture* gesture = event->gesture(Qt::SwipeGesture);
     if (gesture) {
-        QSwipeGesture* swipe = static_cast<QSwipeGesture *>(gesture);
-        if (swipe->state() == Qt::GestureFinished) {
-            QSwipeGesture::SwipeDirection direction = swipeAngleToDirection(
-                    swipe->swipeAngle(), logsSwipeAngleDelta);
-            if (mViewManager.mainWindow().orientation() == Qt::Vertical) {
-                if (direction == QSwipeGesture::Left) {
-                    leftFlick();
-                    event->accept(Qt::SwipeGesture);
-                } else if (direction == QSwipeGesture::Right) {
-                    rightFlick();
-                    event->accept(Qt::SwipeGesture);
-                }
-            } else {
-                if (direction == QSwipeGesture::Down) {
-                    rightFlick();
-                    event->accept(Qt::SwipeGesture);
-                } else if (direction == QSwipeGesture::Up) {
-                    leftFlick();
-                    event->accept(Qt::SwipeGesture);
-                }
+        LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::gestureEvent()" );
+        HbSwipeGesture* swipe = static_cast<HbSwipeGesture *>(gesture);
+        if (swipe && swipe->state() == Qt::GestureFinished) {
+            LOGS_QDEBUG_2( "logs [UI] sceneSwipeAngle: ", swipe->sceneSwipeAngle() );
+            LOGS_QDEBUG_2( "logs [UI] swipeAngle: ", swipe->swipeAngle() );
+            
+            QSwipeGesture::SwipeDirection direction = swipe->sceneHorizontalDirection(); 
+            if (direction == QSwipeGesture::Left) {
+                leftFlick();
+                event->accept(Qt::SwipeGesture);
+            } else if (direction == QSwipeGesture::Right) {
+                rightFlick();
+                event->accept(Qt::SwipeGesture);
             }
         }
     }
-}
-
-// -----------------------------------------------------------------------------
-// LogsRecentCallsView::swipeAngleToDirection
-// -----------------------------------------------------------------------------
-//
-QSwipeGesture::SwipeDirection LogsRecentCallsView::swipeAngleToDirection(
-        int angle, int delta)
-{
-    QSwipeGesture::SwipeDirection direction(QSwipeGesture::NoDirection);
-    if ((angle > 90-delta) && (angle < 90+delta)) {
-        direction = QSwipeGesture::Up;
-    } else if ((angle > 270-delta) && (angle < 270+delta)) {
-        direction = QSwipeGesture::Down;
-    } else if (((angle >= 0) && (angle < delta)) 
-            || ((angle > 360-delta) && (angle <= 360))) {
-        direction = QSwipeGesture::Right;
-    } else if ((angle > 180-delta) && (angle < 180+delta)) {
-        direction = QSwipeGesture::Left;
-    }
-    LOGS_QDEBUG_4( "logs [UI] LogsRecentCallsView::swipeAngleToDirection() angle: ",
-            angle, " direction: ", direction );
-    return direction;    
 }
 
 // -----------------------------------------------------------------------------
@@ -577,7 +578,8 @@ void LogsRecentCallsView::leftFlick()
         if (model() && model()->rowCount() > 0) {
             mEffectHandler->startMoveNotPossibleEffect(*mListView, false, mListViewX);
         } else {
-            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, false, mListViewX);
+            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, 
+                    false, mEmptyListLabelX);
         }
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::leftFlick()" );
@@ -598,7 +600,8 @@ void LogsRecentCallsView::rightFlick()
         if (model() && model()->rowCount() > 0) {
             mEffectHandler->startMoveNotPossibleEffect(*mListView, true, mListViewX);
         } else {
-            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, true, mListViewX);
+            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, 
+                    true, mEmptyListLabelX);
         }
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::rightFlick()" );
@@ -621,11 +624,13 @@ void LogsRecentCallsView::changeView(LogsServices::LogsView view)
     }
     
     mMoveLeftInList = mConversionMap.value(view) < mConversionMap.value(mCurrentView);
-
     mAppearingView = view;
+    // Disable scrollbar while moving the list for more nice looks
+    mListView->setVerticalScrollBarPolicy(HbScrollArea::ScrollBarAlwaysOff);  
     mEffectHandler->startDissappearAppearByFadingEffect(*mViewName);
     mEffectHandler->startDissappearAppearByMovingEffect(
-            *mListView, *mEmptyListLabel, !mMoveLeftInList, mListViewX);
+            *mListView, *mEmptyListLabel, !mMoveLeftInList, 
+             mListViewX, mEmptyListLabelX);
 
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mAppearingView));
     
@@ -655,9 +660,24 @@ void LogsRecentCallsView::dissappearByMovingComplete()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::dissappearByMovingComplete()" )
     
-    updateView( mAppearingView );
+    updateView( mAppearingView ); 
     
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::dissappearByMovingComplete()" )
+}
+
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::appearByMovingComplete()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::appearByMovingComplete()" )
+    
+    // Restore scrollbar which was hidden when animation started
+    mListView->setVerticalScrollBarPolicy(mListScrollBarPolicy);
+    
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::appearByMovingComplete()" )
 }
 
 // -----------------------------------------------------------------------------
@@ -680,6 +700,8 @@ void LogsRecentCallsView::updateMenu()
     
     updateDialpadCallAndMessagingActions();
     updateContactSearchAction();
+    
+    updateMenuVisibility();
     
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateMenu()" );
 }
@@ -705,21 +727,48 @@ void LogsRecentCallsView::updateWidgetsSizeAndLayout()
     if ( mListView ) {
         updateMenu();
         updateListLayoutName(*mListView);
-        updateListSize();
-        HbDeviceProfile deviceProf;
+        updateListSize(*mListView);
         LogsConfigurationParams param;
-        QString testString = mListView->layoutName();
-        //note: ListItemTextWidth values are currently hardcoded and 
-        //they are taken from hblistviewitem.css "text-1" field
-        if (mListView->layoutName() == logsListLandscapeDialpadLayout) {
-            param.setListItemTextWidth( 38 * deviceProf.unitValue() );
-        } else {
-            param.setListItemTextWidth( 40 * deviceProf.unitValue() );
-        }
+        param.setListItemTextWidth( getListItemTextWidth() );
         mModel->updateConfiguration(param);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateWidgetsSizeAndLayout()" );
 }
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::getListItemTextWidth
+// -----------------------------------------------------------------------------
+//
+int LogsRecentCallsView::getListItemTextWidth()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::getListItemTextWidth()" );
+
+    qreal width = 0.0;
+    QRectF screenRect = mViewManager.mainWindow().layoutRect();
+    LOGS_QDEBUG_2( "logs [UI]  screenRect:", screenRect );
+    
+    // Cannot use hb-param-screen-width in expressions currently due bug in layoutrect
+    qreal modifier = 0.0;
+    QString expr;
+    if (mListView->layoutName() == QLatin1String(logsListDefaultLayout)) {
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) ";
+        expr += "+ var(hb-param-margin-gene-right) + var(hb-param-margin-gene-middle-horizontal))";
+        width = screenRect.width();
+    } else {
+        expr = "expr(var(hb-param-graphic-size-primary-medium) + var(hb-param-margin-gene-left) ";
+        expr += "+ var(hb-param-margin-gene-right))";
+        width = screenRect.width() / 2;
+    }
+    
+    if ( expr.isEmpty() || !style()->parameter(expr, modifier) ){
+        LOGS_QDEBUG( "logs [UI] No expression or incorrect expression" );
+    }
+    width -= modifier;
+    
+    LOGS_QDEBUG_2( "logs [UI] <- LogsRecentCallsView::getListItemTextWidth(): ", width );   
+    return qRound(width);
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::updateCallButton
@@ -741,7 +790,7 @@ void LogsRecentCallsView::updateCallButton()
 //
 void LogsRecentCallsView::handleMissedCallsMarking()
 {
-    if ( mFilter && !mMarkingMissedAsSeen && !mResetted && 
+    if ( mFilter && !mMarkingMissedAsSeen && !mFirstActivation && 
           ( mFilter->filterType() == LogsFilter::Missed || 
             mFilter->filterType() == LogsFilter::All ) ){
         // Don't care if timer would be already running, slot's implementation
@@ -765,19 +814,4 @@ bool LogsRecentCallsView::markMissedCallsSeen()
             mModel->markEventsSeen(LogsModel::TypeLogsClearMissed);
     }
     return mMarkingMissedAsSeen;
-}
-
-// -----------------------------------------------------------------------------
-// LogsRecentCallsView::scrollToTopItem
-// -----------------------------------------------------------------------------
-//
-void LogsRecentCallsView::scrollToTopItem()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::scrollToTopItem()" );
-    disconnect( mFilter, SIGNAL(rowsInserted(const QModelIndex&,int,int)), 
-                this, SLOT(scrollToTopItem()));
-    if ( mFilter && mFilter->hasIndex(0,0) ) {
-        mListView->scrollTo( mFilter->index(0,0) );
-    }
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::scrollToTopItem()" );
 }

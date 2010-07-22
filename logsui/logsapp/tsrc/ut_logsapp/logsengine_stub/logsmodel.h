@@ -24,6 +24,7 @@
 
 class LogsMatchesModel;
 class LogsConfigurationParams;
+class LogsDetailsModel;
 
 /**
  * 
@@ -58,6 +59,7 @@ public: // The exported API
     int refreshData();
     int compressData();
 	int updateConfiguration(LogsConfigurationParams& params);
+	LogsDetailsModel* logsDetailsModel(LogsEvent& event);
 
 public: // From QAbstractItemModel
     

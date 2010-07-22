@@ -19,6 +19,7 @@
 #include <hbinputkeymapfactory.h>
 #include <hbinputkeymap.h>
 #include <hbinputsettingproxy.h>
+#include <QTextCodec>
 
 #include "logspredictivethai12keytranslator.h"
 #include "logslogger.h"
@@ -27,26 +28,35 @@ const QChar IgnoreList[] = {'*', '#' };
 const int IgnoreCount = 2;
 
 
+
+
 // -----------------------------------------------------------------------------
 // LogsPredictiveThai12KeyTranslator::LogsPredictiveThai12KeyTranslator()
 // -----------------------------------------------------------------------------
 //
 LogsPredictiveThai12KeyTranslator::LogsPredictiveThai12KeyTranslator()
-    : LogsPredictive12KeyTranslator()
+    : LogsPredictive12KeyTranslator( QLocale::Thai )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveThai12KeyTranslator::\
 LogsPredictiveThai12KeyTranslator()" )
-    HbInputLanguage lang = 
-            HbInputSettingProxy::instance()->globalInputLanguage();
-    ASSERT( lang.language() == QLocale::Thai );
-    mKeyMap = HbKeymapFactory::instance()->keymap( lang.language(), 
-                                                   lang.variant() );
-    
-    
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveThai12KeyTranslator::\
 LogsPredictiveThai12KeyTranslator()" )
 }
 
+// -----------------------------------------------------------------------------
+// LogsPredictiveThai12KeyTranslator::LogsPredictiveThai12KeyTranslator()
+// -----------------------------------------------------------------------------
+//
+LogsPredictiveThai12KeyTranslator::LogsPredictiveThai12KeyTranslator(
+        const HbInputLanguage& lang )
+    : LogsPredictive12KeyTranslator( lang )
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveThai12KeyTranslator::\
+LogsPredictiveThai12KeyTranslator()" )
+    ASSERT( lang.language() == QLocale::Thai );
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveThai12KeyTranslator::\
+LogsPredictiveThai12KeyTranslator()" )
+}
 
 // -----------------------------------------------------------------------------
 // LogsPredictiveThai12KeyTranslator::~LogsPredictiveThai12KeyTranslator()
@@ -66,11 +76,14 @@ LogsPredictiveThai12KeyTranslator::~LogsPredictiveThai12KeyTranslator()
 // -----------------------------------------------------------------------------
 //
 const QChar LogsPredictiveThai12KeyTranslator::translateChar( 
-                                                    const QChar character ) const
+                                                    const QChar character, 
+                                                    bool& ok ) const
 {
+    ok = true;
     QChar keycode;
     if ( !isIgnored( character ) ) {
         keycode = LogsPredictive12KeyTranslator::translateChar( character );
+        ok = !keycode.isNull();
         keycode = !keycode.isNull() && !isIgnored( keycode ) ? 
                     keycode : QChar();
     }
@@ -102,8 +115,3 @@ bool LogsPredictiveThai12KeyTranslator::isIgnored( const QChar character ) const
     }
     return found;
 }
-
-
-
-
-

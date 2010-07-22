@@ -22,11 +22,39 @@
 
 /**
 * Logs application services
+* @deprecated  Use XQApplicationManager instead. 
+*  Service name: "logs",
+*  Interface name: "com.nokia.symbian.ILogsView"
+*  Operation signature: "show(QVariantMap)" 
+*  Operation parameters: 
+*     "view_index": int, 0 - all recent, 1 - received, 2 - called, 3 - missed
+*     "show_dialpad": bool, if true view is shown with dialpad opened on top
+*     "dialpad_text": QString, number to be prefilled into dialpad
+*     
+*  Example usage:
+*  XQApplicationManager appMgr;
+*  QScopedPointer<XQAiwRequest> request(appMgr.create(QString("logs"),
+*                  QString("com.nokia.symbian.ILogsView"), 
+*                  QString("show(QVariantMap)"), false));   
+*  if (!request.isNull()) {
+*      int retValue = -1; 
+*      QList<QVariant> arglist;
+*      QVariantMap map;
+*      map.insert("view_index", QVariant(0));
+*      map.insert("show_dialpad", QVariant(true));
+*      map.insert("dialpad_text", QVariant(QString()));
+*      arglist.append(QVariant(map));
+*      request->setArguments(arglist);
+*      QVariant ret(retValue);        
+*      request->send(ret);
+*  }
+*
 */
 class LogsServices
 {
     public:
     
+    //Deprecated
     enum LogsView{
         ViewAll,
         ViewReceived,
@@ -36,6 +64,9 @@ class LogsServices
     /**
      * Requests to start Logs application. If Logs is already running,
      * activates the requested view.
+     * 
+     * @deprecated Use "com.nokia.symbian.ILogsView" interface 
+     * and "show(int,bool,QString)" operation instead
      *
      * @param activatedView   The view to be activated in Logs.
      * @param showDialpad     Specifies whether dialpad should be shown on top
@@ -47,5 +78,6 @@ class LogsServices
         LogsView activatedView, bool showDialpad, const QString& number = QString());
 
 };
+
 
 #endif  //LOGSSERVICES_H

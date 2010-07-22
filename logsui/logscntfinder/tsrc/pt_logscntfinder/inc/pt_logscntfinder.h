@@ -14,23 +14,51 @@
 * Description:
 *
 */
-#ifndef UT_CNTPREFILTERING_H
-#define UT_CNTPREFILTERING_H
+#ifndef PT_LOGSCNTFINDER_H
+#define PT_LOGSCNTFINDER_H
 
 #include <QObject>
 #include <qcontactmanager.h>
 
 QTM_USE_NAMESPACE
-
 class LogsCntFinder;
 
+class PtTest
+{
+public:
+    
+    PtTest( const QString& name );
+    void execute( LogsCntFinder& engine );
+    void execute( QContactManager& manager );
+    void calculateMean();
+    void calculateVariance();
+    void calculateDeviation();
+    void print();
+    static QString statHeader(); 
+    
+public:
+    
+    QString mPattern;
+    QList<int> mSamples;
+    float mMean;
+    float mVariance;
+    float mStdDeviation;
+    int mMin;
+    int mMax;
+    int mMinSample;
+    int mMaxSample;
+    int mResults;
 
-class pt_LogsCntFinder : public QObject                 
+};
+
+
+
+class PT_LogsCntFinder : public QObject                 
 {
      Q_OBJECT
 public:
      
-     inline pt_LogsCntFinder( int samples ) : mSamples(samples) {}
+     inline PT_LogsCntFinder( int samples ) : mSamples(samples) {}
      
 private slots:
 
@@ -57,10 +85,7 @@ private slots: //test methods
     void statistics();
 
 private:
-    void createContacts();
     void createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber);
-    
-    QContactFilter::MatchFlags flag(int f);
     
 private:
     
@@ -70,4 +95,4 @@ private:
 };
 
 
-#endif //UT_CNTSPREFILTERING_H
+#endif //PT_LOGSCNTFINDER_H

@@ -134,11 +134,21 @@ bool XQServiceRequest::send(QVariant& retValue)
 {
     return true;
 }
+
 void XQServiceRequest::addArg(const QVariant& v)
 {
 
 }
 
+void XQServiceRequest::setInfo(const XQRequestInfo &info)
+{
+    Q_UNUSED(info);
+}
+
+void XQRequestInfo::setForeground(bool on)
+{
+    Q_UNUSED(on)
+}
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------

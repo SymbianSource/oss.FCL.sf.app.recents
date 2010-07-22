@@ -25,6 +25,14 @@
 #include "logspredictive12keytranslator.h"
 
 class HbKeymap;
+class HbInputLanguage;
+
+
+//Name: TIS-620
+//MIBenum: 2259
+//Source: Thai Industrial Standards Institute (TISI) [Tantsetthi]
+const int MIBenumThai = 2259;
+
 
 
 /**
@@ -37,13 +45,15 @@ class LogsPredictiveThai12KeyTranslator : public LogsPredictive12KeyTranslator
 public: 
 
     explicit LogsPredictiveThai12KeyTranslator();
+    explicit LogsPredictiveThai12KeyTranslator( const HbInputLanguage& lang );
     ~LogsPredictiveThai12KeyTranslator();
     
 public: //from LogsPredictiveTranslator
     
-    const QChar translateChar( const QChar character ) const;
+    const QChar translateChar( const QChar character, bool& ok ) const;
     QStringList nameTokens( const QString& name ) const;
-    
+    inline int mib() const {return MIBenumThai;}
+  
 private:
     
     bool isIgnored( const QChar character ) const;

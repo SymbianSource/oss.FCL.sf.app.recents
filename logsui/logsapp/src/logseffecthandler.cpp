@@ -31,6 +31,7 @@ const int logsEffectMoveNotPossibleDurationInMs = 200;
 const int logsMoveNotPossibleAmount = 30;
 
 const int logsDissappearByMovingIndex = 0;
+const int logsPauseBetweenDissappearAndAppearIndex = 1;
 const int logsAppearByMovingIndex = 2;
 
 // -----------------------------------------------------------------------------
@@ -72,6 +73,7 @@ LogsEffectHandler::LogsEffectHandler() : QObject()
 
     connect(mMoveGroup, SIGNAL(currentAnimationChanged(QAbstractAnimation *)), 
             this, SLOT( moveAnimationChanged(QAbstractAnimation *)));
+    connect(mMoveGroup, SIGNAL(finished()), this, SIGNAL(appearByMovingComplete()) );
     connect(mFadeGroup, SIGNAL(currentAnimationChanged(QAbstractAnimation *)), 
             this, SLOT( fadeAnimationChanged(QAbstractAnimation *)));        
     
@@ -101,7 +103,8 @@ LogsEffectHandler::~LogsEffectHandler()
 //
 void LogsEffectHandler::moveAnimationChanged(QAbstractAnimation *currentAnimation)
 {
-    if ( mMoveGroup->indexOfAnimation(currentAnimation) == 1 ) {
+    int indexOfAnimation = mMoveGroup->indexOfAnimation(currentAnimation);
+    if (indexOfAnimation == logsPauseBetweenDissappearAndAppearIndex ) {
         emit dissappearByMovingComplete();
     }
 }
@@ -112,7 +115,8 @@ void LogsEffectHandler::moveAnimationChanged(QAbstractAnimation *currentAnimatio
 //
 void LogsEffectHandler::fadeAnimationChanged(QAbstractAnimation *currentAnimation)
 {
-    if ( mFadeGroup->indexOfAnimation(currentAnimation) == 1 ) {
+    int indexOfAnimation = mFadeGroup->indexOfAnimation(currentAnimation);
+    if ( indexOfAnimation == logsPauseBetweenDissappearAndAppearIndex ) {
         emit dissappearByFadingComplete();
     }
 }
@@ -137,12 +141,13 @@ void LogsEffectHandler::startDissappearAppearByFadingEffect(QObject& effectTarge
 //
 void LogsEffectHandler::startDissappearAppearByMovingEffect(
         QObject& effectTarget, QObject& secondaryEffectTarget, 
-        bool dissappearToLeft, int origX)
+        bool dissappearToLeft, int origX, int secondaryOrigX)
 {
     doStartDissappearAppearByMovingEffect(
             *mMoveGroup, effectTarget, dissappearToLeft, origX);
+    
     doStartDissappearAppearByMovingEffect(
-            *mMoveGroup2, secondaryEffectTarget, dissappearToLeft, origX);
+            *mMoveGroup2, secondaryEffectTarget, dissappearToLeft, secondaryOrigX);
 }
 
 // -----------------------------------------------------------------------------

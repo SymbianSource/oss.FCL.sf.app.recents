@@ -54,6 +54,7 @@ private slots: //test methods
     void testSetContactLocalId();
     void testUpdateRemotePartyFromContacts();
     void testParseContactName();
+    void testSerialization();
  
 private:
  

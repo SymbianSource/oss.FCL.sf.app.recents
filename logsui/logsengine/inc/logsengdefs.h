@@ -31,7 +31,7 @@ const char logsVideoCallIconId[] = "qtg_large_video_call";
 const char logsVoipCallIconId[] = "qtg_large_voip";
 
 const char logsRemotePartyInfoIconId[] = "qtg_large_info";
-const char logsCallDurationIconId[] = "qtg_large_callduration";
+const char logsCallDurationIconId[] = "qtg_large_call_duration";
 const char logsCallDateAndTimeIconId[] = "qtg_large_calendar";
 const char logsThumbUnknownId[] = "qtg_large_avatar";
 
@@ -56,17 +56,12 @@ const char logsReceivedVoipCallIconId[] = "qtg_large_voip_received_call";
 const int logsEventALS = 0x4;
 const int logsDeleteCountInit = -1;
 
-const int logsReadSizeCompressEnabled = 20;
+const int logsReadSizeCompressEnabled = 10;
 const int logsReadSizeUndefined = -1;
 
 // MACROS
 #define DESC_TO_QSTRING( desc )\
     QString::fromUtf16( desc.Ptr(), desc.Length() );
-
-#define LOGSENG_PANIC() User::Invariant()
-
-#define LOGSENG_ASSERT( cond )\
-if ( !(cond) ) LOGSENG_PANIC;
 
 // DATA TYPES
 

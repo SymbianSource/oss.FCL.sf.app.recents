@@ -22,9 +22,15 @@
 #include "hbstubs_helper.h"
 #include <hbmessagebox.h>
 #include <hbapplication.h>
+#include <hbcolorscheme.h>
+#include <hbview.h>
+#include <hbactivitymanager.h>
 #include <QCoreApplication>
+#include <QApplication>
 #include <QTimer>
 #include <QGesture>
+#include <hblistview.h>
+#include <hblistviewitem.h>
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
@@ -40,6 +46,15 @@ bool testQuitCalled = false;
 Qt::GestureState testState = Qt::NoGesture;
 bool testIsWidgetOpen = false;
 bool testIsWidgetRaised = false;
+QColor testColor = Qt::white;
+QList<HbView *> testViews;
+QList<QVariantHash> testActivities;
+HbActivityManager testActivityManager;
+Hb::ActivationReason testActivationReason = Hb::ActivationReasonNormal;
+QString testActivityId = "LogsViewMatches";
+QList<HbListViewItem*> testViewItems;
+bool testEnsureVisibleCalled = false;
+bool testScrollToCalled = false;
 
 void HbStubHelper::reset()
 {
@@ -49,9 +64,15 @@ void HbStubHelper::reset()
     testQuitCalled = false;
     testIsWidgetRaised = false;
     testDialogShown = false;
+    testColor = Qt::white;
+    testActivationReason = Hb::ActivationReasonNormal;
+    testActivityId = "LogsViewMatches";
+    testActivities.clear();
+    qDeleteAll(testViewItems);
+    testViewItems.clear();
+    testScrollToCalled = false;
+    testEnsureVisibleCalled = false;
 }
-
-
 
 int HbStubHelper::widgetActionsCount()
 {
@@ -106,6 +127,62 @@ void HbStubHelper::setWidgetOpen(bool isOpen)
     testIsWidgetOpen = isOpen;
 }
 
+void HbStubHelper::setColorScheme(QColor col)
+{
+    testColor = col;
+}
+
+void HbStubHelper::setActivityReason(Hb::ActivationReason reason)
+{
+    testActivationReason = reason;
+}
+
+void HbStubHelper::setActivityId(QString activityId)
+{
+    testActivityId = activityId;
+}
+
+QList<HbListViewItem*>& HbStubHelper::listItems()
+{
+    return testViewItems;
+}
+
+bool HbStubHelper::listScrollToCalled()
+{
+    return testScrollToCalled;
+}
+
+bool HbStubHelper::listEnsureVisibleCalled()
+{
+    return testEnsureVisibleCalled;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QCoreApplication::QCoreApplication(int &argc, char **argv)
+{
+    
+}
+
+
+void QCoreApplication::quit()
+{
+    testQuitCalled = true; 
+}
+
+QApplication::QApplication(QApplication::QS60MainApplicationFactory factory, int &argc, char **argv, int version) 
+: QCoreApplication(argc, argv)
+{
+    
+}
+
+QApplication::~QApplication()
+{
+    
+}
+
 bool QGraphicsWidget::close()
 {
     testIsWidgetOpen = false;
@@ -121,11 +198,52 @@ void QWidget::raise()
     testIsWidgetRaised = true;
 }
 
+QPixmap QPixmap::grabWidget(QWidget *widget, const QRect &rect)
+{
+    Q_UNUSED(widget);
+    Q_UNUSED(rect);
+    return QPixmap();
+}
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
 //
-HbApplication::HbApplication(int &/*argc*/, char */*argv*/[]) 
+HbActivityManager::HbActivityManager(QObject *parent) : QObject(parent)
+{
+    
+}
+HbActivityManager::~HbActivityManager()
+{
+    
+}
+    
+bool HbActivityManager::addActivity(const QString &activityId, const QVariant &data, const QVariantHash &parameters)
+{
+    testActivities.append(parameters);
+}
+bool HbActivityManager::removeActivity(const QString &activityId)
+{
+    if ( !testActivities.isEmpty() ){
+        testActivities.takeFirst();
+    }
+}
+QList<QVariantHash> HbActivityManager::activities() const
+{
+    return testActivities;
+}
+
+bool HbActivityManager::waitActivity()
+{
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+HbApplication::HbApplication(int &argc, char *argv[]) :
+    QApplication(0, argc, argv, 0) 
 {
 }
 
@@ -138,9 +256,26 @@ void HbApplication::quit()
     testQuitCalled = true; 
 }
 
-void QCoreApplication::quit()
+HbActivityManager *HbApplication::activityManager()
 {
-    testQuitCalled = true; 
+    return &testActivityManager;
+}
+
+Hb::ActivationReason HbApplication::activateReason() const
+{
+    return testActivationReason;
+}
+QVariantHash HbApplication::activateParams() const
+{
+    return QVariantHash();
+}
+QString HbApplication::activateId() const
+{
+    return testActivityId;
+}
+QVariant HbApplication::activateData()
+{
+    return QVariant();
 }
     
 // -----------------------------------------------------------------------------
@@ -182,6 +317,7 @@ HbMainWindow::HbMainWindow(QWidget *parent, Hb::WindowFlags windowFlags) : d_ptr
     Q_UNUSED(windowFlags)
     testViewCount = 0;
     testWindow = this;
+    testViews.clear();
 }
 
 HbMainWindow::~HbMainWindow()
@@ -191,7 +327,7 @@ HbMainWindow::~HbMainWindow()
     
 void HbMainWindow::setOrientation(Qt::Orientation orientation, bool animate)
 {
-		Q_UNUSED(animate)
+    Q_UNUSED(animate)
     windowOrientation = orientation; 
 }
 
@@ -202,26 +338,30 @@ Qt::Orientation HbMainWindow::orientation() const
 
 QRectF HbMainWindow::layoutRect() const
 {
-    return QRectF(0, 0, 100,100);
+    if (windowOrientation == Qt::Vertical) {
+        return QRectF(0, 0, 360, 640);
+    } else {
+        return QRectF(0, 0, 640, 360);
+    }
 }
 
 HbView *HbMainWindow::addView(QGraphicsWidget *widget)
 {
-    Q_UNUSED(widget)
     testViewCount++;
+    testViews.append( static_cast<HbView*>(widget) );
 }
 
 void HbMainWindow::setCurrentView(HbView *view, bool animate, Hb::ViewSwitchFlags flags)
 {
-    Q_UNUSED(animate)
     Q_UNUSED(flags)
     testView = view;
 }
 
-int HbMainWindow::viewCount() const
+QList<HbView *> HbMainWindow::views() const
 {
-    return testViewCount;
+    return testViews;
 }
+
 HbView *HbMainWindow::currentView() const
 {
     return testView;
@@ -256,26 +396,68 @@ QList<HbMainWindow *> HbInstance::allMainWindows() const
 
 void HbMessageBox::setText(const QString &string)
 {
-    
     if (string == "Ok") {
     	selectedActionString = "primary";
     } else if (string == "Cancel") {
     	selectedActionString = "secondary";
-    }
-   
-}
-
-
-HbAction *HbDialog::exec()
-{
-    if (selectedActionString == "primary")	{
-        return primaryAction();
-    } else {
-        return 0;
     }
 }
 
 void QTimer::singleShot(int msec, QObject *receiver, const char *member)
 {
     testSingleShotTimer = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool HbStyle::parameter(const QString &parameter, qreal &value, const HbDeviceProfile &profile) const
+{
+    Q_UNUSED( profile );
+    value = parameter.length();
+    return true;
+}
+
+
+QColor HbColorScheme::color( const QString &colorRole )
+{
+    Q_UNUSED(colorRole);
+    return testColor;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void HbListView::scrollTo(const QModelIndex &index, ScrollHint hint)
+{
+    Q_UNUSED(index);
+    Q_UNUSED(hint);
+    testScrollToCalled = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QList<HbAbstractViewItem *> HbAbstractItemView::visibleItems() const
+{
+    QList<HbAbstractViewItem*> visible;
+    foreach ( HbListViewItem* item, testViewItems ){
+        visible.append( item );
+    }
+    return visible;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void HbScrollArea::ensureVisible(const QPointF &position, qreal xMargin, qreal yMargin)
+{
+    Q_UNUSED(position);
+    Q_UNUSED(xMargin);
+    Q_UNUSED(yMargin);
+    testEnsureVisibleCalled = true;
 }

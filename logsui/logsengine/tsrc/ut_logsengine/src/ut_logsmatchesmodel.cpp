@@ -331,6 +331,55 @@ void UT_LogsMatchesModel::testDataRemoved()
 //
 // -----------------------------------------------------------------------------
 //
+void UT_LogsMatchesModel::testDataResetted()
+{
+    // Have few events and then get reset where one event is removed and
+    // one new event is added
+    //
+    LogsEvent* event = new LogsEvent();
+    QString event1Name("event1");
+    event->setRemoteParty(event1Name);
+    LogsEvent* event2 = new LogsEvent();
+    QString event2Name("event2");
+    event2->setRemoteParty(event2Name);
+    LogsEvent* event3 = new LogsEvent();
+    QString event3Name("event3");
+    event3->setRemoteParty(event3Name);
+    mModel->mEvents.append(event);
+    mModel->mEvents.append(event2);
+    mModel->mEvents.append(event3);
+    mMatchesModel->eventsAdded(QModelIndex(), 0, 2);
+    QCOMPARE( mMatchesModel->mSearchEvents.count(), 3 );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.count(), 3 );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(0)->firstName().at(0).text(), event1Name );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(1)->firstName().at(0).text(), event2Name );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(2)->firstName().at(0).text(), event3Name );
+    
+    mModel->mEvents.clear();
+
+    LogsEvent* event4 = new LogsEvent();
+    QString event4Name("event4");
+    event4->setRemoteParty(event4Name);
+    mModel->mEvents.append(event4);
+    
+    mModel->mEvents.append(event);
+    mModel->mEvents.append(event3);
+    
+    QSignalSpy spy(mMatchesModel, SIGNAL(modelReset()));
+    mMatchesModel->eventsResetted();
+    QCOMPARE( mMatchesModel->mSearchEvents.count(), 3 );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.count(), 3 );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(0)->firstName().at(0).text(), event4Name );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(1)->firstName().at(0).text(), event1Name );
+    QCOMPARE( mMatchesModel->mLogsCntFinder->mHistoryEvents.at(2)->firstName().at(0).text(), event3Name );
+    QCOMPARE( spy.count(), 1 ); 
+    delete event2;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void UT_LogsMatchesModel::testLogsMatches()
 {
     QVERIFY( mMatchesModel->mLogsCntFinder );
@@ -487,9 +536,12 @@ void UT_LogsMatchesModel::testCreateMessage()
     // With contact, messaging supported
     LogsMatchesModelItemContainer item3(*mModel, *mMatchesModel->mIconManager, 2);  
     item3.setContact(2);
+    item3.mContactName = "<b>so</b>mename";
+    item3.mContactNameSimple = "somename";
     var = mMatchesModel->createMessage(item3);
     message = qVariantValue<LogsMessage *>( var );
     QVERIFY( message );
+    QVERIFY( message->mDisplayName == "somename" );
     delete message;
 }
 
@@ -605,22 +657,26 @@ void UT_LogsMatchesModel::testGetFormattedCallerId()
 void UT_LogsMatchesModel::testGetFormattedContactInfo()
 {
     QString name;
+    QString nameSimple;
     QString number;
     QVERIFY( mMatchesModel->mIconManager );
     
     // Entry is not initialized, name and number are empty
     LogsCntEntry entry(0);
     LogsMatchesModelItemContainer item(*mModel, *mMatchesModel->mIconManager, 0);
-    item.getFormattedContactInfo(entry, name, number);
-    QVERIFY( name.length() == 0 && number.length() == 0 );
+    item.getFormattedContactInfo(entry, name, nameSimple, number);
+    QVERIFY( name.length() == 0 && nameSimple.length() == 0 && number.length() == 0 );
     
     // Entry is initialized, name and number are not empty
     entry.setFirstName("long firstname");
     entry.setLastName("long lastname");
     entry.setPhoneNumber("number");
-    item.getFormattedContactInfo(entry, name, number);
-    QVERIFY( name == "long firstname long lastname" );
-    QVERIFY( number == "number" );
+    entry.setHighlights("lo");
+    item.getFormattedContactInfo(entry, name, nameSimple, number);
+    QCOMPARE( nameSimple, QString("long firstname long lastname") );
+    QVERIFY( nameSimple.length() < name.length() );
+    QCOMPARE( number, QString("number") );
+    entry.setHighlights("");
 }
 
 // -----------------------------------------------------------------------------

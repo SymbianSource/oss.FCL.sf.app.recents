@@ -48,6 +48,8 @@ private slots: //test methods
      
     void testConstructorDestructor();
     void testSetActive();
+    void testChangeEvent();
+    void testUpdateColor();
     void testAnimationFinnished();
     
 private:

@@ -45,9 +45,12 @@ LogsMatchesView::LogsMatchesView(
     : LogsBaseView(LogsMatchesViewId, repository, viewManager),
       mListView(0),
       mModel(0),
-      mAddToContactsButton(0)
+      mAddToContactsButton(0),
+      mAddToContactsButtonDisabled(false)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsMatchesView::LogsMatchesView()" );
+    
+    mActivities.append( logsActivityIdViewMatches );
 }
     
 // -----------------------------------------------------------------------------
@@ -67,7 +70,10 @@ LogsMatchesView::~LogsMatchesView()
 //
 void LogsMatchesView::activated(bool showDialer, QVariant args)
 {
-    //base class handling first
+    // Disable add to contacts button handling while view is activated
+    // to avoid unnecessary quick appear/dissappear of it.
+    mAddToContactsButtonDisabled = true;
+    
     LogsBaseView::activated(showDialer, args);
     
     LogsMatchesModel* model = qVariantValue<LogsMatchesModel*>(args);
@@ -75,6 +81,10 @@ void LogsMatchesView::activated(bool showDialer, QVariant args)
     dialpadEditorTextChanged();
     
     activateEmptyListIndicator(mModel);
+    
+    scrollToTopItem(mListView);
+    
+    mAddToContactsButtonDisabled = false;
 }
 
 // -----------------------------------------------------------------------------
@@ -188,8 +198,9 @@ void LogsMatchesView::updateModel(LogsMatchesModel* model)
 void LogsMatchesView::handleBackSoftkey()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::::handleBackSoftkey()" );
- 
+    mDialpad->editor().blockSignals(true);
     mDialpad->editor().setText(QString());
+    mDialpad->editor().blockSignals(false);
     
     if (mDialpad->isOpen()){
         LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::::handleBackSoftkey() closeDialpad" );
@@ -199,7 +210,7 @@ void LogsMatchesView::handleBackSoftkey()
         mDialpad->closeDialpad();
         mDialpad->blockSignals(false);
     }
-    
+
     LogsBaseView::handleBackSoftkey();
 
     LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::::handleBackSoftkey()" );
@@ -211,16 +222,18 @@ void LogsMatchesView::handleBackSoftkey()
 //
 void LogsMatchesView::dialpadEditorTextChanged()
 {
+    LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::::dialpadEditorTextChanged()" );
     updateCallButton();
     updateMenu();
     
     QString pattern = mDialpad->editor().text();
     if ( pattern.isEmpty() ){
-        // Treat empty input field same was as back press
+        // Treat empty input field same way as back press
         LogsBaseView::handleBackSoftkey();
     } else if ( mModel ) {
         mModel->logsMatches( pattern );
     }
+    LOGS_QDEBUG_2( "logs [UI] <- LogsMatchesView::::dialpadEditorTextChanged(), text: ", pattern );
 }
 
 // -----------------------------------------------------------------------------
@@ -255,7 +268,7 @@ void LogsMatchesView::updateWidgetsSizeAndLayout()
     if ( mListView ) {
         updateMenu();
         updateListLayoutName(*mListView);
-        updateListSize();
+        updateListSize(*mListView);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::updateWidgetsSizeAndLayout()" );
 }
@@ -293,9 +306,9 @@ void LogsMatchesView::updateMenu()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::updateMenu()" );
     
-    updateDialpadCallAndMessagingActions();
-    
+    updateDialpadCallAndMessagingActions();    
     updateContactSearchAction();
+    updateMenuVisibility();
 	
     LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::updateMenu()" );
 }
@@ -309,6 +322,7 @@ void LogsMatchesView::updateAddContactButton()
     if (mAddToContactsButton) {
         LOGS_QDEBUG( "logs [UI] <-> LogsMatchesView::updateAddContactButton()" );
         bool matchesFound(model() && (model()->rowCount() > 0));
-        mAddToContactsButton->setVisible(!matchesFound && isDialpadInput());
+        mAddToContactsButton->setVisible(
+            !mAddToContactsButtonDisabled && !matchesFound && isDialpadInput() );
     }
 }

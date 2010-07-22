@@ -128,9 +128,9 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::callToNumber(), type", callType )
         
     if (callType == TypeLogsVoiceCall) {
-        createcall("com.nokia.services.telephony", "dial(QString)", number, false);
+        createcall("com.nokia.symbian.ICallDial", "dial(QString)", number, false);
     } else if (callType == TypeLogsVideoCall) {
-        createcall("com.nokia.services.telephony", "dialVideo(QString)", number, false);
+        createcall("com.nokia.symbian.ICallDial", "dialVideo(QString)", number, false);
     } else if (callType == TypeLogsVoIPCall){
         if ( serviceId ){
         
@@ -140,7 +140,7 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
             // also contact must be passed if available if change service is
             // provided (no point change service and try to call service specific
             // uri with another service)?
-            createCallWithService("com.nokia.services.telephony", 
+            createCallWithService("com.nokia.symbian.ICallDial", 
                 "dialVoipService(QString,int)", number, false, serviceId);
         }
         else {
@@ -148,7 +148,7 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
             // offer any kind of service selection. Normally voip call
             // should always have service id set but if it's missing
             // for some reason, then this provides call failure UI.
-            createcall("com.nokia.services.telephony", 
+            createcall("com.nokia.symbian.ICallDial", 
                 "dialVoip(QString)", number, false);
         }
     }
@@ -189,6 +189,7 @@ void LogsCall::initiateCallback()
 void LogsCall::createcall(QString service, QString type, QString num, bool sync)
 {
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), num", num )
+    LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), service", service )
     XQServiceRequest snd(service, type, sync);
     snd << num;
     // Start call at bg, call UI will bring itself to foreground when ever

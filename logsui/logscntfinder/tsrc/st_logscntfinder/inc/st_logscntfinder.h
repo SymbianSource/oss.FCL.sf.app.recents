@@ -19,13 +19,14 @@
 
 #include <QObject>
 #include <qcontactmanager.h>
+#include <hbinputlanguage.h>
 
 QTM_USE_NAMESPACE
 
 class LogsCntFinder;
 
 
-class st_LogsCntFinder : public QObject                 
+class ST_LogsCntFinder : public QObject                 
 {
      Q_OBJECT
     
@@ -47,13 +48,36 @@ private slots:
      void cleanup();
 
 private slots: //test methods
-    void testPredictiveSearchQuery();
-    void testKeymap();
-    void testPredictiveSearchQueryZero();
-    void testPredictiveSearchQueryLimit();
+
+    void testKeymap_2();
+    void testKeymap_3();
+    void testKeymap_4();
+    void testKeymap_5();
+    void testKeymap_6();
+    void testKeymap_7();
+    void testKeymap_8();
+    void testKeymap_9();
+    void testPredictiveSearchQueryZeroStart();
+    void testPredictiveSearchQueryZeroStartZeroEnd();
+    void testPredictiveSearchQueryZeroMiddle();
+    void testPredictiveSearchQueryMultiZerosMiddle();
+    void testPredictiveSearchQueryZeroMiddleLong();
+    void testPredictiveSearchQueryMultiZerosAndZeroMiddle();
+    void testPredictiveSearchQueryPartialCached();
+    void testPredictiveSearchQueryFullyCached();
+    void testPredictiveSearchQueryPartialCachedNoResults();
+    void testPredictiveSearchQueryFullyCachedNoResults();
+    void testPredictiveSearchQueryPartialCachedZeroCase();
+    void testPredictiveSearchQueryFullyCachedZerosCase();
     void testPredictiveSearchQueryLogs();
-    void testPredictiveSearchQueryLogsContacts();
+    void testPredictiveSearchQueryLogsZeroCase();
+    void testPredictiveSearchQueryLogsContactsPartialCached();
+    void testPredictiveSearchQueryLogsContactsFullyCached();
+    void testPredictiveSearchQueryLogsContactsZeroCase();
+    void testPredictiveSearchQueryLogsContactsPhoneNumberMatch();
+    void testPredictiveSearchQueryLimit();
     void testQueryOrder();
+    void testContactWithNonMappedChars();
 
 private:
 
@@ -67,6 +91,7 @@ private:
     void createContacts();
     void createContactsForQueryOrder();
     void createContactsForQueryZero();
+    void createContactsWithNonMappedChars();
     void createHistoryEvents();
     void createLogEvent(
         QString firstname, 

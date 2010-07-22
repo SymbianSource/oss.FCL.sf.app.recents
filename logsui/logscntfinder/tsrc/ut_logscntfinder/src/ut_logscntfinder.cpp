@@ -72,7 +72,6 @@ void UT_LogsCntFinder::testPredictiveSearchQuery_latin12k()
     QSignalSpy queryReadySpy(mFinder, SIGNAL(queryReady() ) );
     QSignalSpy resultsAddedSpy(mCntResults, SIGNAL(resultsAdded() ) );
     
-    int resultsCount = 0;
     LogsCntEntryHandle* handle1 = (LogsCntEntryHandle*)1;
     LogsCntEntryHandle* handle2 = (LogsCntEntryHandle*)2;
     LogsCntEntryHandle* handle3 = (LogsCntEntryHandle*)3;

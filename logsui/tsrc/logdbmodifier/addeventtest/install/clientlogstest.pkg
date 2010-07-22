@@ -37,7 +37,7 @@
 ;
 ; Three files to install
 ;
-"\epoc32\release\armv5\udeb\logclienttest.exe"                   -"!:\sys\bin\logclienttest.exe"
+"\epoc32\release\armv5\urel\logclienttest.exe"       -"!:\sys\bin\logclienttest.exe"
 "\epoc32\winscw\c\system\testlogclients.dat"         -"!:\system\testlogclients.dat"
 
 

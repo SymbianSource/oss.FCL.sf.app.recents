@@ -27,6 +27,7 @@
 class LogsEventData;
 class LogsEventStrings;
 class CLogEvent;
+class QDataStream;
 
 QTM_BEGIN_NAMESPACE
 class QContactName;
@@ -166,6 +167,16 @@ public:
          */
         LOGSENGINE_EXPORT bool isRead() const;
         
+        /**
+         * Construct event from serialized data stream
+         */
+        LOGSENGINE_EXPORT LogsEvent( QDataStream& serializedEvent );
+        
+        /**
+         * Serialize event to data stream
+         */
+        LOGSENGINE_EXPORT bool serialize( QDataStream& serializeDestination );
+        
     public:
         
         /**
@@ -288,7 +299,7 @@ public:
 
         void setEventUid( int uid );
 
-        void setEventType( LogsEventType aEventType );
+        bool setEventType( LogsEventType aEventType );
 
         void setLogsEventData( LogsEventData* logsEventData );
 

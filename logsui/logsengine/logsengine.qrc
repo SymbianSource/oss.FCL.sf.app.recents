@@ -1,7 +1,0 @@
-<!DOCTYPE RCC><RCC version="1.0">
-  <qresource prefix="/" >    
-    <file>themes/icons/hbdefault/scalable/qtg_large_missed_voice_call_unseen.svg</file>
-    <file>themes/icons/hbdefault/scalable/qtg_large_missed_video_call_unseen.svg</file>
-    <file>themes/icons/hbdefault/scalable/qtg_large_missed_voip_call_unseen.svg</file>
-  </qresource>
-</RCC>

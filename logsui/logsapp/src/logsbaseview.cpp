@@ -42,14 +42,15 @@
 #include <hblistview.h>
 #include <QGraphicsLinearLayout>
 #include <hbpushbutton.h>
-
+#include <hbactivitymanager.h>
+#include <hbmodeliterator.h>
+#include <hbscrollbar.h>
 
 Q_DECLARE_METATYPE(LogsCall*)
 Q_DECLARE_METATYPE(LogsMessage*)
 Q_DECLARE_METATYPE(LogsContact*)
 Q_DECLARE_METATYPE(LogsDetailsModel*)
 
-const int contextMenuTimeout = 5000000; //5 secs
 
 // -----------------------------------------------------------------------------
 // 
@@ -70,14 +71,15 @@ LogsBaseView::LogsBaseView(
       mMessage(0),
       mContact(0),
       mDetailsModel(0),
-      mCallTypeMapper(0)
+      mCallTypeMapper(0),
+      mOptionsMenu(0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::LogsBaseView()" );
-    
-    mSoftKeyBackAction = new HbAction(Hb::BackNaviAction, this);
-    connect(mSoftKeyBackAction, SIGNAL(triggered()), this, 
-            SLOT(handleBackSoftkey()));
 
+    setNavigationAction(new HbAction(Hb::BackNaviAction, this));
+    connect(navigationAction(), SIGNAL(triggered()), this, 
+            SLOT(handleBackSoftkey()));
+    
     mDialpad =  mRepository.dialpad();
     
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::LogsBaseView()" );
@@ -96,6 +98,7 @@ LogsBaseView::~LogsBaseView()
     delete mContact;
     delete mDetailsModel;    
     delete mCallTypeMapper;
+    delete mOptionsMenu;
 
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::~LogsBaseView()" );
 }
@@ -136,6 +139,51 @@ void LogsBaseView::resetView()
 //
 // -----------------------------------------------------------------------------
 //
+void LogsBaseView::clearActivity(HbActivityManager& manager)
+{
+    foreach ( const QString& activity, mActivities ){
+        manager.removeActivity(activity);
+    }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsBaseView::saveActivity(
+    QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return mActivities.isEmpty() ? QString() : mActivities.at(0);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QVariant LogsBaseView::loadActivity(
+    const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData)
+{
+    Q_UNUSED( activityId );
+    Q_UNUSED( serializedActivity );
+    Q_UNUSED( metaData );
+    return QVariant();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool LogsBaseView::matchWithActivityId(const QString& activityId)
+{
+    return mActivities.contains(activityId);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsBaseView::activated(bool showDialer, QVariant args)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::activated()" );
@@ -154,10 +202,6 @@ void LogsBaseView::activated(bool showDialer, QVariant args)
     connect( &mDialpad->editor(), SIGNAL( contentsChanged() ), this,
             SLOT( dialpadEditorTextChanged() ) );
 
-    if ( navigationAction() != mSoftKeyBackAction ) {
-        setNavigationAction(mSoftKeyBackAction);
-    }
-    
     if (showDialer && !mDialpad->isOpen()) {
         openDialpad();
     }
@@ -237,8 +281,6 @@ void LogsBaseView::initView()
     mInitialized = true;
     initFilterMenu();
     addActionNamesToMap();
-    connect(menu(), SIGNAL(aboutToShow()), this, 
-            SLOT(closeEmptyMenu()), Qt::QueuedConnection);
 }
 
 // -----------------------------------------------------------------------------
@@ -295,7 +337,7 @@ void LogsBaseView::callKeyPressed()
         listView()->scrollTo( topIndex );
         listView()->setCurrentIndex( topIndex, QItemSelectionModel::Select );
         initiateCallback(topIndex); 
-    }  
+    }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::callKeyPressed()" );
 }
 
@@ -325,32 +367,17 @@ void LogsBaseView::showFilterMenu()
 }
 
 // -----------------------------------------------------------------------------
-// LogsBaseView::closeEmptyMenu()
-// -----------------------------------------------------------------------------
-//
-void LogsBaseView::closeEmptyMenu()
-{
-    bool visibleActionsExist = false;
-    foreach (QAction* action, menu()->actions()) {
-        if  (action->isVisible()) {
-            visibleActionsExist = true ;
-        }
-    }
-    
-    if (!visibleActionsExist) {
-        menu()->close();
-    }
-}
-// -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
 //
 void LogsBaseView::openDialpad()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::openDialpad()" );
+   
     updateCallButton();
     setDialpadPosition();
     mDialpad->openDialpad();
+    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::openDialpad()" );
 }
 
@@ -361,13 +388,12 @@ void LogsBaseView::openDialpad()
 void LogsBaseView::openContactsApp()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::openContactsApp()" );
-    
-    // Need to do request in async manner, otherwise new phonebook ui process
-    // will be started due bug(?) in highway.
-    XQServiceRequest snd("com.nokia.services.phonebookappservices.Launch","launch()", false);
+    XQServiceRequest snd("com.nokia.services.phonebookappservices.Launch","launch()");
+    XQRequestInfo info;
+    info.setForeground(true);
+    snd.setInfo(info);
     int retValue;
     snd.send(retValue);
-    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::openContactsApp()" );
 }
 
@@ -378,25 +404,21 @@ void LogsBaseView::openContactsApp()
 void LogsBaseView::setDialpadPosition()
 {
     HbMainWindow& window = mViewManager.mainWindow(); 
-    // layoutrect broken, fix will be in MCL wk14, use workaround meanwhile
-    //QRectF screenRect = window.layoutRect();
-    QRectF screenRect = (window.orientation() == Qt::Horizontal) ? 
-        QRectF(0,0,640,360) : QRectF(0,0,360,640);
-
+    QRectF screenRect = window.layoutRect();
     LOGS_QDEBUG_2( "logs [UI] -> LogsBaseView::setDialpadPosition(), screenRect:", 
             screenRect );
     if (window.orientation() == Qt::Horizontal) {
         // dialpad takes half of the screen width    
         mDialpad->setPos(QPointF(screenRect.width()/2,
-                                 this->scenePos().y()));
+                                 scenePos().y()));
         mDialpad->setPreferredSize(screenRect.width()/2,
-                                   (screenRect.height()-scenePos().y()));                                  
+                                   (screenRect.height()-scenePos().y())); 
     } else {
-        // dialpad takes 65% of the screen height
+        // dialpad takes 55% of the screen height
         qreal screenHeight = screenRect.height();
-        mDialpad->setPos(QPointF(0, screenHeight/2.25));
+        mDialpad->setPos(QPointF(0, screenHeight*0.45));
         mDialpad->setPreferredSize(screenRect.width(),
-                                   screenHeight-screenHeight/2.25);        
+                                   screenHeight*0.55);        
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::setDialpadPosition()" );
 }
@@ -498,7 +520,6 @@ void LogsBaseView::showListItemMenu(
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showListItemMenu()" );
     HbMenu* itemContextMenu = new HbMenu();    
     itemContextMenu->setDismissPolicy(HbMenu::TapAnywhere);
-    itemContextMenu->setTimeout(contextMenuTimeout);
     itemContextMenu->setAttribute(Qt::WA_DeleteOnClose);
     
     updateListItemData(item->modelIndex());    
@@ -510,17 +531,6 @@ void LogsBaseView::showListItemMenu(
     if (itemContextMenu->actions().count() > 0) {
         itemContextMenu->setPreferredPos(coords,HbPopup::TopLeftCorner);
         itemContextMenu->open();
-        //TODO: 
-        //the hack below is needed since otherwise listbox will get mouse event
-        //and "activated" signal will be emitted (=>initiateCallback() called)
-        //Remove it, when something is done in platform code for that
-        if (scene()) {
-             QGraphicsItem *item = scene()->mouseGrabberItem();
-             if (item) {
-                 LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showListItemMenu() ungrabbing the mouse" );
-                 item->ungrabMouse();
-             }
-        }
     }
 }
 
@@ -715,15 +725,15 @@ void LogsBaseView::saveContact()
                 new HbLabel(hbTrId("txt_dial_title_add_to_contacts"), popup));
         popup->setAttribute(Qt::WA_DeleteOnClose);
         popup->setTimeout( HbPopup::NoTimeout );
-        popup->setSecondaryAction(
-                new HbAction(hbTrId("txt_dial_button_cancel"), popup));
+        popup->addAction(
+                new HbAction(hbTrId("txt_common_button_cancel"), popup));
 
         HbWidget* buttonWidget = new HbWidget(popup);
         QGraphicsLinearLayout* layout = new QGraphicsLinearLayout(Qt::Vertical);
         
         HbPushButton* addButton = new HbPushButton(buttonWidget);
         addButton->setStretched(true);
-        addButton->setText(hbTrId("txt_dial_list_save_as_a_new_contact"));
+        addButton->setText(hbTrId("txt_dial_button_save_as_a_new_contact"));
         HbIcon plusIcon("qtg_mono_plus");
         addButton->setIcon(plusIcon);
         connect(addButton, SIGNAL(clicked()), popup, SLOT(close()));
@@ -731,7 +741,7 @@ void LogsBaseView::saveContact()
         
         HbPushButton* updateButton = new HbPushButton(buttonWidget);
         updateButton->setStretched(true);
-        updateButton->setText(hbTrId("txt_dial_list_update_existing_contact"));
+        updateButton->setText(hbTrId("txt_dial_button_update_existing_contact"));
         updateButton->setIcon(plusIcon);
         connect(updateButton, SIGNAL(clicked()), popup, SLOT(close()));
         connect(updateButton, SIGNAL(clicked()),
@@ -1006,7 +1016,7 @@ void LogsBaseView::updateListLayoutName( HbListView& listView, bool ignoreDialpa
 // Loads appropriate section from *.docml to resize list widget
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::updateListSize()
+void LogsBaseView::updateListSize( HbListView& list )
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::updateListSize()" );
     QString newSection( logsViewDefaultSection );
@@ -1022,10 +1032,13 @@ void LogsBaseView::updateListSize()
         newSection = QString( logsViewDefaultSection );
     }
     
-    if (newSection != mLayoutSectionName) {
-        mLayoutSectionName = newSection;
-        LOGS_QDEBUG_2( "logs [UI]  loading new section: ", newSection );
-        mRepository.loadSection( viewId(), newSection );
+    bool sectionChanged( mLayoutSectionName != newSection );
+    mLayoutSectionName = newSection;
+    LOGS_QDEBUG_2( "logs [UI]  loading new section: ", newSection );
+    mRepository.loadSection( viewId(), newSection );
+    
+    if ( sectionChanged ){
+        ensureListPositioning( list );
     }
     
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::updateListSize()" );
@@ -1037,7 +1050,7 @@ void LogsBaseView::updateListSize()
 //
 void LogsBaseView::handleOrientationChanged()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleOrientationChanged()!" );
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleOrientationChanged()" );
     setDialpadPosition();
     updateWidgetsSizeAndLayout();    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::handleOrientationChanged()");
@@ -1061,20 +1074,28 @@ void LogsBaseView::toggleActionAvailability( HbAction* action, bool available )
 void LogsBaseView::askConfirmation( QString heading , QString text,
         QObject* receiver, const char* okSlot, const char* cancelSlot )
 {
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::askConfirmation()" );
     HbMessageBox* note = new HbMessageBox(text, HbMessageBox::MessageTypeQuestion);
     note->setAttribute(Qt::WA_DeleteOnClose);
-    note->setHeadingWidget(new HbLabel( heading ));
-    //note->setText( text );
-    note->setPrimaryAction(new HbAction(hbTrId("txt_common_button_ok"), note));
-    note->setSecondaryAction(new HbAction(hbTrId("txt_common_button_cancel"), note));
-
-    if (receiver && okSlot) {
-        connect(note->primaryAction(), SIGNAL(triggered()), receiver, okSlot);
+    note->setHeadingWidget(new HbLabel(heading));
+    note->setDismissPolicy(HbPopup::TapOutside);    
+    
+    if (note->actions().count() > 0 && note->actions().at(0)) {
+        note->actions().at(0)->setText(hbTrId("txt_common_button_ok"));
+        
+        if (receiver && okSlot) {
+            connect(note->actions().at(0), SIGNAL(triggered()), receiver, okSlot);
+        }
     }
-    if (receiver && cancelSlot) {
-        connect(note->secondaryAction(), SIGNAL(triggered()), receiver, cancelSlot);
+    if (note->actions().count() > 1 && note->actions().at(1)) {
+        note->actions().at(1)->setText(hbTrId("txt_common_button_cancel"));
+    
+        if (receiver && cancelSlot) {
+            connect(note->actions().at(1), SIGNAL(triggered()), receiver, cancelSlot);
+        }
     }
     note->open();
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::askConfirmation()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -1090,11 +1111,9 @@ void LogsBaseView::updateContactSearchAction()
         if ( isContactSearchPermanentlyDisabled() ){
            contactSearchAction->setVisible(false);
         } else if ( isContactSearchEnabled() ){
-           contactSearchAction->setIconText("Contact search off");
            contactSearchAction->setText(hbTrId("txt_dialer_ui_opt_contact_search_off"));
            contactSearchAction->setVisible(mDialpad->isOpen());
         } else {
-           contactSearchAction->setIconText("Contact search on");
            contactSearchAction->setText(hbTrId("txt_dialer_ui_opt_contact_search_on"));
            contactSearchAction->setVisible(mDialpad->isOpen());
         }
@@ -1168,3 +1187,87 @@ bool LogsBaseView::isDialpadInput() const
     return ( mDialpad->isOpen() && !mDialpad->editor().text().isEmpty() );
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::ensureListPositioning( HbListView& list )
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::ensureListPositioning()" );
+
+    HbWidget* content = 
+        qobject_cast<HbWidget*>( mRepository.findWidget( logsContentId ) );
+    QList<HbAbstractViewItem *> visibleItems = list.visibleItems();
+    if ( content && visibleItems.count() > 0 ){
+        LOGS_QDEBUG_2( "logs [UI]   contentsRect:", content->contentsRect() );
+        QRectF rect = content->contentsRect();
+        rect.adjust( 0, list.pos().y(), 0, -list.pos().y() );
+        LOGS_QDEBUG_2( "logs [UI]   listRect:", rect );
+        list.setGeometry(rect);
+        
+        HbScrollArea::ScrollBarPolicy prevPolicy = list.verticalScrollBarPolicy();
+        list.setVerticalScrollBarPolicy(HbScrollArea::ScrollBarAlwaysOff);
+        list.setVerticalScrollBarPolicy(prevPolicy);
+        
+        qreal itemHeight = visibleItems.at(0)->size().height();
+        HbModelIterator* modelIt = list.modelIterator();
+        if ( modelIt && itemHeight > 0 ) {
+            int maxVisibleItems = rect.height() / itemHeight;
+            LOGS_QDEBUG_2( "logs [UI]   max visible items:", maxVisibleItems );
+            if ( modelIt->indexCount() <= maxVisibleItems ){
+                // All items can fit the rect reserved for the list, force them to fit
+                list.ensureVisible(QPointF(0,0));
+            } else if ( visibleItems.count() < maxVisibleItems ) {
+                // All items cannot fit the rect reserved, force to reserve whole
+                // area so that current index is tried to be centered
+                list.scrollTo(list.currentIndex(), HbAbstractItemView::PositionAtCenter);
+            }
+        }
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::ensureListPositioning()" );
+}
+
+// -----------------------------------------------------------------------------
+// LogsBaseView::scrollToTopItem
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::scrollToTopItem( HbListView* list )
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::scrollToTopItem()" );
+    
+    if ( list && list->verticalScrollBar() ){
+        list->verticalScrollBar()->setValue(0.0);
+    }
+    
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::scrollToTopItem()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::updateMenuVisibility()
+{
+   bool visibleActionsExist = false;
+   HbMenu* optionsMenu = mOptionsMenu ? mOptionsMenu : menu();
+   foreach (QAction* action, optionsMenu->actions()) {
+       if  (action->isVisible()) {
+           visibleActionsExist = true;
+       }
+   }
+   setMenuVisible(visibleActionsExist);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::setMenuVisible(bool visible)
+{
+    if (!visible && !mOptionsMenu) {
+        mOptionsMenu = takeMenu();
+    } else if (visible && mOptionsMenu) {
+        setMenu(mOptionsMenu);
+        mOptionsMenu = 0;
+    }
+}

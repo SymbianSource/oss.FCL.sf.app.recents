@@ -1,4 +1,4 @@
-/*
+    /*
 * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
@@ -273,7 +273,7 @@ void LogsCntFinder::setCurrentPattern( const QString& pattern )
             LogsPredictiveTranslator::instance();
     
     mCurrentInputPattern = pattern;
-    mCurrentPredictivePattern = translator->translate( mCurrentInputPattern );
+    mCurrentPredictivePattern = translator->translatePattern( mCurrentInputPattern );
     
 }
 
@@ -300,18 +300,15 @@ const LogsCntEntry& LogsCntFinder::resultAt( int index )
         LOGS_QDEBUG_2( "logs [FINDER] caching from DB cid=", entry->contactId() )
         QContact contact = mContactManager->contact( entry->contactId() );
         QContactName contactName = contact.detail( QContactName::DefinitionName );
-        entry->setFirstName( contactName.value( QContactName::FieldFirst ) );
-        entry->setLastName( contactName.value( QContactName::FieldLast ) );
+        entry->setFirstName( contactName.value( QContactName::FieldFirstName ) );
+        entry->setLastName( contactName.value( QContactName::FieldLastName ) );
         QContactPhoneNumber contactPhoneNumber = 
               contact.detail( QContactPhoneNumber::DefinitionName );
         entry->setPhoneNumber( 
               contactPhoneNumber.value( QContactPhoneNumber::FieldNumber ) );
-        QContactAvatar contactAvatar = contact.detail<QContactAvatar>();  
-        if (contactAvatar.subType().compare(
-        QLatin1String(QContactAvatar::SubTypeImage)) == 0 && 
-               !contactAvatar.avatar().isEmpty()) {
-                  entry->setAvatarPath(contactAvatar.avatar());
-              } 
+        QContactAvatar contactAvatar = contact.detail<QContactAvatar>();
+        QString avatar = contactAvatar.value( QContactAvatar::FieldImageUrl );
+        entry->setAvatarPath( avatar );
         
         updateResult( entry );      
     }

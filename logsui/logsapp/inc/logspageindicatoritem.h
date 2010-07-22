@@ -35,10 +35,14 @@ public:
 
     void setActive(bool active = true);
     bool isActive() const;
+   
+protected:
     
-    
+    void changeEvent(QEvent * event);
+
 private:
 
+    void updateColor();
     void startAnimation();
 
 private slots:

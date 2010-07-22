@@ -23,7 +23,7 @@
 #include <QtTest/QtTest>
 
 #define PATTERN( pattern )\
-    LogsPredictiveTranslator::instance()->translate( QString( pattern ) )
+    LogsPredictiveTranslator::instance()->translatePattern( QString( pattern ) )
     
 
 void UT_LogsCntEntry::initTestCase()
@@ -625,7 +625,7 @@ void UT_LogsCntEntry::testMatch_latin12k()
     mEntry->setFirstName( QString("Alice 028") );
     mEntry->setLastName( QString( "Ming" ) );
     QVERIFY( mEntry->match( PATTERN( "02806" ) ) );
-    QVERIFY( !mEntry->match( PATTERN( "0280" ) ) );//not supported
+    QVERIFY( mEntry->match( PATTERN( "0280" ) ) );//not supported
     
     mEntry->mType = LogsCntEntry::EntryTypeContact;
     QVERIFY( !mEntry->match( PATTERN( "+202" ) ) );
@@ -635,6 +635,24 @@ void UT_LogsCntEntry::testMatch_latin12k()
     QVERIFY( mEntry->match( PATTERN( "000" ) ) );
     
 }
+
+void UT_LogsCntEntry::testStartsWith_latin12k()
+{
+    //just using numbers as name
+    mEntry->setFirstName( QString( "" ) );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("") ), 0 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("123") ), 0 );
+    
+    mEntry->setFirstName( QString( "123" ) );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("") ), 0 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("1234") ), 0 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("1") ), 1 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("123") ), 3 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("12"), true ), 2 );
+    QCOMPARE( mEntry->startsWith( mEntry->firstName()[0], QString("12"), false ), 2 );
+    
+}
+
 
 void UT_LogsCntEntry::testMatch_thai12k()
 {
@@ -688,4 +706,5 @@ void UT_LogsCntEntry::testSetHighlights_thai12k()
     
     
 }
+
 

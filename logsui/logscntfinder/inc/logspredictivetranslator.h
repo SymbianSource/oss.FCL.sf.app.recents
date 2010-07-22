@@ -20,8 +20,10 @@
 
 #include <QObject>
 #include <QChar>
+#include <QList>
 
 class HbKeymap;
+class HbInputLanguage;
 
 /**
  * predictive translator. Singelton
@@ -37,27 +39,34 @@ public:
     
     ~LogsPredictiveTranslator();
     
-    const QString translate( const QString& name, int count = -1 ) const;
-    int startsWith( const QString& text, const QString& pattern, 
-                    bool optimize = true ) const;
+    const QString translatePattern( const QString& pattern ) const;
+    const QString translateText( const QString& text );
     
 public: //abstracts
     
     virtual QStringList nameTokens( const QString& name ) const = 0;
     virtual QStringList patternTokens( const QString& pattern ) const = 0;
     virtual int hasPatternSeparators( const QString& pattern ) const = 0;
-    virtual const QChar translateChar( const QChar character ) const = 0;
+    virtual const QChar translateChar( const QChar character, bool& ok ) const = 0;
+    virtual int mib() const = 0;
     
 protected:
     
-    explicit LogsPredictiveTranslator();
-
+    explicit LogsPredictiveTranslator( const HbInputLanguage& lang );
+    bool encodes( const QString& sniplet );
+    const QString translate( const QString& text, bool* ok = 0, int count = -1 ) const;
+    
+private:
+    
+    const LogsPredictiveTranslator& nameTranslator( const QString& name );
+    
 protected:
     
     const HbKeymap* mKeyMap;
 
 private:
     
+    LogsPredictiveTranslator* mNameTranslator;
     static LogsPredictiveTranslator* mInstance;
     friend class UT_LogsPredictiveTranslator;
     

@@ -14,17 +14,22 @@
 * Description:
 *
 */
-#ifndef UT_LOGSFOREGROUNDWATCHER_H
-#define UT_LOGSFOREGROUNDWATCHER_H
+#ifndef ST_LOGSCNTFINDERQWERTY_H
+#define ST_LOGSCNTFINDERQWERTY_H
 
 #include <QObject>
+#include <qcontactmanager.h>
+#include <hbinputlanguage.h>
 
-class LogsForegroundWatcher;
+QTM_USE_NAMESPACE
 
-class UT_LogsForegroundWatcher : public QObject        
+class LogsCntFinder;
+
+
+class ST_LogsCntFinderQwerty : public QObject                 
 {
      Q_OBJECT
-			
+    
 private slots:
 
 /*
@@ -37,22 +42,27 @@ private slots:
  * init() will be called before each testfunction is executed.
  * cleanup() will be called after every testfunction.
 */
-    void initTestCase();
-    void cleanupTestCase();
-    void init();
-    void cleanup();
-    
-private slots: //test methods
-    void testConstructor();
-    void testHandleLosingForeground();
-    void testHandleGainingForeground();
+     void initTestCase();
+     void cleanupTestCase();
+     void init();
+     void cleanup();
 
-        
+private slots: //test methods
+
+    void testPredictiveEmailSearchNameAndEmailMatch();
+    void testPredictiveEmailSearchWithSpace();
+    void testPredictiveEmailSearchEmailMatch();
+    void testPredictiveEmailSearchNoEmails();
+    void testPredictiveEmailSearchOverLongPattern();
+    void testPredictiveEmailSearchSpecialCharsInPattern();
+
 private:
 
-    LogsForegroundWatcher* mWatcher;
-    
+    void createContacts();
+
+private:
+    QContactManager *m_manager;
 };
 
 
-#endif //UT_LOGSFOREGROUNDWATCHER_H
+#endif // ST_LOGSCNTFINDERQWERTY_H

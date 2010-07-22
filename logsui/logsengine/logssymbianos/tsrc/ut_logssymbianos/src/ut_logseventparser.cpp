@@ -166,26 +166,26 @@ void UT_LogsEventParser::testResolveEventType()
     LogsEventParser::resolveEventType(*mEvent);
     QVERIFY( mEvent->eventType() == LogsEvent::TypeVoiceCall );
     
-    // Event data
+    // Event data, type not changed
     LogsEventData* eventData = new LogsEventData();
     mEvent->setLogsEventData(eventData);
-    LogsEventParser::resolveEventType(*mEvent);
+    QVERIFY( !LogsEventParser::resolveEventType(*mEvent) );
     QVERIFY( mEvent->eventType() == LogsEvent::TypeVoiceCall );
-    
+
     eventData->mIsVoIP = true;
-    LogsEventParser::resolveEventType(*mEvent);
+    QVERIFY( LogsEventParser::resolveEventType(*mEvent) );
     QVERIFY( mEvent->eventType() == LogsEvent::TypeVoIPCall );
     
     eventData->mIsVoIP = false;
     eventData->mIsVT = true;
-    LogsEventParser::resolveEventType(*mEvent);
+    QVERIFY( LogsEventParser::resolveEventType(*mEvent) );
     QVERIFY( mEvent->eventType() == LogsEvent::TypeVideoCall );
     
     // PoC not supported
     eventData->mIsVoIP = false;
     eventData->mIsVT = false;
     eventData->mIsPoC = true;
-    LogsEventParser::resolveEventType(*mEvent);
+    QVERIFY( LogsEventParser::resolveEventType(*mEvent) );
     QVERIFY( mEvent->eventType() == LogsEvent::TypeUndefined );
     
     // Msgs not supported
@@ -193,6 +193,6 @@ void UT_LogsEventParser::testResolveEventType()
     eventData->mIsVT = false;
     eventData->mIsPoC = false;
     eventData->mMsgPartsNumber = 2;
-    LogsEventParser::resolveEventType(*mEvent);
+    QVERIFY( !LogsEventParser::resolveEventType(*mEvent) );
     QVERIFY( mEvent->eventType() == LogsEvent::TypeUndefined );
 }

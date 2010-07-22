@@ -35,6 +35,8 @@ class QSignalMapper;
 class HbLabel;
 class HbListView;
 class LogsAbstractModel;
+class QDataStream;
+class HbActivityManager;
 
 /**
  * 
@@ -45,7 +47,7 @@ class LogsBaseView : public HbView
     friend class UT_LogsBaseView;
     
 public:
-
+    
     virtual ~LogsBaseView();
 
 public:
@@ -60,13 +62,18 @@ public:
     virtual void activated(bool showDialer, QVariant args);
     virtual void deactivated();
     virtual bool isExitAllowed();
-    virtual void resetView();
+    virtual void resetView(); 
+    virtual void clearActivity(HbActivityManager& manager);
+    virtual QString saveActivity(QDataStream& serializedActivity, QVariantHash& metaData);
+    virtual QVariant loadActivity(
+        const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData);
+    virtual bool matchWithActivityId(const QString& activityId);
+    
 
 public slots:
     
     virtual void handleExit();
     virtual void callKeyPressed();
-    void closeEmptyMenu();
     
 signals:
 
@@ -131,7 +138,7 @@ protected:
     /**
      * Loads appropriate section from *.docml to resize list widget
      */
-    void updateListSize();
+    void updateListSize( HbListView& list );
   
 protected:
     
@@ -182,13 +189,17 @@ protected:
     void updateDialpadCallAndMessagingActions();
     bool tryMatchesViewTransition();
     bool isDialpadInput() const;
+    void ensureListPositioning( HbListView& list );
+    void scrollToTopItem( HbListView* list );
+    
+    void updateMenuVisibility();
+    void setMenuVisible(bool visible);
     
 protected:
     
     LogsAppViewId mViewId;
     LogsComponentRepository& mRepository;
     LogsAbstractViewManager& mViewManager;
-    HbAction* mSoftKeyBackAction;
     
     HbMenu* mShowFilterMenu; //not owned
     Dialpad* mDialpad; //not owned
@@ -205,6 +216,9 @@ protected:
     
     QSignalMapper* mCallTypeMapper;
     QString mLayoutSectionName;
+    
+    QStringList mActivities;
+    HbMenu* mOptionsMenu;
 };
 
 

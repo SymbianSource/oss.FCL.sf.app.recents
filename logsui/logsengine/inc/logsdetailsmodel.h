@@ -45,6 +45,7 @@ public: // The exported API
 
     LOGSENGINE_EXPORT void clearEvent();
     LOGSENGINE_EXPORT void getNumberToClipboard();
+    LOGSENGINE_EXPORT LogsEvent getLogsEvent() const;
     
 public: // From QAbstractItemModel
     

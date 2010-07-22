@@ -61,4 +61,8 @@ EXPORTS
 	?clearList@LogsModel@@QAE_NW4ClearType@1@@Z @ 60 NONAME ; bool LogsModel::clearList(enum LogsModel::ClearType)
 	??1LogsContact@@UAE@XZ @ 61 NONAME ; LogsContact::~LogsContact(void)
 	?clearType@LogsFilter@@QBE?AW4ClearType@LogsModel@@XZ @ 62 NONAME ; enum LogsModel::ClearType LogsFilter::clearType(void) const
+	?logsDetailsModel@LogsModel@@QAEPAVLogsDetailsModel@@AAVLogsEvent@@@Z @ 63 NONAME ; class LogsDetailsModel * LogsModel::logsDetailsModel(class LogsEvent &)
+	?getLogsEvent@LogsDetailsModel@@QBE?AVLogsEvent@@XZ @ 64 NONAME ; class LogsEvent LogsDetailsModel::getLogsEvent(void) const
+	?serialize@LogsEvent@@QAE_NAAVQDataStream@@@Z @ 65 NONAME ; bool LogsEvent::serialize(class QDataStream &)
+	??0LogsEvent@@QAE@AAVQDataStream@@@Z @ 66 NONAME ; LogsEvent::LogsEvent(class QDataStream &)
 

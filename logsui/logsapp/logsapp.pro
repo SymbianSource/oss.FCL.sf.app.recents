@@ -39,10 +39,11 @@ HEADERS += inc/logsrecentcallsview.h
 HEADERS += inc/logsdetailsview.h
 HEADERS += inc/logsmatchesview.h
 HEADERS += inc/logsservicehandler.h
+HEADERS += inc/logsservicehandlerold.h
 HEADERS += inc/logseffecthandler.h
 HEADERS += inc/logspageindicator.h
 HEADERS += inc/logspageindicatoritem.h
-HEADERS += ../logsengine/logssymbianos/inc/logsforegroundwatcher.h
+HEADERS += inc/logscomponentrepository.h
 
 SOURCES += src/main.cpp 
 SOURCES += src/logsmainwindow.cpp
@@ -53,10 +54,10 @@ SOURCES += src/logsrecentcallsview.cpp
 SOURCES += src/logsdetailsview.cpp
 SOURCES += src/logsmatchesview.cpp
 SOURCES += src/logsservicehandler.cpp
+SOURCES += src/logsservicehandlerold.cpp
 SOURCES += src/logseffecthandler.cpp
 SOURCES += src/logspageindicator.cpp
 SOURCES += src/logspageindicatoritem.cpp
-SOURCES += ../logsengine/logssymbianos/src/logsforegroundwatcher.cpp
  
 symbian: {
     TARGET.UID2 = 0x100039CE

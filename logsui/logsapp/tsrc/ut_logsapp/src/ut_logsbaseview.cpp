@@ -38,6 +38,8 @@
 #include <hblistviewitem.h>
 #include <hblistview.h>
 #include <QStringListModel>
+#include <hbapplication.h>
+#include <hbactivitymanager.h>
 
 void UT_LogsBaseView::initTestCase()
 {
@@ -69,7 +71,6 @@ void UT_LogsBaseView::cleanup()
 void UT_LogsBaseView::testConstructor()
 {
     QVERIFY( mBaseView );
-    QVERIFY( mBaseView->mSoftKeyBackAction );
     QVERIFY( !mBaseView->mShowFilterMenu );
     QVERIFY( !mBaseView->mInitialized );
     QVERIFY( mBaseView->mActionMap.isEmpty() );
@@ -79,6 +80,7 @@ void UT_LogsBaseView::testConstructor()
     QVERIFY( !mBaseView->mMessage );
     QVERIFY( !mBaseView->mContact );
     QVERIFY( !mBaseView->mCallTypeMapper );
+    QVERIFY( !mBaseView->mOptionsMenu );
 }
 
 void UT_LogsBaseView::testActivated()
@@ -272,30 +274,71 @@ void UT_LogsBaseView::testPopulateListItemMenu()
     QVERIFY( HbStubHelper::widgetActionsCount() == 5 );
 }
 
-
-
-void UT_LogsBaseView::testCloseEmptyMenu()
+void UT_LogsBaseView::testUpdateMenuVisibility()
 {
-    LogsRecentCallsView* view = mRepository->recentCallsView();
+    HbMenu* menu = new HbMenu;
+    HbAction* action = menu->addAction("action1");
+    mBaseView->setMenu(menu);
     
-    //visible actions exist
-    QVERIFY( view->menu()->actions().count() > 0 );
-    HbStubHelper::setWidgetOpen(true);
-    view->closeEmptyMenu();
-    QVERIFY(HbStubHelper::isWidgetOpen());
+    // No visible actions in menu => menu is replaced by empty one
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(!mBaseView->menu()->isEmpty());
+    action->setVisible(false);
+    mBaseView->updateMenuVisibility();
+    QVERIFY(mBaseView->menu()->isEmpty());
+    QVERIFY(mBaseView->mOptionsMenu == menu);
+    QVERIFY(mBaseView->menu() != menu);
+  
+    // Visible action exists => restoring the menu
+    action->setVisible(true);
+    QVERIFY(mBaseView->mOptionsMenu);
+    mBaseView->updateMenuVisibility();
+    QVERIFY(!mBaseView->menu()->isEmpty());
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(mBaseView->menu() == menu);
+ 
+    // Menu has no actions => menu is replaced by empty one
+    mBaseView->setMenu(0);
+    menu = mBaseView->menu();
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(mBaseView->menu()->isEmpty());
+    mBaseView->updateMenuVisibility();
+    QVERIFY(mBaseView->menu()->isEmpty());
+    QVERIFY(mBaseView->mOptionsMenu == menu);
+    QVERIFY(mBaseView->menu() != menu);   
+}
+
+void UT_LogsBaseView::testSetMenuVisible()
+{
+    HbMenu* menu = new HbMenu;
+    menu->addAction("action1");
+    mBaseView->setMenu(menu);
     
-    //no visible actions
-    foreach (QAction* action, view->menu()->actions()) {
-        action->setVisible(false);
-    }
-    view->closeEmptyMenu();
-    QVERIFY(!HbStubHelper::isWidgetOpen());
+    // Hiding menu, view menu is replaced by empty menu
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(!mBaseView->menu()->isEmpty());
+    mBaseView->setMenuVisible(false);
+    QVERIFY(mBaseView->menu()->isEmpty());
+    QVERIFY(mBaseView->mOptionsMenu == menu);
+    QVERIFY(mBaseView->menu() != menu);
+        
+    // Trying to hide again, nothing happens
+    mBaseView->setMenuVisible(false);
+    QVERIFY(mBaseView->menu()->isEmpty());
+    QVERIFY(mBaseView->mOptionsMenu == menu);
+    QVERIFY(mBaseView->menu() != menu);
     
-    //no actions
-    HbStubHelper::setWidgetOpen(true);
-    view->menu()->actions().clear();
-    view->closeEmptyMenu();
-    QVERIFY(!HbStubHelper::isWidgetOpen());
+    // Showing menu, original menu is restored
+    mBaseView->setMenuVisible(true);
+    QVERIFY(!mBaseView->menu()->isEmpty());
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(mBaseView->menu() == menu);
+    
+    // Showing again, nothing happen
+    mBaseView->setMenuVisible(true);
+    QVERIFY(!mBaseView->menu()->isEmpty());
+    QVERIFY(!mBaseView->mOptionsMenu);
+    QVERIFY(mBaseView->menu() == menu);    
 }
 
 void UT_LogsBaseView::testSaveContact()
@@ -408,23 +451,24 @@ void UT_LogsBaseView::testUpdateListSize()
     mBaseView->mLayoutSectionName = "dummy";
     
     //default section is loaded
+    HbListView view;
     mBaseView->mViewManager.mainWindow().setOrientation( Qt::Vertical );
     mBaseView->mDialpad->closeDialpad();
-    mBaseView->updateListSize();
+    mBaseView->updateListSize(view);
     QVERIFY( mBaseView->mLayoutSectionName == logsViewDefaultSection );
     
     //same section again, not loaded
-    mBaseView->updateListSize();
+    mBaseView->updateListSize(view);
     QVERIFY( mBaseView->mLayoutSectionName == logsViewDefaultSection );
 
     //portrait with dialpad
     mBaseView->mDialpad->openDialpad();
-    mBaseView->updateListSize();
+    mBaseView->updateListSize(view);
     QVERIFY( mBaseView->mLayoutSectionName == logsViewPortraitDialpadSection );
     
     //landscape with dialpad
     mBaseView->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
-    mBaseView->updateListSize();
+    mBaseView->updateListSize(view);
     QVERIFY( mBaseView->mLayoutSectionName == logsViewLandscapeDialpadSection );
 }
 
@@ -529,6 +573,116 @@ void UT_LogsBaseView::testAskConfirmation()
     // Receiver and slots specified
     HbStubHelper::reset();
     mBaseView->askConfirmation(QLatin1String("heading"), QLatin1String("text"), this,
-            SLOT(""), SLOT(""));
+            SLOT("dummy()"), SLOT("dummy()"));
     QVERIFY( HbStubHelper::dialogShown() );
+}
+
+void UT_LogsBaseView::testMatchWithActivityId()
+{
+    QVERIFY( !mBaseView->matchWithActivityId(QString("")) );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("somedummy")) );
+    mBaseView->mActivities.append( "testActivity1" );
+    mBaseView->mActivities.append( "testActivity2" );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("")) );
+    QVERIFY( !mBaseView->matchWithActivityId(QString("somedummy")) );
+    QVERIFY( mBaseView->matchWithActivityId(QString("testActivity2")) );   
+}
+
+void UT_LogsBaseView::testSaveActivity()
+{
+    QDataStream serializedActivity; 
+    QVariantHash metaData;
+    QVERIFY( mBaseView->saveActivity(serializedActivity, metaData).isEmpty() );
+    mBaseView->mActivities.append( "testActivity1" );
+    QVERIFY( mBaseView->saveActivity(serializedActivity, metaData) == QString("testActivity1") );
+}
+
+void UT_LogsBaseView::testLoadActivity()
+{
+    QDataStream serializedActivity; 
+    QVariantHash metaData;
+    QVERIFY( mBaseView->loadActivity(QString("dummy"), serializedActivity, metaData).isNull() );
+}
+
+void UT_LogsBaseView::testClearActivity()
+{
+    HbStubHelper::reset();
+    HbActivityManager* manager = static_cast<HbApplication*>(qApp)->activityManager();
+    manager->addActivity("someact", QVariant(), QVariantHash());
+    QCOMPARE( manager->activities().count(), 1 );
+    mBaseView->mActivities.append( "testActivity1" );
+    mBaseView->clearActivity(*manager);
+    QCOMPARE( manager->activities().count(), 0 );
+}
+
+void UT_LogsBaseView::testEnsureListPositioning()
+{
+    HbStubHelper::reset();
+    HbListView list;
+    QStringList itemTexts;
+    itemTexts.append( "foo1" );
+    itemTexts.append( "foo2" );
+    QStringListModel model;
+    model.setStringList(itemTexts);
+    
+    itemTexts.append( "foo3" );
+    itemTexts.append( "foo4" );
+    QStringListModel model2;
+    model2.setStringList(itemTexts);
+    
+    list.setModel(&model);
+    
+    // No content found, nop
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    
+    // Content found, no visible items, nop
+    mRepository->recentCallsView();
+    mBaseView->activated(false, QVariant());
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    
+    // Content found and visible items which can fit the screen, height of item zero, nop
+    HbWidget* content = 
+            qobject_cast<HbWidget*>( mRepository->findWidget( logsContentId ) );
+    content->setContentsMargins(0,0,0,0);
+    content->setGeometry( QRectF(0,0,100,200) );
+    
+    HbListViewItem* item = new HbListViewItem;
+    HbStubHelper::listItems().append(item);
+    HbListViewItem* item2 = new HbListViewItem;
+    HbStubHelper::listItems().append(item2);
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    
+    // Screen is already filled with items, nop
+    list.setModel(&model2);
+    HbListViewItem* item3 = new HbListViewItem;
+    HbStubHelper::listItems().append(item3);
+    item->setGeometry(QRectF(0,0,100,100));
+    item2->setGeometry(QRectF(0,0,100,100));
+    item3->setGeometry(QRectF(0,0,100,100));
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() );
+       
+    // Content found and visible items which can fit the screen, all items ensured visible
+    list.setModel(&model);
+    delete HbStubHelper::listItems().takeLast();
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    
+    // Content found and more visible items which can fit the screen and currently screen
+    // is not full of items, ensure that area is filled by scrolling 
+    list.setModel(&model2);
+    list.setCurrentIndex(model2.index(0,0));
+    delete HbStubHelper::listItems().takeLast();
+    mBaseView->ensureListPositioning(list);
+    QVERIFY( HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( HbStubHelper::listScrollToCalled() );
+
 }

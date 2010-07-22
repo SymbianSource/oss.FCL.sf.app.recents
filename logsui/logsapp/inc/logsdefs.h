@@ -39,6 +39,7 @@ const char logsLabelEmptyListId[] = "logs_label_empty_list";
 const char logsToolbarId[] = "logs_toolbar";
 const char logsButtonAddToContactsId[] = "logs_button_addtocontacts";
 const char logsPageIndicatorId[] = "logs_page_indicator";
+const char logsContentId[] = "logs_content";
 
 //action ids
 const char logsCommonVideoCallMenuActionId[] = "logs_act_video_call";
@@ -79,5 +80,29 @@ enum LogsAppViewId {
 const int logsContactSearchPermanentlyDisabled = 0;
 const int logsContactSearchEnabled = 1;
 const int logsContactSearchDisabled = 2;
+
+
+
+// Interface related constants
+const char logsServiceName[] = "logs";
+const char logsInterfaceName[] = "com.nokia.symbian.ILogsView";
+const char logsOperationName[] = "show(QVariantMap)";
+
+const char logsViewIndexParam[] = "view_index";
+const char logsShowDialpadParam[] = "show_dialpad";
+const char logsDialpadTextParam[] = "dialpad_text";
+
+// Activity related constants
+const char logsActivityIdViewRecent[] = "LogsViewRecent";
+const char logsActivityIdViewCalled[] = "LogsViewCalled";
+const char logsActivityIdViewReceived[] = "LogsViewReceived";
+const char logsActivityIdViewMissed[] = "LogsViewMissed";
+const char logsActivityIdViewMatches[] = "LogsViewMatches";
+const char logsActivityIdViewDetails[] = "LogsViewDetails";
+
+const char logsActivityParamShowDialpad[] = "show_dialpad"; // val type bool
+const char logsActivityParamDialpadText[] = "dialpad_text"; // val type string
+const char logsActivityParamInternalViewId[] = "view_id"; // val type int
+
 
 #endif // LOGSDEFS_H

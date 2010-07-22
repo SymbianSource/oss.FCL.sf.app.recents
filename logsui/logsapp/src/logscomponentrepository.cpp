@@ -29,23 +29,30 @@
 #include <dialpad.h>
 #include <dialpadkeyhandler.h>
 #include <hbtoolbar.h>
+#include <hbmainwindow.h>
+#include <QTimer>
+
+const int logsRepositoryLazyInitTimerMsec = 3000;
 
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
 //
 LogsComponentRepository::LogsComponentRepository(LogsAbstractViewManager& viewManager)
-    : HbDocumentLoader(),
+    : QObject(), 
+      HbDocumentLoader(),
       mViewManager(viewManager),
       mRecentCallsView(0),
       mDetailsView(0),
       mMatchesView(0),
       mDialpad(0),
-      mDialpadKeyHandler(0)
+      mDialpadKeyHandler(0),
+      mCurrentObjectTree(0)
 {
-    bool resourceControl = true;
-    mModel = new LogsModel(LogsModel::LogsRecentModel, resourceControl);
+    mModel = new LogsModel(LogsModel::LogsRecentModel, ETrue);
+    QTimer::singleShot(logsRepositoryLazyInitTimerMsec, this, SLOT(lazyInit()));
 }
+
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
@@ -85,22 +92,16 @@ void LogsComponentRepository::addToolbarToObjectList( QObjectList& list )
 // 
 // -----------------------------------------------------------------------------
 //
-LogsRecentCallsView* LogsComponentRepository::recentCallsView()
+LogsRecentCallsView* LogsComponentRepository::recentCallsView(bool onlyInit)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsComponentRepository::recentCallsView()" );
-    setObjectTreeToView( LogsRecentViewId );
     
     if ( !mRecentCallsView ) {
-        bool ok = false;
-        mRecentViewComponents = load( logsRecentCallsViewFile, &ok );
-        if ( ok ) {
-            mRecentCallsView = qobject_cast<LogsRecentCallsView*>
-                ( findWidget(logsRecentCallsViewId) );
-            
-            addToolbarToObjectList(mRecentViewComponents);
-        } else {
-            LOGS_QCRITICAL( "logs [UI] XML loading failed..." );
-        }         
+        mRecentCallsView = qobject_cast<LogsRecentCallsView*>(doLoadView( 
+            logsRecentCallsViewFile, logsRecentCallsViewId, 
+            mRecentViewComponents, LogsRecentViewId, onlyInit));
+    } else if ( !onlyInit ){
+        setObjectTreeToView( LogsRecentViewId );
     }
      
     LOGS_QDEBUG( "logs [UI] <- LogsComponentRepository::recentCallsView()" );
@@ -111,23 +112,18 @@ LogsRecentCallsView* LogsComponentRepository::recentCallsView()
 // 
 // -----------------------------------------------------------------------------
 //
-LogsDetailsView* LogsComponentRepository::detailsView()
+LogsDetailsView* LogsComponentRepository::detailsView(bool onlyInit)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsComponentRepository::detailsView()" );   
-    setObjectTreeToView( LogsDetailsViewId );
-    
+    LOGS_QDEBUG( "logs [UI] -> LogsComponentRepository::detailsView()" ); 
+
     if ( !mDetailsView ) {
-        bool ok = false;
-        mDetailsViewComponents = load( logsDetailsViewFile, &ok );
-        if ( ok ) {
-            mDetailsView = qobject_cast<LogsDetailsView*>
-                ( findWidget(logsDetailsViewId) );
-            
-            addToolbarToObjectList(mDetailsViewComponents);
-        } else {
-            LOGS_QCRITICAL( "logs [UI] XML loading failed..." );
-        }         
+        mDetailsView = qobject_cast<LogsDetailsView*>(doLoadView( 
+            logsDetailsViewFile, logsDetailsViewId, 
+            mDetailsViewComponents, LogsDetailsViewId, onlyInit));
+    } else if ( !onlyInit ){
+        setObjectTreeToView( LogsDetailsViewId );
     }
+    
     LOGS_QDEBUG( "logs [UI] -> LogsComponentRepository::detailsView()" );
     return mDetailsView;
 }
@@ -136,22 +132,16 @@ LogsDetailsView* LogsComponentRepository::detailsView()
 // 
 // -----------------------------------------------------------------------------
 //
-LogsMatchesView* LogsComponentRepository::matchesView()
+LogsMatchesView* LogsComponentRepository::matchesView(bool onlyInit)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsComponentRepository::matchedCallsView()" );
-    setObjectTreeToView( LogsMatchesViewId );
 
     if ( !mMatchesView ) {
-        bool ok = false;
-        mMatchesViewComponents = load( logsMatchedCallsViewFile, &ok );
-        if ( ok ) {
-            mMatchesView = qobject_cast<LogsMatchesView*>
-                ( findWidget(logsMatchesViewId) );
-
-            addToolbarToObjectList(mMatchesViewComponents);
-        } else {
-            LOGS_QCRITICAL( "logs [UI] XML loading failed..." );
-        }         
+        mMatchesView = qobject_cast<LogsMatchesView*>(doLoadView( 
+            logsMatchedCallsViewFile, logsMatchesViewId, 
+            mMatchesViewComponents, LogsMatchesViewId, onlyInit));
+    } else if ( !onlyInit ){
+        setObjectTreeToView( LogsMatchesViewId );
     }
      
     LOGS_QDEBUG( "logs [UI] <- LogsComponentRepository::matchedCallsView()" );
@@ -188,12 +178,17 @@ LogsModel*  LogsComponentRepository::model() const
 void  LogsComponentRepository::setObjectTreeToView( LogsAppViewId viewId )
 {
     reset();
+    QObjectList* objTree = 0;
     if ( viewId == LogsRecentViewId ) {
-        setObjectTree( mRecentViewComponents );
+        objTree = &mRecentViewComponents;
     } else if ( viewId == LogsDetailsViewId ) {
-        setObjectTree( mDetailsViewComponents );
+        objTree = &mDetailsViewComponents;
     } else if ( viewId == LogsMatchesViewId ) {
-        setObjectTree( mMatchesViewComponents );        
+        objTree = &mMatchesViewComponents;      
+    }
+    if ( objTree ){
+        setObjectTree( *objTree );
+        mCurrentObjectTree = objTree;
     }
 }
 
@@ -259,3 +254,43 @@ bool LogsComponentRepository::loadSection(  LogsAppViewId viewId,
     return ok;
     }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsComponentRepository::lazyInit()
+{
+    mModel->refreshData();
+    recentCallsView(true);
+    detailsView(true);
+    matchesView(true);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QGraphicsWidget* LogsComponentRepository::doLoadView( 
+    const QString &fileName, const QString &viewName, 
+    QObjectList& viewComponents, LogsAppViewId viewId, bool onlyInit)
+{
+    QObjectList* prevObjectTree = mCurrentObjectTree;
+    setObjectTreeToView( viewId );
+    
+    QGraphicsWidget* view = 0;
+    bool ok = false;
+    viewComponents = load( fileName, &ok );
+    if ( ok ) {
+        view = findWidget(viewName);
+        addToolbarToObjectList(viewComponents);
+    } else {
+       LOGS_QCRITICAL( "logs [UI] XML loading failed..." );
+    }  
+    
+    if ( onlyInit && prevObjectTree ){
+        LOGS_QDEBUG( "logs [UI] set back previous object tree" )   
+        mCurrentObjectTree = prevObjectTree;
+        setObjectTree( *mCurrentObjectTree );
+    }
+    return view;
+}

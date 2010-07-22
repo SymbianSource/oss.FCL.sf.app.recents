@@ -103,6 +103,18 @@ void LogsEventParser::parseL(
         dest.setDuration(source.Duration());
     }
     
+    LogsEventData* logsEventData = new LogsEventData();
+    if ( logsEventData->parse(source) != 0 ){
+        // Parsing failed, clear event data
+        delete logsEventData;
+        dest.setLogsEventData( 0 );
+    } else {
+        dest.setLogsEventData( logsEventData );  //Ownership transferred
+    }
+    
+    // Resolve event type based on current event data
+    dataChanged |= resolveEventType(dest);
+    
     int currLogId = dest.logId();
     int newLogId = source.Id();
     bool logIdChanged( currLogId != newLogId );
@@ -114,19 +126,7 @@ void LogsEventParser::parseL(
         dest.mEventState = LogsEvent::EventNotUpdated;
     }
     dest.setLogId( newLogId ); // Store unique identifier
-    
-    LogsEventData* logsEventData = new LogsEventData();
-    if ( logsEventData->parse(source) != 0 ){
-        // Parsing failed, clear event data
-        delete logsEventData;
-        dest.setLogsEventData( 0 );
-    } else {
-        dest.setLogsEventData( logsEventData );  //Ownership transferred
-    }
-    
-    // Resolve event type based on current event data
-    resolveEventType(dest);
-    
+
     eventTypeSpecificParsing(dest);
     
     dest.setDuplicates( 0 );
@@ -140,7 +140,7 @@ void LogsEventParser::parseL(
 // LogsEventParser::resolveEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEventParser::resolveEventType(LogsEvent& dest)
+bool LogsEventParser::resolveEventType(LogsEvent& dest)
 {
     LogsEvent::LogsEventType type( LogsEvent::TypeVoiceCall );
     if ( dest.mLogsEventData ){
@@ -157,7 +157,7 @@ void LogsEventParser::resolveEventType(LogsEvent& dest)
         }
     }
     LOGS_QDEBUG_2( "LogsEventParser::resolveEventType, type:", type )
-    dest.setEventType( type );
+    return dest.setEventType( type );
 }
 
 // ----------------------------------------------------------------------------

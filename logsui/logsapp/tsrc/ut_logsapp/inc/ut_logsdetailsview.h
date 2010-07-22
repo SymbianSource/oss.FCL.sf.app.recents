@@ -65,6 +65,8 @@ private slots: //test methods
     void testUpdateWidgetsSizeAndLayout();
     void testDialpadEditorTextChanged();
     void testSendMessage();
+    void testSaveActivity();
+    void testLoadActivity();
     
 private:
  

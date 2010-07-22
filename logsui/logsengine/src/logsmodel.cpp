@@ -59,6 +59,9 @@ LogsModel::LogsModel(LogsModelType modelType, bool resourceControl) :
             this, SLOT( dataUpdated(QList<int>) ));
     connect( mDbConnector, SIGNAL( dataRemoved(QList<int>) ), 
             this, SLOT( dataRemoved(QList<int>) ));
+    connect( mDbConnector, SIGNAL( dataReset() ), 
+                this, SLOT( resetModel() ));
+    
     connect( hbInstance->theme(), SIGNAL ( changeFinished() ),
             this, SLOT ( resetModel()));
     mDbConnector->init();
@@ -180,6 +183,16 @@ int LogsModel::updateConfiguration(LogsConfigurationParams& params)
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsModel::updateConfiguration()" )
     return retVal;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+LogsDetailsModel* LogsModel::logsDetailsModel(LogsEvent& event)
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsModel::logsDetailsModel()" )
+    return new LogsDetailsModel( *mDbConnector, event );
 }
 
 // -----------------------------------------------------------------------------
@@ -368,11 +381,13 @@ QString LogsModel::SqueezedString(
     qreal totalwidth = 0;
     int x = 0;
     if (fontMetrics.width(fullString) > maxwidth){
-    		maxwidth = maxwidth - fontMetrics.width(tr("...")+secondarystring);
+    	maxwidth = maxwidth - fontMetrics.width(tr("...")+secondarystring);
         for (x = 0; (x < basestring.count()) && (totalwidth < maxwidth); x++){
             totalwidth  = totalwidth + fontMetrics.width(basestring[x]);
         }
-        if ( ( totalwidth > maxwidth ) && ( x>0 ) ) x--;
+        if ( x>1 ){
+            x -= 2;
+        }
         return basestring.left(x) + tr("...") + secondarystring;
     } else {
         return fullString;  
@@ -385,7 +400,9 @@ QString LogsModel::SqueezedString(
 //
 void LogsModel::resetModel()
 {
-   this->reset();
+    LOGS_QDEBUG( "logs [ENG] -> LogsModel::resetModel()" )
+    this->reset();
+    LOGS_QDEBUG( "logs [ENG] <- LogsModel::resetModel()" )
 }
 // -----------------------------------------------------------------------------
 //

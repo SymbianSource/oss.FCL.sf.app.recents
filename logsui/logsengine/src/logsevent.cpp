@@ -24,6 +24,7 @@
 #include <qcontactname.h>
 #include <qcontactonlineaccount.h>
 #include <hbglobal.h>
+#include <QDataStream>
 #include "logsevent.h"
 #include "logseventparser.h"
 #include "logseventdata.h"
@@ -257,9 +258,11 @@ void LogsEvent::setEventUid( int uid )
 // LogsEvent::setEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEvent::setEventType( LogsEventType eventType )
+bool LogsEvent::setEventType( LogsEventType eventType )
 {
+    bool changed( mEventType != eventType );
     mEventType = eventType;
+    return changed;
 }
 
 // ----------------------------------------------------------------------------
@@ -344,6 +347,85 @@ LogsEvent::LogsEventType LogsEvent::eventType() const
 	return mIsRead;
 }
 
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+LogsEvent::LogsEvent( QDataStream& serializedEvent )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEvent::LogsEvent deserialize")
+    serializedEvent >> mLogId;
+    int tempEnum;
+    serializedEvent >> tempEnum;
+    mDirection = static_cast<LogsEvent::LogsDirection>( tempEnum );
+    serializedEvent >> tempEnum;
+    mEventType = static_cast<LogsEvent::LogsEventType>( tempEnum );
+    serializedEvent >> mUid;
+    
+    serializedEvent >> mRemoteParty;
+    serializedEvent >> mNumber;
+    serializedEvent >> mDuplicates;
+    serializedEvent >> mTime;
+    serializedEvent >> mRingDuration;
+    serializedEvent >> mIsRead;  
+    serializedEvent >> mIsALS;
+    serializedEvent >> mDuration;
+          
+    serializedEvent >> mIndex;
+    serializedEvent >> mIsInView;
+    serializedEvent >> tempEnum;
+    mEventState = static_cast<LogsEvent::LogsEventState>( tempEnum );
+    serializedEvent >> mIsLocallySeen;
+    serializedEvent >> mIsPrivate;
+    serializedEvent >> mIsUnknown;
+    
+    LogsEventData* logsEventData = new LogsEventData(serializedEvent);
+    if ( serializedEvent.status() == QDataStream::ReadPastEnd ){
+        mLogsEventData = 0;
+        delete logsEventData;
+    } else {
+        mLogsEventData = logsEventData;
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsEvent::LogsEvent deserialize")
+    
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::serialize( QDataStream& serializeDestination )
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsEvent::serialize")
+    serializeDestination << mLogId;
+    serializeDestination << mDirection;
+    serializeDestination << mEventType;
+    serializeDestination << mUid;
+    
+    serializeDestination << mRemoteParty;
+    serializeDestination << mNumber;
+    serializeDestination << mDuplicates;
+    serializeDestination << mTime;
+    serializeDestination << mRingDuration;
+    serializeDestination << mIsRead;  
+    serializeDestination << mIsALS;
+    serializeDestination << mDuration;
+       
+    serializeDestination << mIndex;
+    serializeDestination << mIsInView;
+    serializeDestination << mEventState;
+    serializeDestination << mIsLocallySeen;
+    serializeDestination << mIsPrivate;
+    serializeDestination << mIsUnknown; 
+    
+    if ( mLogsEventData ){
+        mLogsEventData->serialize(serializeDestination);
+    }
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsEvent::serialize")
+    return true;
+}
+        
 // ----------------------------------------------------------------------------
 // LogsEvent::RingDuration
 //
@@ -519,10 +601,9 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
         phoneFilter.setValue(mLogsEventData->remoteUrl());
         phoneFilter.setMatchFlags(QContactFilter::MatchExactly);
     } else if ( !mNumber.isEmpty() ){
-         // remove non-significant parts from number for better matching
         phoneFilter.setDetailDefinitionName( QContactPhoneNumber::DefinitionName,  
                                              QContactPhoneNumber::FieldNumber);
-        phoneFilter.setValue(stripPhoneNumber(mNumber));
+        phoneFilter.setValue(mNumber);
         phoneFilter.setMatchFlags(QContactFilter::MatchEndsWith);
     } else {
         // Searching not possible
@@ -553,59 +634,19 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
     return contactNameStr;
 }
 
-
-// ----------------------------------------------------------------------------
-// LogsEvent::stripPhoneNumber
-// ----------------------------------------------------------------------------
-//
-QString LogsEvent::stripPhoneNumber(const QString& num)
-{
-    // Remove international part from beginning if starts with '+'
-    // and leading digit can be removed if doesn't start with '+'
-    // NOTE: since international part is not fixed length, this
-    // approach is not bulletproof (i.e. if international part is
-    // only one digit long, part of group identification code is ignored
-    // which might lead to incorrect matching in case where user
-    // would have two contacts with same subscriber number part but for
-    // different operator (quite unlikely).
-
-    if ( num.length() == 0 ){
-        return num;
-    }
-    QString modifiedNum( num );
-    if ( modifiedNum.at(0) == '+' ) {
-        // QString handles automatically case of removing too much
-        const int removePlusAndInternationalPart = 4;
-        modifiedNum.remove( 0, removePlusAndInternationalPart );
-    }
-    else {
-        const int removeFirstDigit = 1;
-        modifiedNum.remove( 0, removeFirstDigit );
-    }
-
-    return modifiedNum;
-}
-
 // ----------------------------------------------------------------------------
 // LogsEvent::parseContactName
 // ----------------------------------------------------------------------------
 //
 QString LogsEvent::parseContactName(const QContactName& name)
 {
-    QString firstName = name.value(QContactName::FieldFirst);
-    QString lastName = name.value(QContactName::FieldLast);
-    QString parsedName;
-    if (!lastName.isEmpty()) {
-        if (!firstName.isEmpty()) {
-            parsedName = 
-                QString(QLatin1String("%1 %2")).arg(firstName).arg(lastName);
-        } 
-        else {
-            parsedName = lastName;
-        }
-    } else if (!firstName.isEmpty()) {
-        parsedName = firstName;
+    QString firstName = name.value(QContactName::FieldFirstName);
+    QString lastName = name.value(QContactName::FieldLastName);
+    QString parsedName = firstName;    
+    if (!parsedName.isEmpty() && !lastName.isEmpty()) {
+        parsedName.append(" ");
     }
+    parsedName.append(lastName);
     return parsedName;
 }
 

@@ -17,21 +17,21 @@
 //USER
 #include "logsservicehandler.h"
 #include "logslogger.h"
+#include "logsdefs.h"
 #include "logsmainwindow.h"
 #include <xqserviceutil.h>
 
 //SYSTEM
 
 // -----------------------------------------------------------------------------
-// LogsService::LogsService
+// LogsServiceHandler::LogsServiceHandler
 // -----------------------------------------------------------------------------
 //
 LogsServiceHandler::LogsServiceHandler(LogsMainWindow& mainWindow)
-    : XQServiceProvider(QLatin1String("com.nokia.services.logsservices.starter"),0), 
-      mActivatedView(0),
+    : XQServiceProvider(QLatin1String("logs.com.nokia.symbian.ILogsView"),0), 
       mMainWindow(mainWindow)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsServiceHandler::LogsServiceHandler()" )
+    LOGS_QDEBUG( "logs [UI] -> LogsServiceHandler::LogsServiceHandler(), ILogsView" )
     
     publishAll();
     mIsAppStartedUsingService = XQServiceUtil::isService();
@@ -51,64 +51,41 @@ LogsServiceHandler::~LogsServiceHandler()
 }
 
 // -----------------------------------------------------------------------------
-// LogsServiceHandler::start
+// LogsServiceHandler::show
 // -----------------------------------------------------------------------------
 //
-int LogsServiceHandler::start(int activatedView, bool showDialpad)
+int LogsServiceHandler::show(const QVariantMap& params)
 {
-    LOGS_QDEBUG_2( "logs [UI] -> LogsServiceHandler::start(), view:", activatedView )
+    LOGS_QDEBUG( "logs [UI] -> LogsServiceHandler::show()" )
+    int activatedView = params.value(logsViewIndexParam, 
+                            QVariant((int)LogsServices::ViewAll)).toInt();
+    bool showDialpad = params.value(logsShowDialpadParam, 
+                            QVariant(false)).toBool();
+    QString dialpadText = params.value(logsDialpadTextParam, 
+                            QVariant(QString())).toString();
+    
+    LOGS_QDEBUG_2( "logs [UI] activatedView:", activatedView )
+    LOGS_QDEBUG_2( "logs [UI] showDialpad:", showDialpad )
+    LOGS_QDEBUG_2( "logs [UI] dialpadText:", dialpadText )
     
     if ( activatedView < LogsServices::ViewAll || 
          activatedView > LogsServices::ViewMissed ){
-        LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::start(), incorrect view" )
+        LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::show(), incorrect view" )
         return -1;
     }
+    
     mIsAppStartedUsingService = true;
-    mActivatedView = activatedView;
     
     LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
     mMainWindow.bringAppToForeground();
     
-    emit activateView((LogsServices::LogsView)mActivatedView, showDialpad);
-
-    LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::start()" )
-    return 0;
-}
-
-// -----------------------------------------------------------------------------
-// LogsServiceHandler::startWithNum
-// -----------------------------------------------------------------------------
-//
-int LogsServiceHandler::startWithNum(int activatedView, bool showDialpad, QString dialpadText)
-{
-    LOGS_QDEBUG_2( "logs [UI] -> LogsServiceHandler::startWithNum(), view:", activatedView )
-    
-    Q_UNUSED(showDialpad);
-    
-    if ( activatedView < LogsServices::ViewAll || 
-         activatedView > LogsServices::ViewMissed ){
-        LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::startWithNum(), incorrect view" )
-        return -1;
+    if (!dialpadText.isEmpty()) {
+        emit activateView(dialpadText);
+    } else {
+        emit activateView((LogsServices::LogsView)activatedView, showDialpad, dialpadText);
     }
-    mIsAppStartedUsingService = true;
-    mActivatedView = activatedView;
-    
-    LOGS_QDEBUG( "logs [UI]     Bring app to foreground" )
-    mMainWindow.bringAppToForeground();
-    
-    emit activateView(dialpadText);
-
-    LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::startWithNum()" )
+    LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::show()" )
     return 0;
-}
-
-// -----------------------------------------------------------------------------
-// LogsServiceHandler::currentlyActivatedView
-// -----------------------------------------------------------------------------
-//
-LogsServices::LogsView LogsServiceHandler::currentlyActivatedView()
-{
-    return (LogsServices::LogsView)mActivatedView;
 }
 
 // -----------------------------------------------------------------------------

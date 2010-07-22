@@ -74,6 +74,7 @@ private:
     HbListView* mListView;    //not owned
     LogsMatchesModel* mModel; //owned
     HbPushButton* mAddToContactsButton; // not owned
+    bool mAddToContactsButtonDisabled;
 };
 
 #endif // LOGSMATCHESVIEW_H

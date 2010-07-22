@@ -17,9 +17,9 @@
 #include <QObject>
 #include <QLocale>
 #include <QHash>
-#include <hbinputkeymapfactory.h>
 #include <hbinputkeymap.h>
 #include <hbinputsettingproxy.h>
+#include <QTextCodec>
 
 #include "logspredictivelatin12keytranslator.h"
 #include "logslogger.h"
@@ -34,16 +34,41 @@ const QChar SpaceSepar(' ');
 // LogsPredictiveLatin12KeyTranslator::LogsPredictiveLatin12KeyTranslator()
 // -----------------------------------------------------------------------------
 //
-LogsPredictiveLatin12KeyTranslator::LogsPredictiveLatin12KeyTranslator()
-    : LogsPredictive12KeyTranslator()
+LogsPredictiveLatin12KeyTranslator::LogsPredictiveLatin12KeyTranslator() 
+    : LogsPredictive12KeyTranslator( QLocale::English )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveLatin12KeyTranslator::\
 LogsPredictiveLatin12KeyTranslator()" )
-    HbInputLanguage lang = 
-            HbInputSettingProxy::instance()->globalInputLanguage();
-    mKeyMap = HbKeymapFactory::instance()->keymap( lang.language(), 
-                                                   lang.variant() );
     
+    createSpecialMapping();
+    
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveLatin12KeyTranslator::\
+LogsPredictiveLatin12KeyTranslator()" )
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveLatin12KeyTranslator::LogsPredictiveLatin12KeyTranslator()
+// -----------------------------------------------------------------------------
+//
+LogsPredictiveLatin12KeyTranslator::LogsPredictiveLatin12KeyTranslator( 
+        const HbInputLanguage& lang )
+    : LogsPredictive12KeyTranslator( lang )
+{
+    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveLatin12KeyTranslator::\
+LogsPredictiveLatin12KeyTranslator()" )
+    createSpecialMapping();
+    
+    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveLatin12KeyTranslator::\
+LogsPredictiveLatin12KeyTranslator()" )
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveLatin12KeyTranslator::createSpecialMapping()
+// -----------------------------------------------------------------------------
+//
+void LogsPredictiveLatin12KeyTranslator::createSpecialMapping()
+{
     int index = 0;
     int arraySize = SpecialsCount * 2;
     while( index < arraySize ) {
@@ -52,10 +77,7 @@ LogsPredictiveLatin12KeyTranslator()" )
         mSpecialKeyMap[ character ] = keycode;
     }
     
-    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveLatin12KeyTranslator::\
-LogsPredictiveLatin12KeyTranslator()" )
 }
-
 
 // -----------------------------------------------------------------------------
 // LogsPredictiveLatin12KeyTranslator::~LogsPredictiveLatin12KeyTranslator()
@@ -76,17 +98,20 @@ LogsPredictiveLatin12KeyTranslator::~LogsPredictiveLatin12KeyTranslator()
 // -----------------------------------------------------------------------------
 //
 const QChar LogsPredictiveLatin12KeyTranslator::translateChar( 
-                                                    const QChar character ) const
+                                                    const QChar character,
+                                                    bool& ok ) const
 {
+    ok = true;
     QChar keycode = mSpecialKeyMap[ character ]; 
     if ( keycode.isNull() ) {
         keycode = LogsPredictive12KeyTranslator::translateChar( character );
         if ( keycode.isNull() ) {
             QString decomposed = character.decomposition();
             if (decomposed.isEmpty()) {
+                ok = false;
                 return keycode;
             }
-            return translateChar (decomposed.at(0));
+            return translateChar (decomposed.at(0), ok);
         }
     }
     return keycode;
@@ -103,4 +128,9 @@ QStringList LogsPredictiveLatin12KeyTranslator::nameTokens(
 {
     return name.split( SpaceSepar, QString::SkipEmptyParts );
 }
-        
+
+
+
+
+
+

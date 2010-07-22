@@ -86,6 +86,27 @@ LogsEvent::~LogsEvent()
 }
 
 // ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+LogsEvent::LogsEvent( QDataStream& serializedEvent )
+{
+    serializedEvent >> mLogId;
+    mLogsEventData = 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::serialize( QDataStream& serializeDestination )
+{
+    serializeDestination << mLogId;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
 // LogsEvent::initializeEventL
 // ----------------------------------------------------------------------------
 //
@@ -243,9 +264,11 @@ void LogsEvent::setEventUid( int uid )
 // LogsEvent::setEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEvent::setEventType( LogsEventType eventType )
+bool LogsEvent::setEventType( LogsEventType eventType )
 {
+    bool changed( mEventType != eventType );
     mEventType = eventType;
+    return changed;
 }
 
 // ----------------------------------------------------------------------------

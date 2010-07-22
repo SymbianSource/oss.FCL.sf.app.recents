@@ -44,8 +44,9 @@ void LogsEventParser::parseL(
 // LogsEventParser::resolveEventType
 // ----------------------------------------------------------------------------
 //
-void LogsEventParser::resolveEventType(LogsEvent& /*dest*/)
+bool LogsEventParser::resolveEventType(LogsEvent& /*dest*/)
 {
+    return false;
 }
 
 // End of file

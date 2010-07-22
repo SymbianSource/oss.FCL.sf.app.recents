@@ -54,7 +54,6 @@ private slots: //test methods
     void testInitView();
     void testActivated();
     void testDeactivated();
-    void testResetView();
     void testInitListWidget();
     void testUpdateFilter();
     void testUpdateViewName();
@@ -65,7 +64,6 @@ private slots: //test methods
     void testOpenDialpad(); 
     void testDialpadEditorTextChanged();
     void testGestureEvent();
-    void testSwipeAngleToDirection();
     void testViewChangeByFlicking();    
     void testModel();
     void testShowListItemMenu();
@@ -77,12 +75,15 @@ private slots: //test methods
     void testActivateEmptyListIndicator();
     void testUpdateMenu();
     void testUpdateWidgetsSizeAndLayout();
+    void testGetListItemTextWidth();
     void testDialpadClosed();
     void testClearList();
     void testClearListOkAnswer();
     void testIsExitAllowed();
     void testContactSearch();
     void testDialpadOpened();
+    void testSaveActivity();
+    void testLoadActivity();
     
 private: //helper functions
     

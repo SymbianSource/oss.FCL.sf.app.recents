@@ -34,7 +34,7 @@ LogsMatchesModel::LogsMatchesModel( LogsDbConnector& dbConnector )
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::LogsMatchesModel()" )    
     mDbConnector = &dbConnector;
-    mLastCall = QString();
+    mLastCall = QString("constructor");
     mTextData.append( "firstitem" );
     
     LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::LogsMatchesModel()" )

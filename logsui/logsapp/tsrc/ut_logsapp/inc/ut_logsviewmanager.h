@@ -23,6 +23,8 @@
 class HbMainWindow;
 class LogsViewManager;
 class LogsMainWindow;
+class LogsServiceHandler;
+class LogsServiceHandlerOld;
 
 class UT_LogsViewManager : public QObject
 {
@@ -51,16 +53,21 @@ private slots: //test methods
     void testConstructorDestructor();
     void testActivateView();
     void testchangeMatchesView();
+    void testchangeRecentView();
     void testExitApplication();
-    void testAppFocusGained();
     void testStartingWithService();
     void testHandleOrientationChanged();
     void testCompleteViewActivation();
+    void testSaveActivity();
+    void testLoadActivity();
     
 private:
  
     LogsMainWindow* mMainWindow;
     LogsViewManager* mLogsViewManager;
+    
+    LogsServiceHandler* mService;
+    LogsServiceHandlerOld* mServiceOld;
 };
 
 #endif //UT_LOGSVIEWMANAGER_H

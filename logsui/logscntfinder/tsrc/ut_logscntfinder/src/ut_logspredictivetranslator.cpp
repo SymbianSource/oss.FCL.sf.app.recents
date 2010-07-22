@@ -19,6 +19,8 @@
 
 #include "ut_logspredictivetranslator.h"
 #include "logspredictivetranslator.h"
+#include "logspredictivelatin12keytranslator.h"
+#include "logspredictivethai12keytranslator.h"
 
 #include <QtTest/QtTest>
 
@@ -52,7 +54,10 @@ void UT_LogsPredictiveTranslator::testConstructor()
 {
     QVERIFY( mTranslator );
     QVERIFY( mTranslator->mKeyMap );
+    QVERIFY( mTranslator->mNameTranslator == 0 );
+    QVERIFY( LogsPredictiveTranslator::mInstance != 0 );
     LogsPredictiveTranslator::deleteInstance();
+    QVERIFY( LogsPredictiveTranslator::mInstance == 0 );
     
     mTranslator = 0;
     HbInputLanguage thai( QLocale::Thai );
@@ -61,31 +66,99 @@ void UT_LogsPredictiveTranslator::testConstructor()
     mTranslator = LogsPredictiveTranslator::instance();
     QVERIFY( mTranslator );
     QVERIFY( mTranslator->mKeyMap );
+    QVERIFY( mTranslator->mNameTranslator == 0 );
+    QVERIFY( LogsPredictiveTranslator::mInstance != 0 );
+    
+    LogsPredictiveTranslator::deleteInstance();
+    QVERIFY( LogsPredictiveTranslator::mInstance == 0 );
+    mTranslator = 0;
     
 }
-
 
 void UT_LogsPredictiveTranslator::testTranslate()
 {
     QString test1( "12345" );
+    bool ok;
     
     QCOMPARE( mTranslator->LogsPredictiveTranslator::translate( test1 ).length(),
               test1.length() );
     
-    QCOMPARE( mTranslator->LogsPredictiveTranslator::translate( test1, 2 ).length(),
+    QCOMPARE( mTranslator->LogsPredictiveTranslator::translate( test1, &ok, 2 ).length(),
               2 );
+    QVERIFY( ok );
+    
+    QString test2( "Hannu%");
+    QCOMPARE( mTranslator->LogsPredictiveTranslator::translate( test2, &ok ).length(),test2.length() -1 );
+    QVERIFY( !ok );
+    
 }
 
-void UT_LogsPredictiveTranslator::testStartsWith()
+void UT_LogsPredictiveTranslator::testTranslatePattern()
 {
-    QCOMPARE( mTranslator->startsWith( QString("" ), QString("") ), 0 ); 
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("") ), 0 );
-    QCOMPARE( mTranslator->startsWith( QString("" ), QString("123") ), 0 );
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("1234") ), 0 ); 
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("1") ), 1 ); 
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("123") ), 3 ); 
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("12"), true ), 2 ); 
-    QCOMPARE( mTranslator->startsWith( QString("123" ), QString("12"), false ), 2 );
+    QString test1( "12345" );
+    
+    QCOMPARE( mTranslator->LogsPredictiveTranslator::translatePattern( test1 ).length(),
+              test1.length() );
+    
+}
+
+
+void UT_LogsPredictiveTranslator::testTranslateText()
+{
+    QString test1( "12345" );
+    
+    QCOMPARE( mTranslator->translateText( test1 ).length(), test1.length() );
+    
+    QString test2( "Hannu%");
+    QCOMPARE( mTranslator->translateText( test2 ).length(), test2.length() - 1 );
+
+    QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
+    //text is thai, input lang latin
+    const int ucsize = 9;
+    //                           1      2      3      4      5     6      7      8     9
+    const QChar thaiName1[] = {0x0E01,0x0E06,0x0E0A,0x0E0E,0x0E14,0x0E19,0x0E1E,0x0E23,0x0E2A };
+    QCOMPARE( mTranslator->translateText( QString( thaiName1,ucsize ) ), QString( "123456789" ) );
+
+    
+}
+
+void UT_LogsPredictiveTranslator::testNameTranslator()
+{
+    QString test1( "12345" );
+    QCOMPARE( mTranslator->mib(), MIBenumLatin );
+    QVERIFY( !mTranslator->mNameTranslator );
+    QCOMPARE( mTranslator->nameTranslator( test1 ).mib(), MIBenumLatin );
+    QVERIFY( mTranslator->mNameTranslator );
+
+    //china
+    QString uni;
+    uni.append(QChar(0x0219));
+    uni.append(QChar(0x4E0F));
+    QCOMPARE( mTranslator->nameTranslator( uni ).mib(), MIBenumLatin );
+    QVERIFY( !mTranslator->mNameTranslator );
+    QCOMPARE( mTranslator->mib(), MIBenumLatin );
+    
+    //unmapped
+    QString test2( "Hannu%");
+    QCOMPARE( mTranslator->nameTranslator( test2 ).mib(), MIBenumLatin );
+    QVERIFY( !mTranslator->mNameTranslator );
+    QCOMPARE( mTranslator->mib(), MIBenumLatin );
+
+    QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
+    
+    //text is thai, input lang latin
+    const int ucsize = 9;
+    //                           1      2      3      4      5     6      7      8     9
+    const QChar thaiName1[] = {0x0E01,0x0E06,0x0E0A,0x0E0E,0x0E14,0x0E19,0x0E1E,0x0E23,0x0E2A };
+    QCOMPARE( mTranslator->nameTranslator( QString( thaiName1,ucsize ) ).mib(), MIBenumThai );
+    QVERIFY( mTranslator->mNameTranslator );
+    QCOMPARE( mTranslator->mNameTranslator->mib(), MIBenumThai );
+    QCOMPARE( mTranslator->mib(), MIBenumLatin );
+    
+    QCOMPARE( mTranslator->nameTranslator( QString( thaiName1,ucsize ) ).mib(), MIBenumThai );
+    QVERIFY( mTranslator->mNameTranslator );
+    QCOMPARE( mTranslator->mNameTranslator->mib(), MIBenumThai );
+    QCOMPARE( mTranslator->mib(), MIBenumLatin );
     
 }
 

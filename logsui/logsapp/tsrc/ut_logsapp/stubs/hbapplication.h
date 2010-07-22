@@ -20,11 +20,19 @@
 #include <qobject.h>
 #include <qglobal.h> 
 
-class HbApplication : public QObject
+class HbActivityManager;
+
+class HbApplication : public QApplication
 {
 public:
     HbApplication(int &/*argc*/, char */*argv*/[]);
     ~HbApplication();
+    
+    HbActivityManager *activityManager();
+    Hb::ActivationReason activateReason() const;
+    QVariantHash activateParams() const;
+    QString activateId() const; 
+    QVariant activateData();    
     
     static void quit();
 };

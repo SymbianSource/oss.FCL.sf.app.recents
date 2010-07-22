@@ -475,7 +475,7 @@ void LogsDbConnector::readCompleted(int readCount)
             mAddedEventIndexes.append( mEvents.at(i)->index() );
         }
     }
-    
+
     bool doModelDataReset( !mRemovedEventIndexes.isEmpty() ||
                            !mAddedEventIndexes.isEmpty() || 
                            !mUpdatedEventIndexes.isEmpty() );
@@ -487,21 +487,28 @@ void LogsDbConnector::readCompleted(int readCount)
         }
     }
     
-    if ( !mRemovedEventIndexes.isEmpty() ){
-        emit dataRemoved(mRemovedEventIndexes);
-    }             
-    if ( !mAddedEventIndexes.isEmpty() ){
-        emit dataAdded(mAddedEventIndexes);
-    }
-    if ( !mUpdatedEventIndexes.isEmpty() ){
-        emit dataUpdated(mUpdatedEventIndexes);
+    int changeCount = 0;
+    changeCount += mRemovedEventIndexes.isEmpty() ? 0 : 1;
+    changeCount += mAddedEventIndexes.isEmpty() ? 0 : 1;
+    changeCount += mUpdatedEventIndexes.isEmpty() ? 0 : 1;
+    
+    if ( changeCount > 1 ){
+        // If having many changes, it is less error prone
+        // to just report reset.
+        emit dataReset();
+    } else {
+        if ( !mRemovedEventIndexes.isEmpty() ){
+            emit dataRemoved(mRemovedEventIndexes);
+        }             
+        if ( !mAddedEventIndexes.isEmpty() ){
+            emit dataAdded(mAddedEventIndexes);
+        }
+        if ( !mUpdatedEventIndexes.isEmpty() ){
+            emit dataUpdated(mUpdatedEventIndexes);
+        }
     }
     
     deleteRemoved(readCount);
-    
-    if ( mCompressionEnabled ){
-        mReader->stop();
-    }    
 
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::readCompleted()" )
 }

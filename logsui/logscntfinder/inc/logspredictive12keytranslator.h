@@ -34,7 +34,6 @@ class LogsPredictive12KeyTranslator : public LogsPredictiveTranslator
 
 public: 
 
-    explicit LogsPredictive12KeyTranslator();
     ~LogsPredictive12KeyTranslator();
     
 public: //from LogsPredictiveTranslator
@@ -42,7 +41,11 @@ public: //from LogsPredictiveTranslator
     QStringList patternTokens( const QString& pattern ) const;
     int hasPatternSeparators( const QString& pattern ) const;
     const QChar translateChar( const QChar character ) const;
+
+protected:
     
+    explicit LogsPredictive12KeyTranslator( const HbInputLanguage& lang );
+
 private:
     
     void padWithZeros( QString& token, const QString& source, int padIndex ) const;

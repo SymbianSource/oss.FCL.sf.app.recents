@@ -26,25 +26,25 @@ class LogsServiceHandler : public XQServiceProvider
     {
         Q_OBJECT
     public:
+        
         explicit LogsServiceHandler(LogsMainWindow& mainWindow);
         ~LogsServiceHandler();
     
     public slots:
-        int start(int activatedView, bool showDialpad);
-        int startWithNum(int activatedView, bool showDialpad, QString dialpadText);
+
+        int show(const QVariantMap& params);
         
     signals:
     
-        void activateView(LogsServices::LogsView activatedView, bool showDialpad);
+        void activateView(LogsServices::LogsView activatedView, bool showDialpad, QString dialpadText);
         void activateView(QString dialpadText);
     
     public:
         
-        LogsServices::LogsView currentlyActivatedView();
         bool isStartedUsingService() const;
         
     private:
-        int mActivatedView;
+
         LogsMainWindow& mMainWindow;
         bool mIsAppStartedUsingService;
         

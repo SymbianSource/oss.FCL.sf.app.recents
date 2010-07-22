@@ -52,6 +52,7 @@ private slots: //test methods
     void testDataAdded();
     void testDataUpdated();
     void testDataRemoved();
+    void testDataResetted();
     void testLogsMatches();
     void testCreateContactWithNumber();
     void testCreateCall();

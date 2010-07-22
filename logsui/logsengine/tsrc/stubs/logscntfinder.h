@@ -35,7 +35,7 @@ public:
 
     inline LogsCntText() : mHighlights(0){}
     inline const QString& text() const {return mText;}
-    inline int highlights() const {return mHighlights;}
+    int highlights() const;
     QString richText( QString startTag = QString("<b><u>"), 
                       QString endTag = QString("</u></b>")) const;
     
@@ -48,6 +48,7 @@ private:
     friend class LogsCntEntry;
     friend class UT_LogsCntEntry;
     friend class UT_LogsCntFinder;
+    friend class UT_LogsMatchesModel;
 };
 
 typedef QList<LogsCntText> LogsCntTextList;
@@ -100,6 +101,7 @@ private:
     
     friend class UT_LogsCntEntry;
     friend class UT_LogsCntFinder;
+    friend class UT_LogsMatchesModel;
 };
 
 typedef QList<LogsCntEntry*> LogsCntEntryList;

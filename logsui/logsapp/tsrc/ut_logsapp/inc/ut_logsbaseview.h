@@ -67,7 +67,8 @@ private slots: //test methods
     void testInitiateCallback();
     void testShowListItemMenu();
     void testPopulateListItemMenu();
-    void testCloseEmptyMenu();
+    void testUpdateMenuVisibility();
+    void testSetMenuVisible();
     void testSaveContact();
     void testUpdateCall();
     void testUpdateMessage();
@@ -85,6 +86,11 @@ private slots: //test methods
     void testDeleteEvent();
     void testDeleteEventOkAnswer();
     void testAskConfirmation();
+    void testMatchWithActivityId();
+    void testSaveActivity();
+    void testLoadActivity();
+    void testClearActivity();
+    void testEnsureListPositioning();
     
 private:
  

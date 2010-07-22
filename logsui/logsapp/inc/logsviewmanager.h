@@ -27,6 +27,7 @@
 class HbMainWindow;
 class LogsComponentRepository;
 class LogsServiceHandler;
+class LogsServiceHandlerOld;
 class LogsMainWindow;
 class HbView;
 class LogsBaseView;
@@ -48,15 +49,16 @@ public:
      * @param mainWindow
      * @param service
      */
-    LogsViewManager( LogsMainWindow& mainWindow, LogsServiceHandler& service );
+    LogsViewManager( LogsMainWindow& mainWindow, LogsServiceHandler& service,
+            LogsServiceHandlerOld& serviceOld );
     ~LogsViewManager();
 
 public slots:
 
+    void changeRecentViewViaService(
+        LogsServices::LogsView view, bool showDialpad, QString dialpadText);
+    void changeMatchesViewViaService(QString dialpadText);
     void changeRecentView(LogsServices::LogsView view, bool showDialpad);
-    void changeMatchesView(QString dialpadText);
-    void appFocusGained();
-    void appFocusLost();
     
 public: // From LogsAbstractViewManager
     
@@ -71,16 +73,23 @@ private slots:
     void proceedExit();
     void handleOrientationChanged();
     void completeViewActivation();
+    void saveActivity();  
     
 private:
     
-    void initViews();
-    bool doActivateView(LogsAppViewId viewId, bool showDialpad, QVariant args);
+    bool doActivateView(LogsAppViewId viewId, bool showDialpad, 
+                        QVariant args, const QString& dialpadText = QString());
+    bool loadActivity();
+    LogsAppViewId checkMatchesViewTransition(
+        LogsAppViewId viewId, const QString& dialpadText);
+    void handleFirstActivation();
+    LogsBaseView* createView(LogsAppViewId viewId);
     
 private: //data 
     
     LogsMainWindow& mMainWindow;
     LogsServiceHandler& mService;
+    LogsServiceHandlerOld& mServiceOld;
     LogsComponentRepository* mComponentsRepository;
     QList<LogsBaseView*> mViewStack;
     bool mFirstActivation;

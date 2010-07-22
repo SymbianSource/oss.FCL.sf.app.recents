@@ -14,40 +14,13 @@
 * Description:
 *
 */
-#include "pt_LogsCntFinder.h"
+#include "pt_Logscntfinder.h"
 #include "logscntfinder.h"
 
 #include <qtcontacts.h>
 #include <QtTest/QtTest>
 
 
-
-class PtTest
-{
-public:
-    
-    PtTest( const QString& name );
-    void execute( LogsCntFinder& engine );
-    void calculateMean();
-    void calculateVariance();
-    void calculateDeviation();
-    void print();
-    static QString statHeader(); 
-    
-public:
-    
-    QString mPattern;
-    QList<int> mSamples;
-    float mMean;
-    float mVariance;
-    float mStdDeviation;
-    int mMin;
-    int mMax;
-    int mMinSample;
-    int mMaxSample;
-    int mResults;
-
-};
 
 
 PtTest::PtTest( const QString& name )
@@ -73,8 +46,6 @@ void PtTest::execute( LogsCntFinder& engine )
     engine.predictiveSearchQuery( mPattern );
     mSamples.append( t.elapsed());
     mResults += engine.resultsCount();
-    //mSamples.append( qrand() / 100000000 );
-    //mResults += (100 - mPattern.length() );
     
 }
 
@@ -157,68 +128,60 @@ QString PtTest::statHeader()
 
 }
 
-void pt_LogsCntFinder::initTestCase()
+void PT_LogsCntFinder::initTestCase()
 {
 }
 
-void pt_LogsCntFinder::cleanupTestCase()
+void PT_LogsCntFinder::cleanupTestCase()
 {
       
 }
 
 
-void pt_LogsCntFinder::init()
+void PT_LogsCntFinder::init()
 {   
-    qDebug() << "pt_LogsCntFinder::init start";
+    qDebug() << "PT_LogsCntFinder::init start";
     m_finder = 0;
     //open symbian database
     m_manager = new QContactManager("symbian");
     
-    //qDebug() << "pt_LogsCntFinder::init remove old contacts";
+    /*
+    //qDebug() << "PT_LogsCntFinder::init remove old contacts";
     // Remove all contacts from the database
+    
+    QList<QString> firstnamelist;
+    QList<QString> Lastnamelist;
+    firstnamelist<<"Micheal"<<"Evans"<<"Kacris"<<"Xiao";
+    Lastnamelist<<"Ribecca"<<"Tina"<<"Bob"<<"George"<<"Anna";
+
+    for( int z = 0;z<30;z++) {
+    //for( int z = 0;z<10;z++) {
+      for(int i =0; i < firstnamelist.count(); i++) {
+        for(int k =0; k < Lastnamelist.count(); k++) {
+          //emailaddress = firstnamelist[i].Lastnamelist[k]
+          createContact_one_Contact(firstnamelist[i], Lastnamelist[k], QString("03432"));
+        }
+      }
+    }
+    */
     
     QList<QContactLocalId> cnt_ids = m_manager->contactIds();
     qDebug() << "contacts now in db" << cnt_ids.count();
-    if ( cnt_ids.count() == 600 ) {
-    			QString f("Jack");
-    			QString l("Whatever");
-          createContact_one_Contact( f,l, QString("03432"));
-    	}
-
-	  cnt_ids = m_manager->contactIds();
+    if ( cnt_ids.count() < 600 ) {
+         QString f("Jack");
+         QString l("Whatever");
+         createContact_one_Contact( f,l, QString("03432"));
+    }
+    cnt_ids = m_manager->contactIds();
     qDebug() << "contacts now " << cnt_ids.count();
-    
-	  
-	   
-    /*if ( cnt_ids.count() != 600 ) {
-    qDebug() << "contacts now before delete" << cnt_ids.count();
-      m_manager->removeContacts(&cnt_ids);
-      cnt_ids = m_manager->contactIds();
-      qDebug() << "contacts now " << cnt_ids.count();
-      
-      QVERIFY(0 == cnt_ids.count());
-      
-      //qDebug() << "pt_LogsCntFinder::createContacts";
-      createContacts();
-      //qDebug() << "pt_LogsCntFinder::createContacts DONE";
-      //qDebug() << "contacts now after create" << cnt_ids.count();
-    }*/
-    
     
     m_finder = new LogsCntFinder( *m_manager );
     
-    qDebug() << "pt_LogsCntFinder::init end";
+    qDebug() << "PT_LogsCntFinder::init end";
 }
 
-void pt_LogsCntFinder::cleanup()
+void PT_LogsCntFinder::cleanup()
 {
-		/*m_manager = new QContactManager("symbian");
-		QList<QContactLocalId> cnt_ids = m_manager->contactIds();
-		m_manager->removeContacts(&cnt_ids);
-    cnt_ids = m_manager->contactIds();
-    qDebug() << "contacts now " << cnt_ids.count();
-      
-    QVERIFY(0 == cnt_ids.count());*/
     delete m_manager;
     m_manager = 0;
     delete m_finder;
@@ -226,39 +189,10 @@ void pt_LogsCntFinder::cleanup()
 }
 
 
-void pt_LogsCntFinder::createContacts()
-{
-		//qDebug() << "pt_LogsCntFinder::createContacts";
-    QList<QString> firstnamelist;
-    QList<QString> Lastnamelist;
-    firstnamelist<<"Micheal"<<"Evans"<<"Kris"<<"Xiao"<<"Una Vivi"<<"Wilda"<<"Tisha"<<"Queen"<<"Olga"<<"Maria Zola";
-    //Lastnamelist<<"Ribecca"<<"Tina"<<"Bob"<<"George"<<"Anna"<<"Yadira"<<"Lennon"<<"Jones"<<"Augustin Zi"<<"Csoma"<<"Baranik"<<"Harhai";
-		Lastnamelist<<"Ribecca"<<"Tina"<<"Bob"<<"George"<<"Anna"<<"Yadira"<<"Lennon"<<"Jones"<<"Augustin Zi"<<"Csoma";
-
-    //for( int z = 0;z<100;z++) {
-    for( int z = 0;z<5;z++) {
-      for(int i =0; i < firstnamelist.count(); i++) {
-        for(int k =0; k < Lastnamelist.count(); k++) {
-          createContact_one_Contact(firstnamelist[i], Lastnamelist[k], QString("03432"));
-        }
-      }
-    }
-    
-    // Empty contact
-    //QContact empty;
-    //m_manager->saveContact(&empty);
-    /*
-    QList<QContactLocalId> cnt_ids = m_manager->contactIds();
-    cnt_ids = m_manager->contactIds();
-    int j = cnt_ids.count();
-    QVERIFY( j == 900 );
-    */
-		//qDebug() << "pt_LogsCntFinder::createContacts DONE";
-    
-}
 
 
-void pt_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber)
+//void PT_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber, QString& emailaddress)
+void PT_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& Lastname, QString phnumber)
 {
     //Currenlty we can only fetch firstname,lastname,companyname and sip/email/phone from the databse
     // so create contact with only these details
@@ -276,18 +210,20 @@ void pt_LogsCntFinder::createContact_one_Contact(QString& firstname, QString& La
     number.setNumber(phnumber);
     phonecontact.saveDetail(&number);
     
-    //qDebug() << "pt_LogsCntFinder::createContact_one_Contact about to save..";
+    QContactEmailAddress email;
+    QString emailaddress = firstname + "." + Lastname + "@ovi.com";
+    email.setEmailAddress(emailaddress);
+    phonecontact.saveDetail(&email);
     
     m_manager->saveContact(&phonecontact);
-    //qDebug() << "pt_LogsCntFinder::createContact_one_Contact done";
    
 }
 
 
-void pt_LogsCntFinder::testPredictiveQuery()
+void PT_LogsCntFinder::testPredictiveQuery()
 {
     const int rowsInDisplay = 10;
-    qDebug() << "=>pt_LogsCntFinder::testPredictiveQuery";
+    qDebug() << "=>PT_LogsCntFinder::testPredictiveQuery";
     
     QTime t;
     qDebug() << "--- testing query with 5 ---";
@@ -301,42 +237,31 @@ void pt_LogsCntFinder::testPredictiveQuery()
      
     qDebug() << "-- list 10 matched records start --";
     for( int i=0;(i < rowsInDisplay && i < results);i++) {
- 	    QTime t1;
-      t1.start();
-      const LogsCntEntry& data = m_finder->resultAt( i );
-      //qDebug() << "First Name: ";
-      for (int j = 0; j < data.firstName().length(); j++) {
-        //qDebug() << data.firstName().at(j).text(); 
-      }
-      //qDebug() << "Last Name: ";
-      for (int k = 0; k < data.lastName().length(); k++) {
-        //qDebug() << data.lastName().at(k).text();
-      }
-      //qDebug() << "Phone number: " << data.phoneNumber().text();
-      
-    qDebug() << "fetched one contact";
-    qDebug("  Time elapsed:%d ms", t1.elapsed());
+        QTime t1;
+        t1.start();
+        const LogsCntEntry& data = m_finder->resultAt( i );
+        qDebug() << "fetched one contact";
+        qDebug("  Time elapsed:%d ms", t1.elapsed());
     }
     qDebug() << "-- list 10 matched records end --";
     qDebug("  Time elapsed:%d ms", t.elapsed());
 
-    qDebug() << "<=pt_LogsCntFinder::testPredictiveQuery";
-      
+    qDebug() << "<=PT_LogsCntFinder::testPredictiveQuery";
     }
     
   
 
 
-void pt_LogsCntFinder::testExtendedQuery()
+void PT_LogsCntFinder::testExtendedQuery()
 {
-    qDebug() << "=>pt_LogsCntFinder::testExtendedQuery";
-    qDebug() << "<=pt_LogsCntFinder::testPredictiveQuery";
+    qDebug() << "=>PT_LogsCntFinder::testExtendedQuery";
+    qDebug() << "<=PT_LogsCntFinder::testPredictiveQuery";
 
   }
     
-void pt_LogsCntFinder::testDiffHitQuery()
+void PT_LogsCntFinder::testDiffHitQuery()
 {
-    qDebug() << "=>pt_LogsCntFinder::testDiffHitQuery";
+    qDebug() << "=>PT_LogsCntFinder::testDiffHitQuery";
 
     QTime t;
 
@@ -380,14 +305,14 @@ void pt_LogsCntFinder::testDiffHitQuery()
     results = m_finder->resultsCount();
     qDebug() << "found " << results << " matches:";
 
-    qDebug() << "<=pt_LogsCntFinder::testDiffHitQuery";
+    qDebug() << "<=PT_LogsCntFinder::testDiffHitQuery";
 
 
 }
 
-void pt_LogsCntFinder::statistics()
+void PT_LogsCntFinder::statistics()
 {
-    qDebug() << "=> pt_LogsCntFinder::statistics";
+    qDebug() << "=> PT_LogsCntFinder::statistics";
     int results = 0;
     int queries = 0;
     int ind = mSamples; //samples
@@ -395,9 +320,12 @@ void pt_LogsCntFinder::statistics()
 
     QList<PtTest> tests;
     tests.append( PtTest("5") );
+    tests.append( PtTest("05") );    
     tests.append( PtTest("52") );
     tests.append( PtTest("522") );
     tests.append( PtTest("5220") );
+    tests.append( PtTest("05220") );
+    tests.append( PtTest("052207") );
     tests.append( PtTest("522000000000007") );
     tests.append( PtTest("205") );
     tests.append( PtTest("34096") );
@@ -439,28 +367,7 @@ void pt_LogsCntFinder::statistics()
         tests[ind].print();
     }
     
-    qDebug() << "<= pt_LogsCntFinder::statistics";
+    qDebug() << "<= PT_LogsCntFinder::statistics";
 }
 
-
-//QTEST_MAIN(pt_LogsCntFinder); // on Emulator
-
-int main(int argc, char *argv[]) //on HW
-{
-    int samples = 100;
-    for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-s") {
-            samples = QString(argv[i+1]).toInt();
-        }
-    }
-
-    QApplication app(argc, argv);
-    
-    pt_LogsCntFinder pt_logscntfinder( samples );
-    QString resultFileName = "c:/data/others/pt_logscntfinder.txt";
-    QStringList args_logsCntFinder( "pt_logscntfinder");
-    args_logsCntFinder << "-o" << resultFileName;
-    QTest::qExec(&pt_logscntfinder, args_logsCntFinder);
-    return 0;   
-}
 

@@ -200,7 +200,10 @@ bool LogsContact::requestFetchService( QString message,
             SLOT(handleRequestCompleted(QVariant)));
 
     mService->setArguments(arguments);
-
+    XQRequestInfo info;
+    info.setForeground(true);
+    mService->setInfo(info);
+    
     QVariant retValue;
     return mService->send(retValue);
 }

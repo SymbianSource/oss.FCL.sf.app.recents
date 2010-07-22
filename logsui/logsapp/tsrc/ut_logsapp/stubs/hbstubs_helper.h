@@ -17,6 +17,9 @@
 
 #ifndef HBSTUB_HELPER_H
 #define HBSTUB_HELPER_H
+
+class HbListViewItem;
+
 /**
 * Helper class to control logsdbconnector stub behavior
 *
@@ -34,6 +37,12 @@ class HbStubHelper
         static void setWidgetOpen(bool isOpen);
         static bool isWidgetOpen();    
         static bool isWidgetRaised();
+        static void setColorScheme(QColor col);
+        static void setActivityReason(Hb::ActivationReason reason);
+        static void setActivityId(QString activityId);
+        static QList<HbListViewItem*>& listItems();
+        static bool listScrollToCalled();
+        static bool listEnsureVisibleCalled();
 };
 
 #endif

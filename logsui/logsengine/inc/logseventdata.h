@@ -23,6 +23,7 @@
 
 // FORWARD DECLARATION
 class CLogEvent;
+class QDataStream;
 
 // CLASS DECLARATION
 
@@ -43,6 +44,11 @@ class LogsEventData
          * Copy constructor.
          */
         LogsEventData( const LogsEventData& data );
+        
+        /**
+         * Construct from data stream
+         */
+        LogsEventData( QDataStream& serializedEvent );
 
        /**
         * Destructor.
@@ -78,6 +84,8 @@ class LogsEventData
         bool isCsCompatible();
             
         unsigned int contactLocalId() const;
+        
+        bool serialize( QDataStream& serializeDestination );
         
     private:
         

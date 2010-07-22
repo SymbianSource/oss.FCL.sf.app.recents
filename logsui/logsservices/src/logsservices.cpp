@@ -19,10 +19,11 @@
 #include <logsservices.h>
 #include "logslogger.h"
 
-// --------------------------------------------------------------------------
-// LogsServices::start
-// --------------------------------------------------------------------------
-//
+/*!
+    \deprecated LogsServices::start(LogsView activatedView, bool showDialpad, const QString& number)
+        is deprecated. Use XQApplicationManager and
+        "com.nokia.symbian.ILogsView" interface instead
+*/
 int LogsServices::start(LogsView activatedView, bool showDialpad, const QString& number)
 {
     LOGS_QDEBUG_2( "LogsServices::start ->", activatedView )
