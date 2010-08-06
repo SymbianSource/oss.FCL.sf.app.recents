@@ -183,7 +183,8 @@ void CLogClient::ChangeEvent(const CLogEvent& /*aEvent*/, TRequestStatus& /*aSta
 void CLogClient::DeleteEvent(TLogId /*aId*/, TRequestStatus& aStatus)
 {
     aStatus = KRequestPending;
-    User::RequestComplete( &aStatus, KErrNone );
+    TRequestStatus* status = &aStatus;
+    User::RequestComplete( status, KErrNone );
 }
 
 void CLogClient::DoRunL()
@@ -199,14 +200,16 @@ void CLogClient::ClearLog(const TTime& /*aDate*/, TRequestStatus& aStatus)
 {
     stubLastCalledFunc = "ClearLog";
     aStatus = KRequestPending;
-    User::RequestComplete( &aStatus, KErrNone );
+    TRequestStatus* status = &aStatus;
+    User::RequestComplete( status, KErrNone );
 }
 
 void CLogClient::ClearLog(TInt /*aRecentList*/, TRequestStatus& aStatus)
 {
     stubLastCalledFunc = "ClearLogRecentList";
     aStatus = KRequestPending;
-    User::RequestComplete( &aStatus, KErrNone );
+    TRequestStatus* status = &aStatus;
+    User::RequestComplete( status, KErrNone );
 }
 
 void CLogClient::CLogBase_Reserved1()
@@ -253,7 +256,8 @@ CLogView::~CLogView()
 TBool CLogView::FirstL(TRequestStatus& aStatus)
 {
     aStatus = KRequestPending;
-    User::RequestComplete( &aStatus, KErrNone );
+    TRequestStatus* status = &aStatus;
+    User::RequestComplete( status, KErrNone );
     return ETrue;
 }
 
@@ -261,7 +265,8 @@ TBool CLogView::NextL(TRequestStatus& aStatus)
 {
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -320,7 +325,8 @@ TBool CLogViewRecent::SetRecentListL(TLogRecentList aList, TRequestStatus& aStat
     iRecentList = aList;
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -330,7 +336,8 @@ TBool CLogViewRecent::SetRecentListL(
     iRecentList = aList;
     if (  stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -340,7 +347,8 @@ TBool CLogViewRecent::SetRecentListL(
     iRecentList = aList;
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -354,7 +362,8 @@ TBool CLogViewRecent::DuplicatesL(CLogViewDuplicate& /*aView*/, TRequestStatus& 
 {
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -363,7 +372,8 @@ TBool CLogViewRecent::DuplicatesL(CLogViewDuplicate &/*aView*/, const CLogFilter
 {
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }
@@ -396,7 +406,8 @@ TBool CLogViewEvent::SetFilterL(const CLogFilterList& /*aFilterList*/, TRequestS
 {
     if ( stubAsyncCallPossible ){
         aStatus = KRequestPending;
-        User::RequestComplete( &aStatus, KErrNone );
+        TRequestStatus* status = &aStatus;
+        User::RequestComplete( status, KErrNone );
     }
     return stubAsyncCallPossible;
 }

@@ -57,6 +57,7 @@ public: // From QAbstractItemModel
 protected: // From LogsAbstractModel
     
     virtual QVariant createContact(const LogsModelItemContainer& item) const;
+    virtual void updateModel();
     
 private slots:
 

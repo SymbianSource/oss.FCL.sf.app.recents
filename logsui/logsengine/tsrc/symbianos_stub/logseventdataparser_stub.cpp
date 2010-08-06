@@ -25,7 +25,7 @@
 
 // Separator for gprs data (old legacy non-tagged format for sent and
 // received grps data)
-_LIT8(KDataSeparator,",");  
+//_LIT8(KDataSeparator,",");  
 
 // ----------------------------------------------------------------------------
 // LogsEventDataParser::parse

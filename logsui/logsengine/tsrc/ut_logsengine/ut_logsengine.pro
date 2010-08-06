@@ -71,6 +71,7 @@ HEADERS += ../../logssymbianos/inc/logseventparser.h
 HEADERS += ../../logssymbianos/inc/logseventdataparser.h
 HEADERS += ../../logssymbianos/inc/logsdbconnector.h
 HEADERS += ../../logssymbianos/inc/logsremove.h
+HEADERS += ../../logssymbianos/inc/logssystemtimeobserver.h
 HEADERS += ../stubs/logscntfinder.h
 
 SOURCES += src/main.cpp
@@ -105,6 +106,7 @@ SOURCES += ../hbstubs/hbstubs.cpp
 SOURCES += ../symbianos_stub/logsdbconnector_stub.cpp
 SOURCES += ../symbianos_stub/logseventparser_stub.cpp
 SOURCES += ../symbianos_stub/logseventdataparser_stub.cpp
+SOURCES += ../symbianos_stub/logssystemtimeobserver_stub.cpp
 SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
 SOURCES += ../stubs/qthighway_stub.cpp
 SOURCES += ../stubs/logscntfinder_stub.cpp

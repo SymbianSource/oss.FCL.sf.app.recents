@@ -590,7 +590,7 @@ void LogsBaseView::populateListItemMenu(HbMenu& menu)
     
     if (mMessage) {
         HbAction* messageAction = new HbAction;
-        messageAction->setText(hbTrId("txt_common_menu_create_message"));
+        messageAction->setText(hbTrId("txt_common_menu_send_message"));
         menu.addAction(messageAction);
         QObject::connect( messageAction, SIGNAL(triggered()), 
                           this, SLOT( createMessage() ) );

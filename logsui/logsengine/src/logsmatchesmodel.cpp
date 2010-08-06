@@ -685,7 +685,8 @@ QStringList LogsMatchesModelItemContainer::texts()
     QStringList list;
     if ( mEvent ){
         list << mFormattedCallerId;
-        list << mEvent->time().toTimeSpec(Qt::LocalTime).toString();
+        list << mParentModel.dateAndTimeString( 
+                            mEvent->time().toTimeSpec(Qt::LocalTime) );
     } else if ( mContactId > 0 ) {
         list << mContactName;
         list << mContactNumber;    

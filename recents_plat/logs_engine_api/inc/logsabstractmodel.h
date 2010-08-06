@@ -26,6 +26,7 @@ class LogsDbConnector;
 class LogsModelItemContainer;
 class HbIcon;
 class LogsContact;
+class LogsSystemTimeObserver;
 
 /**
  * Abstract logs model.
@@ -91,10 +92,21 @@ public:
     void getDecorationData(const LogsEvent& event, QList<QVariant>& iconList) const;
     
     LogsDbConnector* dbConnector();
+    
+    /**
+     * Construct a date and time string based on system locale
+     */
+    QString dateAndTimeString(const QDateTime& dateTime) const;
+    /**
+     * Construct a duration string using separator from system locale
+     */
+    QString durationString(const QTime& time) const;
+
 
 protected slots:
 
     virtual void contactSavingCompleted(bool modified);
+    virtual void updateModel();
 
 protected:
 
@@ -111,6 +123,7 @@ protected: //data
     
     LogsDbConnector* mDbConnector;
     QMap<QString, HbIcon*> mIcons;
+    LogsSystemTimeObserver* mSystemTimeObserver;
     
 private:  // Testing related friend definitions
     

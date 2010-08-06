@@ -156,14 +156,25 @@ QVariant LogsDetailsModel::createContact(const LogsModelItemContainer& item) con
 //
 // -----------------------------------------------------------------------------
 //
+void LogsDetailsModel::updateModel()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsDetailsModel::updateModel()" )
+    initContent();
+    reset();
+    LOGS_QDEBUG( "logs [ENG] <- LogsDetailsModel::updateModel()" )
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsDetailsModel::contactActionCompleted(bool modified)
 {
     if ( modified ){
         mEvent->prepareForContactMatching();
         if ( mEvent->updateRemotePartyFromContacts(
                 LogsCommonData::getInstance().contactManager() ).length() > 0 ) {
-            initContent();
-            reset();
+            updateModel();
         }
     }
 }
@@ -180,8 +191,7 @@ void LogsDetailsModel::duplicatesRead()
     mDuplicates.clear();
     mDuplicates = mDbConnector->takeDuplicates();
     
-    initContent();
-    reset();
+    updateModel();
     
     // Someone else might be reading duplicates as well, don't interfere with them.
     disconnect( mDbConnector, SIGNAL(duplicatesRead()), this, SLOT(duplicatesRead()) );
@@ -380,7 +390,7 @@ void LogsDetailsModel::initTexts()
         callDurationRow << hbTrId("txt_dialer_ui_dblist_call_duration");
         QTime n(0, 0, 0);
         QTime t = n.addSecs(mEvent->duration());                
-        callDurationRow << t.toString("hh:mm:ss");
+        callDurationRow << durationString(t);
         mDetailTexts.append(callDurationRow);
     }
     
@@ -435,6 +445,6 @@ void LogsDetailsModel::addDateAndTimeTextRow(
     } else {
         dateAndTimeRow << hbTrId("txt_dialer_ui_dblist_date_and_time");
     }
-    dateAndTimeRow << event.time().toTimeSpec(Qt::LocalTime).toString();
+    dateAndTimeRow << dateAndTimeString( event.time().toTimeSpec(Qt::LocalTime) );
     mDetailTexts.append(dateAndTimeRow);
 }

@@ -39,7 +39,7 @@ Q_DECLARE_METATYPE(LogsContact *)
 
 #define LOGS_TEST_CMP_ICONS( var, icon ){ \
      const HbIcon& tempIcon = qVariantValue<HbIcon>( var );\
-     QVERIFY( &tempIcon = icon ); }
+     QVERIFY( &tempIcon == icon ); }
 
 #define LOGS_TEST_CREATE_EVENT(eventName, index, eventState ) \
 LogsEvent* eventName = new LogsEvent; \

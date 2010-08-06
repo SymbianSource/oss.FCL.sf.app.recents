@@ -114,16 +114,6 @@ QList<QContactLocalId> QContactManager::contactIds(
     return list;
 }
 
-QContact QContactManager::contact(const QContactLocalId& contactId, const QStringList& definitionRestrictions) const
-{
-		Q_UNUSED(definitionRestrictions)
-    QContact contact;
-    if ( contactId == logsTestContactId ) {
-        logsTestContactLocalId = logsTestContactId;
-    }
-    return contact;
-}
-
 QContact QContactManager::contact(const QContactLocalId& contactId, const QContactFetchHint& fetchHint) const
 {
     Q_UNUSED(fetchHint)
@@ -147,12 +137,15 @@ QContactDetailFilter::QContactDetailFilter()
 void QContactDetailFilter::setDetailDefinitionName(
         const QString& definition, const QString& fieldName)
 {
-
+    Q_UNUSED(definition)
+    Q_UNUSED(fieldName)
 }
+
 void QContactDetailFilter::setMatchFlags(QContactFilter::MatchFlags flags)
 {
     Q_UNUSED(flags)
 }
+
 void QContactDetailFilter::setValue(const QVariant& value)
 {
     logsTestNumber = value.toString();
@@ -176,7 +169,22 @@ QContact::~QContact()
 QContact& QContact::operator=(const QContact& other)
 {
     Q_UNUSED(other)
+    return *this;
 }
+
+QContactDetail  QContact::detail(const char* definitionId) const
+{
+    if ( definitionId == QContactName::DefinitionName ){
+         QContactName name;
+         return name;
+     } else if ( definitionId == QContactPhoneNumber::DefinitionName ){
+         QContactPhoneNumber number;
+         return number;
+     }
+     QContactDetail detail;
+     return detail;   
+}
+
 
 QContactDetail QContact::detail(const QString& definitionId) const
 {
@@ -192,14 +200,16 @@ QContactDetail QContact::detail(const QString& definitionId) const
 }
 
 bool QContact::saveDetail(QContactDetail* detail)
-    {
-      return true;
-    }
+{
+    Q_UNUSED(detail)
+    return true;
+}
  
 bool QContact::removeDetail(QContactDetail* detail)
-    {
-     return true;
-    }
+{
+    Q_UNUSED(detail)
+    return true;
+}
 
 
 QContactLocalId QContact::localId() const
@@ -229,6 +239,7 @@ QContactDetail::~QContactDetail()
 QContactDetail& QContactDetail::operator=(const QContactDetail& other)
 {
     Q_UNUSED(other)
+    return *this;
 }
 
 QString QContactDetail::definitionName() const
@@ -260,4 +271,14 @@ QString QContactDetail::value(const QString& key) const
     return QString("");
 }
 
-
+QString QContactDetail::value(const char* key) const
+{
+    if ( key == QContactName::FieldFirstName ){
+        return logsFirstName;
+    } else if ( key == QContactName::FieldLastName ) {
+        return logsLastName;
+    } else if ( key == QContactPhoneNumber::FieldNumber ) {
+        return QString( "12345" );
+    }
+    return QString("");    
+}

@@ -26,6 +26,7 @@
 #include "logsdbconnector_stub_helper.h"
 #include <hblineedit.h>
 #include <hbglobal.h>
+#include <hbextendedlocale.h>
 #include <QtTest/QtTest>
 
 Q_DECLARE_METATYPE(LogsCall *)
@@ -115,7 +116,10 @@ void UT_LogsDetailsModel::testData()
     // Test date and time
     display = mModel->data(mModel->index(1), Qt::DisplayRole).toStringList();
     QVERIFY( display.count() == 2 );
-    QVERIFY( display.at(1) == testDetailsDateAndTime.toTimeSpec(Qt::LocalTime).toString() ); 
+    QDateTime localTime = testDetailsDateAndTime.toTimeSpec(Qt::LocalTime);    
+    QVERIFY( display.at(1).startsWith(
+                localTime.date().toString(Qt::SystemLocaleShortDate)) );
+    
     decoration = mModel->data(mModel->index(1), Qt::DecorationRole).toList();
     QVERIFY( decoration.count() == 1 );
     
@@ -138,7 +142,9 @@ void UT_LogsDetailsModel::testData()
     QVERIFY( display.count() == 2 );
     QTime n(0,0,0);
     QTime t = n.addSecs(testDetailsDuration);
-    QVERIFY( display.at(1) == t.toString("hh:mm:ss") );
+    QChar timeSeparator = HbExtendedLocale::system().timeSeparator(1);
+    QString tiemFormat = QString("hh%1mm%2ss").arg(timeSeparator).arg(timeSeparator);
+    QCOMPARE( display.at(1), t.toString(tiemFormat));
     decoration = mModel->data(mModel->index(4), Qt::DecorationRole).toList();
     QVERIFY( decoration.count() == 1 );
     

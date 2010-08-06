@@ -398,8 +398,8 @@ const LogsCntEntry& LogsCntFinder::resultAt( int index )
     if ( !entry->isCached() ) {
         QContact contact = mContactManager->contact( entry->contactId() );
         QContactName contactName = contact.detail( QContactName::DefinitionName );
-        entry->setFirstName( contactName.value( QContactName::FieldFirst ) );
-        entry->setLastName( contactName.value( QContactName::FieldLast ) );
+        entry->setFirstName( contactName.value( QContactName::FieldFirstName ) );
+        entry->setLastName( contactName.value( QContactName::FieldLastName ) );
         QContactPhoneNumber contactPhoneNumber = 
               contact.detail( QContactPhoneNumber::DefinitionName );
         entry->setPhoneNumber( 

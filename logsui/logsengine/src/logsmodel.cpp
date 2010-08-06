@@ -220,7 +220,7 @@ QVariant LogsModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole){
         QStringList list;
         list << getCallerId( *event );
-        list << event->time().toTimeSpec(Qt::LocalTime).toString();
+        list << dateAndTimeString( event->time().toTimeSpec(Qt::LocalTime) );
         return QVariant(list);
     } else if (role == Qt::DecorationRole) {
         QList<QVariant> icons;

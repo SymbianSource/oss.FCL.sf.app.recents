@@ -26,6 +26,7 @@
 #include "testresultxmlparser.h"
 #include "ut_logsremove.h"
 #include "ut_logsremovestates.h"
+#include "ut_logssystemtimeobserver.h"
 
 
 int main(int argc, char *argv[]) 
@@ -89,6 +90,12 @@ int main(int argc, char *argv[])
     QT_TRAP_THROWING( QTest::qExec(&ut_logsEventData, args_logsEventData); )
     parser.parseAndPrintResults(resultFileName,true);
     
+    UT_LogsSystemTimeObserver ut_logsSystemTimeObserver;
+    resultFileName = "c:/ut_logs_logsSystemTimeObserver.xml";
+    QStringList args_logsSystemTimeObserver( "ut_logsSystemTimeObserver");
+    args_logsSystemTimeObserver << "-xml" << "-o" << resultFileName;
+    QT_TRAP_THROWING( QTest::qExec(&ut_logsSystemTimeObserver, args_logsSystemTimeObserver); )
+    parser.parseAndPrintResults(resultFileName,true);
 
     if (promptOnExit) {
         printf("Press any key...\n");
