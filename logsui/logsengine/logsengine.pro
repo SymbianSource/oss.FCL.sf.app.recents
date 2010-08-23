@@ -45,6 +45,7 @@ HEADERS += inc/logseventdata.h
 HEADERS += inc/logsthumbnailmanager.h
 HEADERS += inc/logscommondata.h
 HEADERS += inc/logsconfigurationparams.h
+HEADERS += inc/logsduplicatelookup.h
 HEADERS += logssymbianos/inc/logsdbconnector.h
 HEADERS += logssymbianos/inc/logsworker.h
 HEADERS += logssymbianos/inc/logsreader.h
@@ -55,7 +56,7 @@ HEADERS += logssymbianos/inc/logsreaderstatecontext.h
 HEADERS += logssymbianos/inc/logseventparser.h
 HEADERS += logssymbianos/inc/logseventdataparser.h
 HEADERS += logssymbianos/inc/logsremove.h
-HEADERS += logssymbianos/inc/logssystemtimeobserver.h
+
 
 SOURCES += src/logsfilter.cpp
 SOURCES += src/logsabstractmodel.cpp
@@ -71,6 +72,7 @@ SOURCES += src/logscustomfilter.cpp
 SOURCES += src/logsthumbnailmanager.cpp
 SOURCES += src/logscommondata.cpp
 SOURCES += src/logsconfigurationparams.cpp
+SOURCES += src/logsduplicatelookup.cpp
 SOURCES += logssymbianos/src/logsdbconnector.cpp
 SOURCES += logssymbianos/src/logsworker.cpp
 SOURCES += logssymbianos/src/logsreader.cpp
@@ -80,7 +82,6 @@ SOURCES += logssymbianos/src/logsremovestates.cpp
 SOURCES += logssymbianos/src/logseventparser.cpp
 SOURCES += logssymbianos/src/logseventdataparser.cpp
 SOURCES += logssymbianos/src/logsremove.cpp
-SOURCES += logssymbianos/src/logssystemtimeobserver.cpp
 
 DEFINES += LOGSENGINE_LIB
 
@@ -96,7 +97,7 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lflogger -llogcli -llogwrap -lefsrv -lxqservice -lxqserviceutil \
             -lqtcontacts -llogscntfinder -lthumbnailmanagerqt \
-            -lcentralrepository -lbafl
+            -lcentralrepository
     
     defFiles = "$${LITERAL_HASH}ifdef WINS" \
         "DEFFILE bwins/logsengine.def" \

@@ -18,6 +18,7 @@
 #define LOGSDETAILSVIEW_H
 
 #include "logsbaseview.h"
+#include <hblistviewitem.h>
 
 class HbListView;
 class HbGroupBox;
@@ -57,6 +58,7 @@ private slots:
     void initiateVideoCall();
     void sendMessage();
     void openContact();
+    void copyNumberToClipboard();
     
     //from LogsBaseView
     virtual void handleBackSoftkey();
@@ -80,5 +82,28 @@ private:
     HbGroupBox* mViewName; //not owned
     HbListView* mListView; //not owned
 };
+
+class LogsDetailsViewItem : public HbListViewItem
+{
+    Q_OBJECT
+    friend class UT_LogsDetailsViewItem;
+    
+public:
+    
+    explicit LogsDetailsViewItem();
+    virtual ~LogsDetailsViewItem();
+    virtual HbAbstractViewItem *createItem();
+    virtual void updateChildItems();
+    
+protected: // From HbAbstractViewItem
+    
+    /*
+    * highlighting in detailsview is removed by
+    * overriding the pressStateChanged method to do nothing.
+    */
+    virtual void pressStateChanged(bool value, bool animate);
+};
+
+
 
 #endif // LOGSDETAILSVIEW_H

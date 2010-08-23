@@ -94,7 +94,7 @@ const char logsLogFile[] = "C:/logs/logsapp/logsappdebug.txt";// Logs applicatio
 #define LOGS_QDEBUG_EVENT( ev ) \
     qDebug() << "Logs event index:" << ev->index() << "type:" << ev->eventType() \
     << "dir:" << ev->direction() << "remote:" << ev->remoteParty() << "num:" << ev->number() \
-    << "inView:" << ev->isInView() << "state:" << ev->eventState();
+    << "inView:" << ev->isInView() << "state:" << ev->eventState() << "id:" << ev->logId();
 
 #define LOGS_QDEBUG_EVENT_ARR( arr )\
     qDebug() << "Logs event arr:";\

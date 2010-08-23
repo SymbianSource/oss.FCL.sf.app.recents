@@ -74,7 +74,7 @@ signals:
     
 private:
     
-    QList<int> getEventIds(bool onlyUnseen = false) const;
+    QList<LogsEvent*> getEvents(bool onlyUnseen = false) const;
     
 private: //data 
 

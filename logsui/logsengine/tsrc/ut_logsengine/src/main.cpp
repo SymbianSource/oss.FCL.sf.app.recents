@@ -31,6 +31,7 @@
 #include "ut_logsthumbnailmanager.h"
 #include "ut_logscommondata.h"
 #include "ut_logsconfigurationparams.h"
+#include "ut_logsduplicatelookup.h"
 #include "testresultxmlparser.h"
 
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
     args_logsThumbnailManager << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsThumbnailManager, args_logsThumbnailManager);
     parser.parseAndPrintResults(resultFileName,true); 
-    
+
     UT_LogsFilter ut_logsFilter;
     resultFileName = "c:/ut_logs_logsFilter.xml";
     QStringList args_logsFilter( "ut_logsFilter");
@@ -114,7 +115,6 @@ int main(int argc, char *argv[])
     QStringList args_logsEvent( "ut_logsEvent");
     args_logsEvent << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsEvent, args_logsEvent);
-    
     parser.parseAndPrintResults(resultFileName,true); 
     
     UT_LogsEventData ut_logsEventdata;
@@ -122,13 +122,13 @@ int main(int argc, char *argv[])
     QStringList args_logsEventData( "ut_logsEventData");
     args_logsEventData << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsEventdata, args_logsEventData);
+    parser.parseAndPrintResults(resultFileName,true); 
     
     UT_LogsCommonData ut_logsCommonData;
     resultFileName = "c:/ut_logs_logsCommonData.xml";
     QStringList args_logsCommonData( "ut_logsCommonData");
     args_logsCommonData << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsCommonData, args_logsCommonData);
-    
     parser.parseAndPrintResults(resultFileName,true);
     
     UT_LogsConfigurationParams ut_logsConfigurationParams;
@@ -136,7 +136,13 @@ int main(int argc, char *argv[])
     QStringList args_logsConfigurationParams( "ut_logsConfigurationParams");
     args_logsConfigurationParams << "-xml" << "-o" << resultFileName;
     QTest::qExec(&ut_logsConfigurationParams, args_logsConfigurationParams);
+    parser.parseAndPrintResults(resultFileName,true); 
     
+    UT_LogsDuplicateLookup ut_logsLookup;
+    resultFileName = "c:/ut_logs_logsDuplicateLookup.xml";
+    QStringList args_logsDuplicateLookup( "ut_logsDuplicateLookup");
+    args_logsDuplicateLookup << "-xml" << "-o" << resultFileName;
+    QTest::qExec(&ut_logsLookup, args_logsDuplicateLookup);
     parser.parseAndPrintResults(resultFileName,true); 
     
      

@@ -39,7 +39,7 @@ void LogClientStubsHelper::reset()
     stubLastCalledFunc.clear();
 }
 
-void LogClientStubsHelper::createEvents(int numEvents)
+void LogClientStubsHelper::createEvents(int /*numEvents*/)
 {
 
 }

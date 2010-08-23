@@ -18,7 +18,7 @@
 #define LOGSBASEVIEW_H
 
 #include <hbview.h>
-#include <logsservices.h>
+#include <xqaiwdecl.h>
 #include "logsdefs.h"
 #include "logscall.h"
 
@@ -75,6 +75,7 @@ public slots:
     
     virtual void handleExit();
     virtual void callKeyPressed();
+    void localeChanged();
     
 signals:
 
@@ -89,6 +90,7 @@ protected slots:
     virtual void updateEmptyListWidgetsVisibility();
     virtual void updateWidgetsSizeAndLayout();
     virtual void contactActionCompleted(bool modified);
+    virtual void updateEmptyListLabelVisibility();
     
     //slots bellow are used in *.docml
     void showFilterMenu();
@@ -105,7 +107,6 @@ protected slots:
     void initiateCall(int callType);
     void createMessage();
     void saveContact();
-    void updateEmptyListLabelVisibility();
     void showCallDetails();
     
     void deleteEvent();
@@ -140,6 +141,11 @@ protected:
      * Loads appropriate section from *.docml to resize list widget
      */
     void updateListSize( HbListView& list );
+    
+    /**
+     * Derived class should call this once it has completed activation.
+     */
+    virtual void activationCompleted();
   
 protected:
     
@@ -203,7 +209,7 @@ protected:
     Dialpad* mDialpad; //not owned
     HbLabel* mEmptyListLabel; // not owned
     
-    QMap<LogsServices::LogsView, QString>   mActionMap;
+    QMap<XQService::LogsViewIndex, QString>   mActionMap;
     
     bool mInitialized;
     
@@ -217,6 +223,7 @@ protected:
     
     QStringList mActivities;
     HbMenu* mOptionsMenu;
+    bool mActivating;
 };
 
 

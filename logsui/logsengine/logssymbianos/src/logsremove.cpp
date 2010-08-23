@@ -21,6 +21,7 @@
 #include "logslogger.h"
 #include "logsremoveobserver.h"
 #include "logsremovestates.h"
+#include "logsevent.h"
 #include <logcli.h>
 #include <f32file.h>
 #include <logview.h>
@@ -138,6 +139,9 @@ void LogsRemove::initL()
     if ( !mLogClient ){
         mLogClient = CLogClient::NewL( *mFsSession );
     }  
+    
+    mRemovedEvents.clear();
+    mRemovedEventDuplicates.clear();
        
     LOGS_QDEBUG( "logs [ENG] <- LogsRemove::initL" )
 }
@@ -147,9 +151,9 @@ void LogsRemove::initL()
 // LogsRemove::clearEvents
 // ----------------------------------------------------------------------------
 //
-int LogsRemove::clearEvents(const QList<int>& eventIds, bool& async)
+int LogsRemove::clearEvents(const QList<LogsEvent*>& events, bool& async)
 {
-    TRAPD( err, clearEventsL(eventIds, async) );
+    TRAPD( err, clearEventsL(events, async) );
     return err;
 }
     
@@ -157,15 +161,20 @@ int LogsRemove::clearEvents(const QList<int>& eventIds, bool& async)
 // LogsRemove::clearEventsL
 // ----------------------------------------------------------------------------
 //
-void LogsRemove::clearEventsL(const QList<int>& eventIds, bool& async)
+void LogsRemove::clearEventsL(const QList<LogsEvent*>& events, bool& async)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsRemove::clearEventsL()")
     
     async = false;
     initializeIdBasedRemovalL();
     
-    mRemovedEvents = eventIds;
-    mCurrentEventId = eventIds.isEmpty() ? -1 : eventIds.at(0);
+    foreach ( LogsEvent* event, events ){
+        mRemovedEvents.append( *event );
+        for ( int i = 0; i <  event->mergedDuplicates().count(); i++ ){
+            mRemovedEventDuplicates.append( event->mergedDuplicates().at(i) );
+        }
+    }
+    mCurrentEventId = mRemovedEvents.isEmpty() ? 0 : mRemovedEvents.at(0).logId();
     if ( !mRemovedEvents.isEmpty() ){
         async = startClearingL();
     }
@@ -249,14 +258,14 @@ bool LogsRemove::startClearingL()
 //
 LogsRemoveObserver& LogsRemove::observer()
 {
-    return mObserver;
+    return *this;
 }
 
 // ----------------------------------------------------------------------------
 // LogsRemove::removedEvents
 // ----------------------------------------------------------------------------
 //
-QList<int>& LogsRemove::removedEvents()
+QList<LogsEvent>& LogsRemove::removedEvents()
 {
     return mRemovedEvents;
 }
@@ -270,6 +279,57 @@ int LogsRemove::clearType()
     return mClearType;
 }
 
+// ----------------------------------------------------------------------------
+// Don't forward completion yet if there is associated duplicate events which
+// need to be still deleted.
+// ----------------------------------------------------------------------------
+//
+void LogsRemove::removeCompleted()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsRemove::removeCompleted()")
+    
+    if ( !mRemovedEventDuplicates.isEmpty() ){
+        TRAPD( err, removeAssociatedDuplicatesL() );
+        if ( err ){
+            mObserver.logsRemoveErrorOccured(err);
+        }
+    } 
+    else {
+        mObserver.removeCompleted();
+    }
+
+    LOGS_QDEBUG( "logs [ENG] <- LogsRemove::removeCompleted()")
+}
+
+// ----------------------------------------------------------------------------
+// LogsRemove::logsRemoveErrorOccured
+// ----------------------------------------------------------------------------
+//
+void LogsRemove::logsRemoveErrorOccured(int err)
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsRemove::logsRemoveErrorOccured()")
+        
+    mObserver.logsRemoveErrorOccured(err);
+    
+    LOGS_QDEBUG( "logs [ENG] <- LogsRemove::logsRemoveErrorOccured()") 
+}
+
+// ----------------------------------------------------------------------------
+// LogsRemove::removeAssociatedDuplicatesL
+// ----------------------------------------------------------------------------
+//
+void LogsRemove::removeAssociatedDuplicatesL()
+{
+    __ASSERT_ALWAYS( !mRemovedEventDuplicates.isEmpty(), User::Leave( KErrNotFound ) );
+           
+    LogsEvent event = mRemovedEventDuplicates.takeFirst();
+    mRemovedEvents.clear();
+    mRemovedEvents.append(event);
+    mCurrentEventId = mRemovedEvents.at(0).logId();
+    mCurrentStateMachine = &mRemoveStates;
+    setCurrentState(*mRemoveStates.at(0));
+    startClearingL();
+}
 
 // End of file
 

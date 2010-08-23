@@ -39,14 +39,18 @@ public:
 protected: // From HbMainWindow
     
     void keyPressEvent( QKeyEvent *event );
+    bool eventFilter(QObject *obj, QEvent *event);
     
 signals:
         
     void callKeyPressed();
+    void localeChanged();
+    void appGainedForeground();
     
 private:
     
     bool mForeground;
+    bool mLocaleChanged;
     
     friend class UT_LogsMainWindow;
     friend class UT_LogsServiceHandler;

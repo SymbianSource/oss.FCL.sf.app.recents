@@ -17,6 +17,7 @@
 
 #include <xqservicerequest.h>
 #include <xqrequestinfo.h>
+#include <xqappmgr.h>
 #include <QHash>
 #include "qthighway_stub_helper.h"
 
@@ -25,12 +26,31 @@ QString qtHighwayStubMessage;
 bool qtHighwayStubRequestBg = false;
 bool qtHighwayStubRequestEmbedded = false;
 
+QString qtAiwStubInterface;
+QString qtAiwStubOperation;
+bool qtAiwStubSynchronous = true;
+bool qtAiwFailCreateRequest = false;
+
 void QtHighwayStubHelper::reset()
 {
     qtHighwayStubService.clear();
     qtHighwayStubMessage.clear();
     qtHighwayStubRequestBg = false;
     qtHighwayStubRequestEmbedded = false;
+    qtAiwStubInterface.clear();
+    qtAiwStubOperation.clear();
+    qtAiwStubSynchronous = true;
+    qtAiwFailCreateRequest = false;
+}
+
+bool QtHighwayStubHelper::isRequestSynchronous()
+{
+    return qtAiwStubSynchronous;
+}
+
+void QtHighwayStubHelper::setFailCreateAiwRequest(bool fail)
+{
+    qtAiwFailCreateRequest = fail;
 }
 
 QString QtHighwayStubHelper::service()
@@ -123,4 +143,81 @@ void XQRequestInfo::setForeground(bool on)
 void XQRequestInfo::setEmbedded(bool embedded)
 {
     qtHighwayStubRequestEmbedded = embedded;
+}
+
+
+// -----------------------------------------------------------------------------
+// XQApplicationManager stubs
+// -----------------------------------------------------------------------------
+//
+XQApplicationManager::XQApplicationManager()
+{
+}
+
+XQApplicationManager::~XQApplicationManager()
+{
+}
+
+XQAiwRequest* XQApplicationManager::create( const QString& interface, 
+        const QString& operation, bool embedded)
+{
+    if (!qtAiwFailCreateRequest) {
+        qtAiwStubInterface = interface;
+        qtAiwStubOperation = operation;
+        qtHighwayStubRequestEmbedded = embedded;
+        XQAiwInterfaceDescriptor descr;
+        return new XQAiwRequest(descr, operation, embedded);
+    } else {
+        return 0; 
+    }
+}
+
+XQAiwRequest::XQAiwRequest(const XQAiwInterfaceDescriptor &descriptor, 
+        const QString &operation, bool embedded)
+{
+    Q_UNUSED(descriptor)
+    Q_UNUSED(operation)
+    Q_UNUSED(embedded)
+}
+
+XQAiwRequest::~XQAiwRequest()
+{    
+}
+
+const QString& XQAiwRequest::operation() const
+{
+    return qtAiwStubOperation;
+}
+
+const XQAiwInterfaceDescriptor& XQAiwRequest::descriptor() const
+{
+    return XQAiwInterfaceDescriptor();
+}
+
+void XQAiwRequest::setArguments(const QList<QVariant> &arguments)
+{
+    Q_UNUSED(arguments)
+}
+
+bool XQAiwRequest::send()
+{
+    return true;
+}
+
+void XQAiwRequest::setSynchronous(bool synchronous)
+{
+    qtAiwStubSynchronous = synchronous;
+}
+
+XQAiwInterfaceDescriptor::XQAiwInterfaceDescriptor()
+{    
+}
+
+XQAiwInterfaceDescriptor::~XQAiwInterfaceDescriptor()
+{    
+}
+
+QString XQAiwInterfaceDescriptor::interfaceName() const
+{
+    return qtAiwStubInterface;
 }

@@ -53,6 +53,7 @@ public: // test helpers
     static bool isMessageSent();
     static void resetTestData();
     static bool isDefaultMessageSent();
+    static QString sentToNumber();
     
 private:
     friend class UT_LogsMessage;

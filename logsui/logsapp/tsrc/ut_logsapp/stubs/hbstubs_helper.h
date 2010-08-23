@@ -43,6 +43,8 @@ class HbStubHelper
         static QList<HbListViewItem*>& listItems();
         static bool listScrollToCalled();
         static bool listEnsureVisibleCalled();
+        static int menuShownPlacement();
+        static void stringUtilDigitConversion(bool enabled);
 };
 
 #endif

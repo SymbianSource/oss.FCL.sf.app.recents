@@ -61,10 +61,11 @@ private slots: //test methods
     void testStateContext();
     void testViewChange();
     void testUpdateDetails();
+    void testLock();
 
 protected: // From LogsReaderObserver
     
-    void readCompleted(int readCount);
+    void readCompleted();
     void errorOccurred(int err);
     void temporaryErrorOccurred(int err);
     void eventModifyingCompleted();

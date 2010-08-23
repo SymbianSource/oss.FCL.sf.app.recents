@@ -343,15 +343,17 @@ void LogsCntEntry::setSpeedDial( const QString& number )
 bool LogsCntEntry::match( const QString& pattern ) const
 {
     bool match = false;
-    LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
-    
-    //direct match with phone number is enough
-    match = ( type() == EntryTypeHistory && 
-              mPhoneNumber.mTranslatedText.startsWith( pattern ) ) ||
-            doSimpleMatch( pattern );
-    
-    match = !match && translator->hasPatternSeparators( pattern ) ? 
-            doComplexMatch( translator->patternTokens( pattern) ) : match;
+    if ( pattern.length() > 0 ) {
+        LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+        
+        //direct match with phone number is enough
+        match = ( type() == EntryTypeHistory && 
+                  mPhoneNumber.mTranslatedText.startsWith( pattern ) ) ||
+                doSimpleMatch( pattern );
+        
+        match = !match && translator->hasPatternSeparators( pattern ) ? 
+                doComplexMatch( translator->patternTokens( pattern) ) : match;
+    }
     
     return match;
 }

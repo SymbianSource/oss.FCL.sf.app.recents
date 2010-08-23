@@ -49,6 +49,7 @@ const char logsCommonAddToContactsMenuActionId[] = "logs_act_add_to_contacts";
 const char logsDetailsViewVoiceCallMenuActionId[] = "logs_act_voice_call";
 const char logsDetailsViewInternetCallMenuActionId[] = "logs_act_internet_call";
 const char logsDetailsOpenContactMenuActionId[] = "logs_act_open_contact";
+const char logsDetailsCopyNumberMenuActionId[] = "logs_act_copy_number";
 const char logsRecentViewClearListMenuActionId[] = "logs_act_clear_list";
 const char logsRecentViewContactSearchMenuActionId[] = "logs_act_contact_search";
 
@@ -85,19 +86,11 @@ const int logsContactSearchDisabled = 2;
 
 // Interface related constants
 const char logsServiceName[] = "logs";
-const char logsInterfaceName[] = "com.nokia.symbian.ILogsView";
-const char logsOperationName[] = "show(QVariantMap)";
 
 //param names below are deprecated
 const char logsViewIndexParam[] = "view_index";
 const char logsShowDialpadParam[] = "show_dialpad";
 const char logsDialpadTextParam[] = "dialpad_text";
-
-//new params
-const char logsViewIndexParamNew[] = "ViewIndex";
-const char logsShowDialpadParamNew[] = "ShowDialpad";
-const char logsDialpadTextParamNew[] = "DialpadText";
-
 
 // Activity related constants
 const char logsActivityIdViewRecent[] = "LogsViewRecent";

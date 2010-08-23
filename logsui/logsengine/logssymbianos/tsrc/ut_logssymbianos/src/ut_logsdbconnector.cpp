@@ -26,6 +26,13 @@
 
 Q_DECLARE_METATYPE(QList<int>)
 
+#define LOGS_TEST_CREATE_EVENT_WITHOUT_IDX(eventName, id, eventState ) \
+LogsEvent* eventName = new LogsEvent; \
+eventName->setLogId(id);\
+eventName->setIsInView(true); \
+eventName->mEventState = eventState; \
+mDbConnector->mEvents.insert(id, eventName)
+
 #define LOGS_TEST_CREATE_EVENT(eventName, index, eventState ) \
 LogsEvent* eventName = new LogsEvent; \
 eventName->setIndex(index); \
@@ -33,6 +40,20 @@ eventName->setLogId(index);\
 eventName->setIsInView(true); \
 eventName->mEventState = eventState; \
 mDbConnector->mEvents.insert(index, eventName)
+
+#define ADD_EVENT_WITH_ID( arr, id ) \
+{\
+LogsEvent* ev = new LogsEvent;\
+ev->setLogId(id);\
+arr.append(ev);\
+}
+
+#define ADD_EVENT_WITH_ID_2( arr, id ) \
+{\
+LogsEvent ev;\
+ev.setLogId(id);\
+arr.append(ev);\
+}
 
 void UT_LogsDbConnector::initTestCase()
 {
@@ -71,13 +92,25 @@ void UT_LogsDbConnector::testInit()
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeUndefined );
     
     // Resource control enabled
+    CentralRepositoryStubHelper::setCurrentVal(logsDefaultMatchLength + 2);
     LogsDbConnector* connector = new LogsDbConnector(mEvents, false, true);
     QVERIFY( connector->init() == 0 );
     QVERIFY( connector->mReader );
     QVERIFY( connector->mLogsRemove );
     QVERIFY( connector->mCompressionEnabled );
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeCompressEnabled );
+    QCOMPARE( LogsCommonData::getInstance().telNumMatchLen(), logsDefaultMatchLength + 2 );
     delete connector;
+    
+    // Match len not found, default is used
+    CentralRepositoryStubHelper::setCurrentVal(logsDefaultMatchLength + 2);
+    CentralRepositoryStubHelper::setFailCode( -1 );
+    connector = new LogsDbConnector(mEvents);
+    QVERIFY( connector->init() == 0 );
+    QVERIFY( connector->mReader );
+    QVERIFY( connector->mLogsRemove );
+    QCOMPARE( LogsCommonData::getInstance().telNumMatchLen(), logsDefaultMatchLength );
+    
 }
 
 void  UT_LogsDbConnector::testClearList()
@@ -93,19 +126,29 @@ void  UT_LogsDbConnector::testClearList()
 void UT_LogsDbConnector::testClearEvents()
 {
     QVERIFY( !mDbConnector->mLogsRemove );
-    QList<int> events;
-    events.append(1);
+    QList<LogsEvent*> events;
+    ADD_EVENT_WITH_ID(events, 1);
     QVERIFY( !mDbConnector->clearEvents(events) ); // sync
     
     mDbConnector->init();
     QVERIFY( mDbConnector->mLogsRemove );
     mDbConnector->clearEvents(events); 
-    QVERIFY( !mDbConnector->clearEvents(events) ); // sync
+    QVERIFY( mDbConnector->mReader->mLocked );
+    QVERIFY( !mDbConnector->clearEvents(events) ); // Already clearing
+    QVERIFY( mDbConnector->mReader->mLocked );
+    qDeleteAll(events);
+    
+    // Remove completed or removeError causes read lock release
+    mDbConnector->removeCompleted();
+    QVERIFY( !mDbConnector->mReader->mLocked );
+    mDbConnector->mReader->mLocked = true;
+    mDbConnector->logsRemoveErrorOccured(-1);
+    QVERIFY( !mDbConnector->mReader->mLocked );
 }
 
 void UT_LogsDbConnector::testMarkEventsSeen()
 {
-    QList<int> events;
+    QList<LogsEvent*> events;
     QSignalSpy spy( mDbConnector, SIGNAL(markingCompleted(int)) );
     
     // Not ready
@@ -125,15 +168,15 @@ void UT_LogsDbConnector::testMarkEventsSeen()
     event2->setDirection(LogsEvent::DirMissed);
     LOGS_TEST_CREATE_EVENT(event3, 2, LogsEvent::EventAdded );
     event3->setDirection(LogsEvent::DirMissed);
-    events.append(0);
-    events.append(1);
+    ADD_EVENT_WITH_ID(events, 0);
+    ADD_EVENT_WITH_ID(events, 1);
     QVERIFY( mDbConnector->markEventsSeen(events) );
     QVERIFY( mDbConnector->mEventsSeen.count() == 2 );
     QVERIFY( mDbConnector->mReader->mCurrentEventId == 0 ); // Started modifying
     
     // Trying to clear missed again, id is appended to mark list, old modifying process in ongoing
     // and is not interrupted
-    events.append(2);
+    ADD_EVENT_WITH_ID(events, 2);
     QVERIFY( !mDbConnector->markEventsSeen(events) );
     QVERIFY( mDbConnector->mEventsSeen.count() == 3 );
     QVERIFY( mDbConnector->mReader->mCurrentEventId == 0 ); // Modifying still previous
@@ -154,11 +197,27 @@ void UT_LogsDbConnector::testMarkEventsSeen()
     
     // Clearing all, ids are not appended as those are already in modification list
     mDbConnector->mEventsSeen.clear();
-    mDbConnector->mEventsSeen.append(0);
-    mDbConnector->mEventsSeen.append(1);
-    mDbConnector->mEventsSeen.append(2);
+    ADD_EVENT_WITH_ID_2(mDbConnector->mEventsSeen, 0);
+    ADD_EVENT_WITH_ID_2(mDbConnector->mEventsSeen, 1);
+    ADD_EVENT_WITH_ID_2(mDbConnector->mEventsSeen, 2);
     QVERIFY( !mDbConnector->markEventsSeen(events) );
     QVERIFY( mDbConnector->mEventsSeen.count() == 3 );
+    
+    // Marked events contains merged duplicates which will be handled same way
+    // as any other event
+    mDbConnector->mEventsSeen.clear();
+    qDeleteAll(events);
+    events.clear();
+    ADD_EVENT_WITH_ID(events, 8);
+    ADD_EVENT_WITH_ID(events, 9);
+    ADD_EVENT_WITH_ID_2( events.at(0)->mergedDuplicates(), 88 );
+    ADD_EVENT_WITH_ID_2( events.at(0)->mergedDuplicates(), 9 ); // already exists in main event list
+    QVERIFY( !mDbConnector->markEventsSeen(events) );
+    QVERIFY( mDbConnector->mEventsSeen.count() == 3 );
+    QVERIFY( mDbConnector->mEventsSeen.at(0).logId() == 8 );
+    QVERIFY( mDbConnector->mEventsSeen.at(1).logId() == 88 );
+    QVERIFY( mDbConnector->mEventsSeen.at(2).logId() == 9 );
+    qDeleteAll(events);
 }
 
 void UT_LogsDbConnector::testReadDuplicates()
@@ -211,15 +270,17 @@ void UT_LogsDbConnector::testReadCompleted()
     QSignalSpy spyReset(mDbConnector, SIGNAL(dataReset()));
 
     // No events, no signal
-    mDbConnector->readCompleted(0);
+    mDbConnector->readCompleted();
     QVERIFY( spyAdded.count() == 0 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 0 );
     QVERIFY( spyReset.count() == 0 );
     
-    // Events exists, their indexes are signaled
-    LOGS_TEST_CREATE_EVENT(event, 0, LogsEvent::EventAdded );
-    mDbConnector->readCompleted(1);
+    // Events exists, their indexes are signaled, indexes are assigned at this phase
+    LOGS_TEST_CREATE_EVENT_WITHOUT_IDX(event, 0, LogsEvent::EventAdded );
+    QCOMPARE( event->index(), -1 );
+    mDbConnector->readCompleted();
+    QCOMPARE( event->index(), 0 );
     QVERIFY( spyAdded.count() == 1 );
     QList<int> addedIndexes = qvariant_cast< QList<int> >(spyAdded.at(0).at(0));
     QVERIFY( addedIndexes.count() == 1 );
@@ -232,10 +293,12 @@ void UT_LogsDbConnector::testReadCompleted()
     
     // 2 more events added, their indexes are signaled
     event->mEventState = LogsEvent::EventNotUpdated;
-    event->setIndex(2);
-    LOGS_TEST_CREATE_EVENT(event2, 0, LogsEvent::EventAdded );
-    LOGS_TEST_CREATE_EVENT(event3, 1, LogsEvent::EventAdded );
-    mDbConnector->readCompleted(3);
+    LOGS_TEST_CREATE_EVENT_WITHOUT_IDX(event2, 0, LogsEvent::EventAdded );
+    LOGS_TEST_CREATE_EVENT_WITHOUT_IDX(event3, 1, LogsEvent::EventAdded );
+    mDbConnector->readCompleted();
+    QCOMPARE( event2->index(), 0 );
+    QCOMPARE( event3->index(), 1 );
+    QCOMPARE( event->index(), 2 );
     QVERIFY( spyAdded.count() == 2 );
     QList<int> addedIndexes2 = qvariant_cast< QList<int> >(spyAdded.at(1).at(0));
     QVERIFY( addedIndexes2.count() == 2 );
@@ -251,7 +314,7 @@ void UT_LogsDbConnector::testReadCompleted()
     event->mEventState = LogsEvent::EventNotUpdated;
     event2->mEventState = LogsEvent::EventNotUpdated;
     event3->mEventState = LogsEvent::EventUpdated;
-    mDbConnector->readCompleted(3); 
+    mDbConnector->readCompleted(); 
     QVERIFY( spyAdded.count() == 2 );
     QVERIFY( spyRemoved.count() == 0 );
     QVERIFY( spyUpdated.count() == 1 );
@@ -265,7 +328,7 @@ void UT_LogsDbConnector::testReadCompleted()
     // One of the events removed (index 2)
     event->setIsInView(false);
     event3->mEventState = LogsEvent::EventNotUpdated;
-    mDbConnector->readCompleted(2);
+    mDbConnector->readCompleted();
     QVERIFY( spyAdded.count() == 2 );
     QVERIFY( spyRemoved.count() == 1 );
     QVERIFY( spyUpdated.count() == 1 );
@@ -279,7 +342,7 @@ void UT_LogsDbConnector::testReadCompleted()
     // Event added and removed, reset should be signaled
     mDbConnector->mEvents.at(0)->mEventState = LogsEvent::EventAdded;
     mDbConnector->mEvents.at(1)->mIsInView = false;
-    mDbConnector->readCompleted(1);
+    mDbConnector->readCompleted();
     QVERIFY( spyAdded.count() == 2 );
     QVERIFY( spyRemoved.count() == 1 );
     QVERIFY( spyUpdated.count() == 1 );
@@ -292,7 +355,7 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( mDbConnector->start() == 0 );
     QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
     mDbConnector->mCompressionEnabled = true;
-    mDbConnector->readCompleted(0);
+    mDbConnector->readCompleted();
     QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
 }
 
@@ -300,8 +363,8 @@ void UT_LogsDbConnector::testErrorOccurred()
 {
     // If pending event modifying, completion is signaled
     QSignalSpy spy( mDbConnector, SIGNAL(markingCompleted(int)) );
-    mDbConnector->mEventsSeen.append(0);
-    mDbConnector->mEventsSeen.append(1);
+    ADD_EVENT_WITH_ID_2(mDbConnector->mEventsSeen, 0);
+    ADD_EVENT_WITH_ID_2(mDbConnector->mEventsSeen, 1);
     mDbConnector->errorOccurred(-3);
     QVERIFY( spy.count() == 1 ); // Completion was signaled with err -3
     QVERIFY( spy.takeFirst().at(0).toInt() == -3 );
@@ -319,7 +382,7 @@ void UT_LogsDbConnector::testUpdateDetails()
     QVERIFY( mDbConnector->mReader );
     LOGS_TEST_CREATE_EVENT(event, 0, LogsEvent::EventUpdated );
     QVERIFY( mDbConnector->updateDetails(false) == 0 );
-    QVERIFY( spyUpdated.count() == 1 );
+    QVERIFY( spyUpdated.count() == 0 ); // Will happen asynchronously
 }
 
 void UT_LogsDbConnector::testClearMissedCallsCounter()

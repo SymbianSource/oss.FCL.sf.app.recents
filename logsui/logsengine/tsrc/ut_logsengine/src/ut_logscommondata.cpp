@@ -60,7 +60,9 @@ void UT_LogsCommonData::testCurrentConfiguration()
 {
     LogsConfigurationParams params;
     params.setListItemTextWidth(400);
+    params.setLocaleChanged(true);
     LogsCommonData::getInstance().updateConfiguration(params);
     LogsConfigurationParams& test = LogsCommonData::getInstance().currentConfiguration();
     QVERIFY( test.listItemTextWidth() == 400 );
+    QVERIFY( test.localeChanged() );
 }

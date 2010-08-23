@@ -105,6 +105,8 @@ public:
          * always at initialization phase. See initializeEventL.
          */
         LogsEventState eventState() const;
+        
+        bool isRemotePartyPrivate() const;
 
 		bool isRead() const;
         
@@ -160,6 +162,18 @@ public:
          * Set remote party name for the event.
          */
         void setRemoteParty( const QString& remoteParty );
+        
+        /**
+        * Set indication of result of searching matching 
+        * contact from contacts
+        */
+        void setContactMatched( bool value );
+                
+        /**
+        * Get indication of result of searching matching 
+        * contact from contacts
+        */
+        bool contactMatched();
         
         /**
          * Check if event is valid.
@@ -228,6 +242,8 @@ public:
 	    
 	    int mIndex;
 	    bool mIsInView;
+	    bool mContactMatched;
+	   bool mIsPrivate;
 	    LogsEventState mEventState;
 	    
     private:
@@ -251,6 +267,7 @@ public:
         friend class UT_LogsReaderStates;
         friend class UT_LogsDetailsModel;
         friend class UT_LogsMessage;
+        friend class UT_LogsDetailsView;
     };
 
 #endif      // LOGSEVENT_H

@@ -48,12 +48,13 @@ LogsEvent::LogsEvent()
     mIsRead(false),
     mIsALS(false),
     mDuration(0),
-    mIndex(0),
+    mIndex(-1),
     mIsInView(false),
     mEventState(EventAdded),
     mIsLocallySeen(false),
     mIsPrivate(false),
-    mIsUnknown(false)
+    mIsUnknown(false),
+    mContactMatched(false)
 {
 }
 
@@ -87,6 +88,8 @@ LogsEvent::LogsEvent( const LogsEvent& event )
     mIsLocallySeen = event.mIsLocallySeen;
     mIsPrivate = event.mIsPrivate;
     mIsUnknown = event.mIsUnknown;
+    mContactMatched = event.mContactMatched;
+    mMergedDuplicates = event.mMergedDuplicates;
 }
 
 // ----------------------------------------------------------------------------
@@ -171,6 +174,24 @@ void LogsEvent::setRemoteParty( const QString& remoteParty )
         mEventState = LogsEvent::EventUpdated;
     }
     mRemoteParty = remoteParty;
+}
+
+// ----------------------------------------------------------------------------
+// LogsEvent::setContactMatched
+// ----------------------------------------------------------------------------
+//
+void LogsEvent::setContactMatched( bool value )
+{
+    mContactMatched = value;
+}
+
+// ----------------------------------------------------------------------------
+// LogsEvent::contactMatched
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::contactMatched()
+{
+   return mContactMatched;
 }
 
 // ----------------------------------------------------------------------------
@@ -379,13 +400,23 @@ LogsEvent::LogsEvent( QDataStream& serializedEvent )
     serializedEvent >> mIsPrivate;
     serializedEvent >> mIsUnknown;
     
-    LogsEventData* logsEventData = new LogsEventData(serializedEvent);
-    if ( serializedEvent.status() == QDataStream::ReadPastEnd ){
-        mLogsEventData = 0;
-        delete logsEventData;
-    } else {
+    bool hasEventData = false;
+    serializedEvent >> hasEventData;
+    if ( hasEventData ){
+        LogsEventData* logsEventData = new LogsEventData(serializedEvent);
         mLogsEventData = logsEventData;
+    } else {
+        mLogsEventData = 0;
     }
+
+    int mergedDuplCount = 0;
+    serializedEvent >> mergedDuplCount;
+    for ( int i = 0; i < mergedDuplCount; i++ ){
+        LOGS_QDEBUG( "logs [ENG]    deserializing merged duplicates")
+        LogsEvent duplEvent( serializedEvent );
+        mMergedDuplicates.append( duplEvent );
+    }
+    
     LOGS_QDEBUG( "logs [ENG] <- LogsEvent::LogsEvent deserialize")
     
 }
@@ -418,8 +449,15 @@ bool LogsEvent::serialize( QDataStream& serializeDestination )
     serializeDestination << mIsPrivate;
     serializeDestination << mIsUnknown; 
     
-    if ( mLogsEventData ){
+    bool hasEventData = mLogsEventData;
+    serializeDestination << hasEventData;
+    if ( hasEventData ){
         mLogsEventData->serialize(serializeDestination);
+    }
+
+    serializeDestination << mMergedDuplicates.count();
+    foreach ( LogsEvent duplEvent, mMergedDuplicates ){
+        duplEvent.serialize( serializeDestination );
     }
     
     LOGS_QDEBUG( "logs [ENG] <- LogsEvent::serialize")
@@ -672,6 +710,9 @@ void LogsEvent::prepareForContactMatching()
 void LogsEvent::markedAsSeenLocally(bool markedAsSeen)
 {
     mIsLocallySeen = markedAsSeen;
+    for ( int i = 0; i < mMergedDuplicates.count(); i++ ){
+        mMergedDuplicates[i].markedAsSeenLocally(markedAsSeen);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -682,26 +723,91 @@ bool LogsEvent::isSeenLocally() const
 {
    return ( mIsLocallySeen || mIsRead );
 }          
-    
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
 bool LogsEvent::isRemotePartyPrivate() const
 {
    return mIsPrivate;
-}          
+}
 
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
 bool LogsEvent::isRemotePartyUnknown() const
 {
     return mIsUnknown;
 }
 
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
 void LogsEvent::setRemotePartyPrivate(bool markedAsPrivate)
 {
     mIsPrivate = markedAsPrivate;
 }
 
-
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
 void LogsEvent::setRemotePartyUnknown(bool markedAsUnknown)
 {
     mIsUnknown = markedAsUnknown;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+void LogsEvent::merge(LogsEvent& event)
+{
+    if ( isUnseenEvent(*this) && isUnseenEvent(event) ){
+        setDuplicates( duplicates() + event.duplicates() + 1 );
+    }
+    if ( !mMergedDuplicates.contains(event) ){
+        mMergedDuplicates.append(event);
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+QList<LogsEvent>& LogsEvent::mergedDuplicates()
+{
+    return mMergedDuplicates;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::operator==(const LogsEvent& other) 
+{
+    return this->logId() == other.logId();
+}
+
+// -----------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------
+//
+bool LogsEvent::isCommunicationPossible() const
+{
+    return ( !isRemotePartyPrivate() && !isRemotePartyUnknown() );
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::isUnseenEvent( const LogsEvent& event ) const
+{
+    return ( event.direction() == LogsEvent::DirMissed && !event.isSeenLocally() );
 }
 
 // End of file

@@ -45,8 +45,7 @@ LogsMatchesView::LogsMatchesView(
     : LogsBaseView(LogsMatchesViewId, repository, viewManager),
       mListView(0),
       mModel(0),
-      mAddToContactsButton(0),
-      mAddToContactsButtonDisabled(false)
+      mAddToContactsButton(0)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsMatchesView::LogsMatchesView()" );
     
@@ -70,10 +69,6 @@ LogsMatchesView::~LogsMatchesView()
 //
 void LogsMatchesView::activated(bool showDialer, QVariant args)
 {
-    // Disable add to contacts button handling while view is activated
-    // to avoid unnecessary quick appear/dissappear of it.
-    mAddToContactsButtonDisabled = true;
-    
     LogsBaseView::activated(showDialer, args);
     
     LogsMatchesModel* model = qVariantValue<LogsMatchesModel*>(args);
@@ -84,7 +79,7 @@ void LogsMatchesView::activated(bool showDialer, QVariant args)
     
     scrollToTopItem(mListView);
     
-    mAddToContactsButtonDisabled = false;
+    LogsBaseView::activationCompleted();
 }
 
 // -----------------------------------------------------------------------------
@@ -154,12 +149,14 @@ void LogsMatchesView::initListWidget()
     mListView->listItemPrototype()->setTextFormat(Qt::RichText);
     
     connect(mListView, SIGNAL(activated(const QModelIndex)),
-            this, SLOT(initiateCallback(const QModelIndex)));
+            this, SLOT(initiateCallback(const QModelIndex)), 
+            Qt::UniqueConnection);
     
     connect(mListView,
             SIGNAL(longPressed(HbAbstractViewItem*, const QPointF&)),
             this,
-            SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)));
+            SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)), 
+            Qt::UniqueConnection);
    
     LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::initListWidget() " );
 }
@@ -321,8 +318,10 @@ void LogsMatchesView::updateAddContactButton()
 {
     if (mAddToContactsButton) {
         LOGS_QDEBUG( "logs [UI] <-> LogsMatchesView::updateAddContactButton()" );
+        // Disable add to contacts button handling while view is being activated
+        // to avoid unnecessary quick appear/dissappear of it.
         bool matchesFound(model() && (model()->rowCount() > 0));
         mAddToContactsButton->setVisible(
-            !mAddToContactsButtonDisabled && !matchesFound && isDialpadInput() );
+            !mActivating && !matchesFound && isDialpadInput() );
     }
 }

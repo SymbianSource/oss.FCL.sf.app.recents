@@ -143,10 +143,6 @@ QVariant LogsMatchesModel::createCall(const LogsModelItemContainer& item) const
     const LogsMatchesModelItemContainer& matchItem = 
         static_cast<const LogsMatchesModelItemContainer&>( item ); 
     LogsCall* logscall = new LogsCall(matchItem.contact(), matchItem.number());
-    if (!logscall->isAllowedCallType()) {
-        delete logscall;
-        logscall = 0;
-    }
     QVariant var = qVariantFromValue(logscall);
     LOGS_QDEBUG( "logs [ENG] <- LogsMatchesModel::createCall()" )
     return var;         
@@ -689,7 +685,7 @@ QStringList LogsMatchesModelItemContainer::texts()
                             mEvent->time().toTimeSpec(Qt::LocalTime) );
     } else if ( mContactId > 0 ) {
         list << mContactName;
-        list << mContactNumber;    
+        list << mParentModel.phoneNumString(mContactNumber);    
     }
     return list;
 }
@@ -747,7 +743,7 @@ QString LogsMatchesModelItemContainer::getFormattedCallerId(
     getFormattedName(callerId, entry.firstName());
     
     if  ( callerId.length() == 0 ) {
-        callerId = entry.phoneNumber().richText();
+        callerId = mParentModel.phoneNumString(entry.phoneNumber().richText());
     }
 
     return callerId.trimmed();

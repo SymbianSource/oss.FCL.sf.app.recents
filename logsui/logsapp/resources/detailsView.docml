@@ -17,6 +17,9 @@
     </object>
     <object name="logs_act_open_contact" type="HbAction">
         <string locid="txt_dialer_ui_opt_open_contact" name="text" value="Open contact"/>
+    </object>   
+    <object name="logs_act_copy_number" type="HbAction">
+        <string locid="txt_dialer_opt_copy_number" name="text" value="Copy number"/>
     </object>
     <object name="logs_act_delete_event" type="HbAction">
         <string locid="txt_common_opt_delete" name="text" value="Delete event"/>
@@ -83,6 +86,7 @@
             <ref object="logs_act_create_message" role="HbMenu:addAction"/>
             <ref object="logs_act_add_to_contacts" role="HbMenu:addAction"/>
             <ref object="logs_act_open_contact" role="HbMenu:addAction"/>
+            <ref object="logs_act_copy_number" role="HbMenu:addAction"/>
             <ref object="logs_act_delete_event" role="HbMenu:addAction"/>
         </widget>
         <string locid="txt_dial_title_dialer" name="title" value="Dialer"/>
@@ -100,6 +104,7 @@
     <connect receiver="logs_details_view" sender="logs_act_create_message" signal="triggered(bool)" slot="sendMessage()"/>
     <connect receiver="logs_details_view" sender="logs_act_add_to_contacts" signal="triggered(bool)" slot="addToContacts()"/>
     <connect receiver="logs_details_view" sender="logs_act_open_contact" signal="triggered(bool)" slot="openContact()"/>
+    <connect receiver="logs_details_view" sender="logs_act_copy_number" signal="triggered(bool)" slot="copyNumberToClipboard()"/>
     <connect receiver="logs_details_view" sender="logs_act_delete_event" signal="triggered(bool)" slot="deleteEvent()"/>
     <connect receiver="logs_details_view" sender="logs_act_dialer" signal="triggered(bool)" slot="openDialpad()"/>
     <connect receiver="logs_details_view" sender="logs_act_contacts" signal="triggered(bool)" slot="openContactsApp()"/>

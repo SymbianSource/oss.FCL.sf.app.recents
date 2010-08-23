@@ -84,6 +84,9 @@ void UT_LogsDetailsView::testActivated()
 */
     //list widget is in repository
     LogsDetailsModel* model2 = new LogsDetailsModel;
+    delete model2->mEvent;
+    model2->mEvent = 0;
+    model2->mEvent = new LogsEvent();
     QVariant arg2 = qVariantFromValue( model2 );
     LogsDetailsView* view = mRepository->detailsView();
     QVERIFY( !view->mInitialized );
@@ -95,6 +98,10 @@ void UT_LogsDetailsView::testActivated()
     QVERIFY(view->mActionMap.count() == 4);
     
     LogsDetailsModel* model3 = new LogsDetailsModel();
+    delete model3->mEvent;
+    model3->mEvent = 0;
+    model3->mEvent = new LogsEvent();
+    model3->mEvent->mIsPrivate = false;
     QVariant arg3 = qVariantFromValue( model3 );
     mDetailsView->activated(false, arg3);
     QVERIFY( mDetailsView->mDetailsModel == model3);
@@ -113,6 +120,9 @@ void UT_LogsDetailsView::testDeactivated()
     
     // Deactivation of properly activated view
     LogsDetailsModel* model = new LogsDetailsModel;
+    delete model->mEvent;
+    model->mEvent = 0;
+    model->mEvent = new LogsEvent();
     QVariant arg = qVariantFromValue( model );
     view->activated(false, arg);
     QVERIFY( view->mListView );
@@ -139,6 +149,7 @@ void UT_LogsDetailsView::testCallKeyPressed()
     delete model->mEvent;
     model->mEvent = 0;
     model->mEvent = new LogsEvent();
+    model->mEvent->mEventType = LogsEvent::TypeVoiceCall;
     QVariant arg = qVariantFromValue( model );
     mRepository->detailsView();
     mDetailsView->activated(false, arg);
@@ -180,6 +191,10 @@ void UT_LogsDetailsView::testUpdateMenu()
     QVERIFY( !mDetailsView->mCall );
     mRepository->detailsView(); // Set correct object tree
     LogsDetailsModel* model = new LogsDetailsModel();
+    delete model->mEvent;
+    model->mEvent = 0;
+    model->mEvent = new LogsEvent();
+    
     QVariant arg = qVariantFromValue( model );
     mDetailsView->activated(false, arg);
     mDetailsView->updateMenu();
@@ -195,6 +210,7 @@ void UT_LogsDetailsView::testUpdateMenu()
     
     // Call exists, call actions enabled
     model->mEvent = new LogsEvent;
+    model->mEvent->mEventType = LogsEvent::TypeVoiceCall;
     mDetailsView->updateMenu();
     QVERIFY( voiceCallAction->isVisible() );
     QVERIFY( videoCallAction->isVisible() );
@@ -243,6 +259,23 @@ void UT_LogsDetailsView::testDeleteEventAnswer()
     QVERIFY( mViewManager->mPreviousActivated );
 }
 
+void UT_LogsDetailsView::testCopyNumberToClipboard()
+{
+    LogsDetailsModel* model = new LogsDetailsModel();
+    mDetailsView->mDetailsModel = model;
+    mDetailsView->copyNumberToClipboard();
+    QVERIFY( LogsDetailsModel::mLastCallName == QLatin1String("getNumberToClipboard") );
+    
+    // Number taken from dialpad if that exists not from details model
+    LogsDetailsModel::mLastCallName.clear();
+    mDetailsView->mDialpad->mIsOpen = true;
+    mDetailsView->mDialpad->mLineEdit->setText("22345");
+    mDetailsView->copyNumberToClipboard();
+    QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
+}
+
+
+
 void UT_LogsDetailsView::testChangeFilter()
 {
     mViewManager->reset();
@@ -250,7 +283,7 @@ void UT_LogsDetailsView::testChangeFilter()
     action.setObjectName(logsShowFilterMissedMenuActionId);
     mDetailsView->changeFilter(&action);
     QVERIFY( mViewManager->mViewId == LogsRecentViewId );
-    QVERIFY( mViewManager->mArgs.toInt() == (int)LogsServices::ViewAll );
+    QVERIFY( mViewManager->mArgs.toInt() == (int)XQService::LogsViewAll );
 }
 
 void UT_LogsDetailsView::testContactActionCompleted()
@@ -258,6 +291,9 @@ void UT_LogsDetailsView::testContactActionCompleted()
     // No viewname for some reason, no effect
     HbGroupBox viewName; 
     LogsDetailsModel* model = new LogsDetailsModel();
+    delete model->mEvent;
+    model->mEvent = 0;
+    model->mEvent = new LogsEvent();
     mDetailsView->mDetailsModel = model;
     mDetailsView->contactActionCompleted(true);
     
@@ -303,6 +339,9 @@ void UT_LogsDetailsView::testDialpadEditorTextChanged()
 {   
     //text editor is one character long
     LogsDetailsModel* model = new LogsDetailsModel();
+    delete model->mEvent;
+    model->mEvent = 0;
+    model->mEvent = new LogsEvent();
     mDetailsView->mDetailsModel = model;
     mDetailsView->mDetailsModel->setPredictiveSearch(true);
     mDetailsView->mDialpad->editor().setText( QString("h") );

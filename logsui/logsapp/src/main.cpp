@@ -28,16 +28,41 @@
 #include <hbapplication.h>
 #include <hbstyleloader.h>
 #include <hbtranslator.h>
+#include <QTranslator>
+
+// TODO: Use QTranslator for now as HbTranslator has some bugs regarding
+// language fallback handling, start using HbTranslator once those problems
+// are fixed 
+#define LOGS_USE_QTRANSLATOR
 
 int main(int argc, char *argv[])
 {
     LOGS_QDEBUG( "logs [UI] -> main()" )
-  
+
     HbApplication app(argc, argv);
-    LogsMainWindow window;
+
+#ifdef LOGS_USE_QTRANSLATOR
+    QString lang = QLocale::system().name();
+    QTranslator trans;
+    QString path = "z:/resource/qt/translations/";
+    if ( trans.load(path + "qt_" + lang) ){
+        app.installTranslator(&trans);
+    }
+    QTranslator trans2;
+    if ( trans2.load(path + "dialer_" + lang) ){
+        app.installTranslator(&trans2);
+    }
+    QTranslator trans3;
+    if ( trans3.load(path + "common_" + lang) ){
+        app.installTranslator(&trans3);
+    }
+    
+#else
     HbTranslator translator("dialer");
     translator.loadCommon();
-
+#endif
+    
+    LogsMainWindow window;
     HbStyleLoader::registerFilePath(":/logslayouts");
     
     // Create service handler asap so that services are published fast.

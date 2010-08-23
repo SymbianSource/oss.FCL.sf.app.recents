@@ -70,10 +70,11 @@ bool LogsCustomFilter::clearEvents()
     LogsAbstractModel* model = qobject_cast<LogsAbstractModel*>( sourceModel() );
     if ( model && model->dbConnector() ){
         connect( model->dbConnector(), SIGNAL(clearingCompleted(int)), 
-                 this, SIGNAL(clearingCompleted(int)) );
-        QList<int> eventIds = getEventIds();
-        if ( !eventIds.isEmpty() ){
-            clearingStarted = model->dbConnector()->clearEvents(eventIds);
+                 this, SIGNAL(clearingCompleted(int)),
+                 Qt::UniqueConnection);
+        QList<LogsEvent*> events = getEvents();
+        if ( !events.isEmpty() ){
+            clearingStarted = model->dbConnector()->clearEvents(events);
         }
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsCustomFilter::clearEvents()" )
@@ -91,10 +92,11 @@ bool LogsCustomFilter::markEventsSeen()
     LogsAbstractModel* model = qobject_cast<LogsAbstractModel*>( sourceModel() );
     if ( model && model->dbConnector() ){
         connect( model->dbConnector(), SIGNAL(markingCompleted(int)), 
-                 this, SIGNAL(markingCompleted(int)) );
-        QList<int> eventIds = getEventIds(true);
-        if ( !eventIds.isEmpty() ){
-            markingStarted = model->dbConnector()->markEventsSeen(eventIds);
+                 this, SIGNAL(markingCompleted(int)),
+                 Qt::UniqueConnection);
+        QList<LogsEvent*> events = getEvents(true);
+        if ( !events.isEmpty() ){
+            markingStarted = model->dbConnector()->markEventsSeen(events);
         }
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsCustomFilter::markEventsSeen()" )
@@ -124,22 +126,22 @@ bool LogsCustomFilter::filterAcceptsRow(int sourceRow, const QModelIndex &source
 }
 
 // -----------------------------------------------------------------------------
-// LogsCustomFilter::getEventIds
+// LogsCustomFilter::getEvents
 // -----------------------------------------------------------------------------
 //
-QList<int> LogsCustomFilter::getEventIds(bool onlyUnseen) const
+QList<LogsEvent*> LogsCustomFilter::getEvents(bool onlyUnseen) const
 {
-    QList<int> ids;
+    QList<LogsEvent*> events;
     for ( int i = 0; i < rowCount(); i++ ){
-        const LogsEvent* event = qVariantValue<LogsEvent *>( 
+        LogsEvent* event = qVariantValue<LogsEvent *>( 
                 data(index(i, 0), LogsModel::RoleFullEvent ) );
         if ( event ){
             if ( !onlyUnseen || !event->isSeenLocally() ){
-                ids.append( event->logId() );
+                events.append( event );
             }
         }
     }
-    return ids;
+    return events;
 }
 
 // End of file

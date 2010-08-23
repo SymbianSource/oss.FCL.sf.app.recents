@@ -37,7 +37,7 @@ class LogsReaderObserver
         /**
          * Reader has completed reading.
          */
-        virtual void readCompleted(int readCount) = 0;
+        virtual void readCompleted() = 0;
         
         /**
          * Error occured while reading.

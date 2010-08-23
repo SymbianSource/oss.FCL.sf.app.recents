@@ -117,7 +117,7 @@ int LogsDbConnector::clearMissedCallsCounter()
 // LogsDbConnector::clearEvents
 // ----------------------------------------------------------------------------
 //
-bool LogsDbConnector::clearEvents(const QList<int>& /*ids*/)
+bool LogsDbConnector::clearEvents(const QList<LogsEvent*>& /*events*/)
 {    
     logsLastCalledFunction = "clearEvents";
     return true;
@@ -127,13 +127,13 @@ bool LogsDbConnector::clearEvents(const QList<int>& /*ids*/)
 // LogsDbConnector::markEventsSeen
 // ----------------------------------------------------------------------------
 //
-bool LogsDbConnector::markEventsSeen(const QList<int>& ids)
+bool LogsDbConnector::markEventsSeen(const QList<LogsEvent*>& events)
 {
     bool started(false);
     logsLastCalledFunction = "markEventsSeen";
-    foreach( int currId, ids ){
-        if ( !mEventsSeen.contains(currId) ){
-            mEventsSeen.append(currId);
+    foreach( LogsEvent* currEv, events ){
+        if ( !mEventsSeen.contains(*currEv) ){
+            mEventsSeen.append(*currEv);
             started = true;
         }
     }
@@ -187,7 +187,7 @@ int LogsDbConnector::compressData()
 // LogsDbConnector::readCompleted
 // ----------------------------------------------------------------------------
 //
-void LogsDbConnector::readCompleted(int /*numRead*/)
+void LogsDbConnector::readCompleted()
 {
 }
 

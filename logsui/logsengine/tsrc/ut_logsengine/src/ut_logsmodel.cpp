@@ -26,6 +26,7 @@
 #include "logsdbconnector_stub_helper.h"
 #include "logscommondata.h"
 #include "logsconfigurationparams.h"
+#include "hbstubs_helper.h"
 
 #include <hbicon.h>
 #include <QtTest/QtTest>
@@ -39,7 +40,7 @@ Q_DECLARE_METATYPE(LogsContact *)
 
 #define LOGS_TEST_CMP_ICONS( var, icon ){ \
      const HbIcon& tempIcon = qVariantValue<HbIcon>( var );\
-     QVERIFY( &tempIcon == icon ); }
+     QVERIFY( tempIcon == *icon ); }
 
 #define LOGS_TEST_CREATE_EVENT(eventName, index, eventState ) \
 LogsEvent* eventName = new LogsEvent; \
@@ -60,6 +61,7 @@ void UT_LogsModel::cleanupTestCase()
 
 void UT_LogsModel::init()
 {
+    HbStubHelper::reset();
     mModel = new LogsModel();
     LogsCommonData::getInstance().currentConfiguration().setListItemTextWidth(360); 
 }
@@ -119,13 +121,16 @@ void UT_LogsModel::testData()
     mModel->mEvents.at(0)->setEventType(LogsEvent::TypeUndefined);
     QVariant callData = mModel->data(mModel->index(0), LogsModel::RoleCall);
     LogsCall *call = qVariantValue<LogsCall *>( callData );
-    QVERIFY ( !call );
+    QVERIFY ( call );
+    QVERIFY( call->defaultCallType() == LogsCall::TypeLogsCallNotAvailable );
+    delete call;
     
     // Call supported
     mModel->mEvents.at(0)->setEventType(LogsEvent::TypeVoiceCall);
     QVariant callData2 = mModel->data(mModel->index(0), LogsModel::RoleCall);
     LogsCall *call2 = qVariantValue<LogsCall *>( callData2 );
     QVERIFY ( call2 );
+    QVERIFY( call2->defaultCallType() != LogsCall::TypeLogsCallNotAvailable );
     delete call2;
     
     // Details model
@@ -305,6 +310,7 @@ void UT_LogsModel::testGetDecorationData()
     icons.clear();
     event->setDirection(LogsEvent::DirMissed);
     event->setEventType(LogsEvent::TypeVideoCall);
+    event->setIsRead(true);
     mModel->getDecorationData(*event, icons);
     QVERIFY(icons.count() == 1);
     LOGS_TEST_CMP_ICONS(icons.at(0), mModel->mIcons.value( logsMissedVideoCallIconId ));
@@ -403,6 +409,8 @@ void UT_LogsModel::testIconName()
 
 void UT_LogsModel::testGetCallerId()
 {
+    HbStubHelper::stringUtilDigitConversion(true);
+    
     //add private and unknown
     // No name or number
     LogsEvent event;
@@ -411,7 +419,7 @@ void UT_LogsModel::testGetCallerId()
     // No name
     QString num("+12345555");
     event.setNumber(num);
-    QVERIFY( mModel->getCallerId(event) == num );
+    QCOMPARE( mModel->getCallerId(event), "conv" + num );
     
     // No number
     QString remote("Souuu");
@@ -424,6 +432,7 @@ void UT_LogsModel::testGetCallerId()
     QVERIFY( mModel->getCallerId(event) == remote );
     
     // Only remote url
+    
     event.setNumber("");
     event.setRemoteParty("");
     LogsEventData* eventData = new LogsEventData;
@@ -433,11 +442,12 @@ void UT_LogsModel::testGetCallerId()
     
     // Duplicates
     event.setDuplicates(3);
-    QVERIFY( mModel->getCallerId(event) == "test@1.2.3.4(4)" );
+    QVERIFY( mModel->getCallerId(event) == "test@1.2.3.4(conv4)" );
     
     // Duplicates for already read event
     event.setIsRead(true);
     QVERIFY( mModel->getCallerId(event) == "test@1.2.3.4" );
+    HbStubHelper::reset();
 }
 
 void UT_LogsModel::testSqueezedString()
@@ -544,21 +554,25 @@ void UT_LogsModel::testSetPredictiveSearch()
 void UT_LogsModel::testUpdateConfiguration()
 {   
     QSignalSpy spy(mModel, SIGNAL(modelReset()));
+    QSignalSpy spy2(mModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)));
     
     // No previous config, reset not signaled
     LogsConfigurationParams params;
     params.setListItemTextWidth(200);
     mModel->updateConfiguration(params);
     QVERIFY( spy.count() == 0 );
+    QVERIFY( spy2.count() == 0 );
     
     // Previous config but no change, reset not signaled
     mModel->updateConfiguration(params);
     QVERIFY( spy.count() == 0 );
+    QVERIFY( spy2.count() == 0 );
     
     // Config changed but no unseen events, reset not signaled
     params.setListItemTextWidth(400);
     mModel->updateConfiguration(params);
     QVERIFY( spy.count() == 0 );
+    QVERIFY( spy2.count() == 0 );
     
     // Config changed and unseen events, reset signaled
     LOGS_TEST_CREATE_EVENT(event, 1, LogsEvent::EventAdded );
@@ -567,5 +581,23 @@ void UT_LogsModel::testUpdateConfiguration()
     params.setListItemTextWidth(300);
     mModel->updateConfiguration(params);
     QVERIFY( spy.count() == 1 );
+    QVERIFY( spy2.count() == 0 );
         
+    //Locale changed, model not empty
+    spy.clear();
+    params.setLocaleChanged(true);
+    QVERIFY( mModel->rowCount(QModelIndex()) == 1 );
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 0 );
+    QVERIFY( spy2.count() == 1 );
+    
+    // Locale changed, model is empty
+    spy.clear();
+    spy2.clear();
+    qDeleteAll( mModel->mEvents );
+    mModel->mEvents.clear();
+    QVERIFY( mModel->rowCount(QModelIndex()) == 0 );
+    mModel->updateConfiguration(params);
+    QVERIFY( spy.count() == 0 );
+    QVERIFY( spy2.count() == 0 );    
 }

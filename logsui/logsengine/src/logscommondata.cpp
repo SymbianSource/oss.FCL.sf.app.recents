@@ -19,6 +19,7 @@
 #include "logscommondata.h"
 #include "logslogger.h"
 #include "logsconfigurationparams.h"
+#include "logsengdefs.h"
 
 //SYSTEM
 #include <qcontactmanager.h>
@@ -31,7 +32,8 @@ static LogsCommonData* mLogsCommonInstance = 0;
 // -----------------------------------------------------------------------------
 //
 LogsCommonData::LogsCommonData() : 
-    mContactManager(0), mMaxReadSize(-1), mMaxReadSizeDir(LogsEvent::DirUndefined)
+    mContactManager(0), mMaxReadSize(-1), 
+    mMaxReadSizeDir(LogsEvent::DirUndefined), mMatchLen(logsDefaultMatchLength)
 {
     LOGS_QDEBUG( "logs [ENG] <-> LogsCommonData::LogsCommonData()" )
 }
@@ -129,5 +131,24 @@ LogsConfigurationParams& LogsCommonData::currentConfiguration()
 {
     return mConfiguration;
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsCommonData::setTelNumMatchLen(int matchLen)
+{
+    mMatchLen = matchLen;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsCommonData::telNumMatchLen() const
+{
+    return mMatchLen;
+}
+
 // End of file
 

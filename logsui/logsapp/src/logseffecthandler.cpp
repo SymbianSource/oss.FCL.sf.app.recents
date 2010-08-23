@@ -23,7 +23,7 @@
 #include <QSequentialAnimationGroup>
 #include <hbinstance.h>
 
-const int logsMoveByExtra = 20;
+const int logsMoveByExtra = 10;
 const int logsEffectDelayBetween = 200;
 const int logsEffectAppearDurationInMs = 500;
 const int logsEffectDissappearDurationInMs = 300;
@@ -104,8 +104,10 @@ LogsEffectHandler::~LogsEffectHandler()
 void LogsEffectHandler::moveAnimationChanged(QAbstractAnimation *currentAnimation)
 {
     int indexOfAnimation = mMoveGroup->indexOfAnimation(currentAnimation);
-    if (indexOfAnimation == logsPauseBetweenDissappearAndAppearIndex ) {
+    if (indexOfAnimation == logsPauseBetweenDissappearAndAppearIndex ) {    
         emit dissappearByMovingComplete();
+    } else if (indexOfAnimation == logsAppearByMovingIndex ) {
+        emit appearStarting();
     }
 }
 
@@ -205,13 +207,13 @@ void LogsEffectHandler::initAppearByMovingEffect(
     LOGS_QDEBUG( "logs [UI] -> LogsEffectHandler::startAppearByMovingEffect()" );
     
     Q_ASSERT(!hbInstance->allMainWindows().isEmpty());   
-    int moveBy = hbInstance->allMainWindows().at(0)->layoutRect().width() + logsMoveByExtra; 
+    int moveBy = hbInstance->allMainWindows().at(0)->layoutRect().width() - logsMoveByExtra; 
     int startPos = appearFromLeft ? -moveBy : moveBy;
     QEasingCurve easing(QEasingCurve::OutQuad); // decelerating
     initMoveHorizontallyEffect(
             animation, effectTarget, startPos, origX,
             logsEffectAppearDurationInMs, easing);
-    
+
     LOGS_QDEBUG( "logs [UI] <- LogsEffectHandler::startAppearByMovingEffect()" );
 }
 

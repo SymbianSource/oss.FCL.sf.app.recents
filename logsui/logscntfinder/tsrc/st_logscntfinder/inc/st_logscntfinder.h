@@ -29,7 +29,9 @@ class LogsCntFinder;
 class ST_LogsCntFinder : public QObject                 
 {
      Q_OBJECT
-    
+public:
+     ST_LogsCntFinder( bool createContacts = true ) : mCreateContacts( createContacts ) {}
+     
 private slots:
 
 /*
@@ -57,18 +59,14 @@ private slots: //test methods
     void testKeymap_7();
     void testKeymap_8();
     void testKeymap_9();
-    void testPredictiveSearchQueryZeroStart();
-    void testPredictiveSearchQueryZeroStartZeroEnd();
-    void testPredictiveSearchQueryZeroMiddle();
-    void testPredictiveSearchQueryMultiZerosMiddle();
-    void testPredictiveSearchQueryZeroMiddleLong();
-    void testPredictiveSearchQueryMultiZerosAndZeroMiddle();
+    
     void testPredictiveSearchQueryPartialCached();
     void testPredictiveSearchQueryFullyCached();
     void testPredictiveSearchQueryPartialCachedNoResults();
     void testPredictiveSearchQueryFullyCachedNoResults();
     void testPredictiveSearchQueryPartialCachedZeroCase();
-    void testPredictiveSearchQueryFullyCachedZerosCase();
+    void testPredictiveSearchQueryFullyCachedZerosStartCase();
+    void testPredictiveSearchQueryFullyCachedZerosEndCase();
     void testPredictiveSearchQueryLogs();
     void testPredictiveSearchQueryLogsZeroCase();
     void testPredictiveSearchQueryLogsContactsPartialCached();
@@ -78,9 +76,16 @@ private slots: //test methods
     void testPredictiveSearchQueryLimit();
     void testQueryOrder();
     void testContactWithSpecialChars();
+    
+    void testPredictiveSearchQueryZeroStart();
+    void testPredictiveSearchQueryZeroStartZeroEnd();
+    void testPredictiveSearchQueryZeroMiddle();
+    void testPredictiveSearchQueryMultiZerosMiddle();
+    void testPredictiveSearchQueryZeroMiddleLong();
+    void testPredictiveSearchQueryMultiZerosAndZeroMiddle();
 
+    
 private:
-
 
     
     void createOneContact(
@@ -103,6 +108,7 @@ private:
 private:
     QContactManager *m_manager;
     LogsCntFinder   *m_finder;
+    bool mCreateContacts;
 };
 
 

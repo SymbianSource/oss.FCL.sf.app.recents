@@ -38,7 +38,8 @@ LogsWorker::LogsWorker(bool readAllEvents)
    mIndex(0),
    mCurrentStateIndex(0),
    mCurrentStateMachine(0),
-   mCurrentEventId(-1)
+   mCurrentEventId(-1),
+   mLocked(false)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsWorker::LogsWorker()" )
     
@@ -58,6 +59,16 @@ LogsWorker::~LogsWorker()
     Cancel();
     
     LOGS_QDEBUG( "logs [ENG] <- LogsWorker::~LogsWorker()" )
+}
+
+// ----------------------------------------------------------------------------
+// LogsWorker::lock
+// ----------------------------------------------------------------------------
+//
+int LogsWorker::lock(bool locked)
+{
+    mLocked = locked;
+    return 0;
 }
 
 // ----------------------------------------------------------------------------

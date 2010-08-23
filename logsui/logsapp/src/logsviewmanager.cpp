@@ -30,7 +30,6 @@
 //SYSTEM
 #include <hbmainwindow.h>
 #include <hbview.h>
-#include <logsservices.h>
 #include <QApplication>
 #include <hblineedit.h>
 #include <dialpad.h>
@@ -54,17 +53,18 @@ LogsViewManager::LogsViewManager(
     //dialpad widget. If connection is moved to a view, then it's not guarantied.
     connect( &mainWindow, SIGNAL(orientationChanged(Qt::Orientation)),
             this, SLOT(handleOrientationChanged()) );
+    connect( &mainWindow, SIGNAL(appGainedForeground()), this, SLOT(appGainedForeground()) );
 
     mComponentsRepository = new LogsComponentRepository(*this);
     
-    connect( &mService, SIGNAL( activateView(LogsServices::LogsView, bool, QString) ), 
-             this, SLOT( changeRecentViewViaService(LogsServices::LogsView, bool, QString) ) );
+    connect( &mService, SIGNAL( activateView(XQService::LogsViewIndex, bool, QString) ), 
+             this, SLOT( changeRecentViewViaService(XQService::LogsViewIndex, bool, QString) ) );
 
     connect( &mService, SIGNAL( activateView(QString) ), 
              this, SLOT( changeMatchesViewViaService(QString) ));
 
-    connect( &mServiceOld, SIGNAL( activateView(LogsServices::LogsView, bool, QString) ), 
-             this, SLOT( changeRecentViewViaService(LogsServices::LogsView, bool, QString) ) );
+    connect( &mServiceOld, SIGNAL( activateView(XQService::LogsViewIndex, bool, QString) ), 
+             this, SLOT( changeRecentViewViaService(XQService::LogsViewIndex, bool, QString) ) );
 
     connect( &mServiceOld, SIGNAL( activateView(QString) ), 
              this, SLOT( changeMatchesViewViaService(QString) ));
@@ -95,7 +95,7 @@ LogsViewManager::~LogsViewManager()
 // -----------------------------------------------------------------------------
 //
 void LogsViewManager::changeRecentViewViaService(
-    LogsServices::LogsView view, bool showDialpad, QString dialpadText)
+    XQService::LogsViewIndex view, bool showDialpad, QString dialpadText)
 {
     closeEmbeddedApplication();
     mMainWindow.bringAppToForeground();
@@ -122,7 +122,7 @@ void LogsViewManager::changeMatchesViewViaService(QString dialpadText)
 // -----------------------------------------------------------------------------
 //
 void LogsViewManager::changeRecentView(
-    LogsServices::LogsView view, bool showDialpad)
+    XQService::LogsViewIndex view, bool showDialpad)
 {
     QVariant args(view);
     doActivateView(LogsRecentViewId, showDialpad, args);
@@ -187,7 +187,9 @@ void LogsViewManager::exitApplication()
     foreach ( LogsBaseView* view, mViewStack ){
         if ( !view->isExitAllowed() ){
             exitAllowed = false;
-            connect( view, SIGNAL(exitAllowed()), this, SLOT(proceedExit()) );
+            connect( view, SIGNAL(exitAllowed()),
+                     this, SLOT(proceedExit()), 
+                     Qt::UniqueConnection );
         }
     }
     if ( exitAllowed ){
@@ -243,7 +245,8 @@ bool LogsViewManager::doActivateView(
     
     if ( oldView && newView && oldView != newView ){   
         oldView->deactivated();
-        disconnect( &mMainWindow, SIGNAL( callKeyPressed() ), oldView, 0 );
+        disconnect( &mMainWindow, SIGNAL(callKeyPressed()), oldView, SLOT(callKeyPressed()) );
+        disconnect( &mMainWindow, SIGNAL(localeChanged()), oldView, SLOT(localeChanged()) );
     }
     
     if ( newView ){
@@ -273,12 +276,19 @@ void LogsViewManager::completeViewActivation()
                    mFirstActivation );
     if ( mFirstActivation ){
         mFirstActivation = false;
-        connect( &mMainWindow, SIGNAL(viewReady()), this, SLOT(completeViewActivation()) );
+        connect( &mMainWindow, SIGNAL(viewReady()), 
+                 this, SLOT(completeViewActivation()), 
+                 Qt::UniqueConnection );
     } else {
         disconnect( &mMainWindow, SIGNAL(viewReady()), this, SLOT(completeViewActivation()) );
         LogsBaseView* newView = mViewStack.at(0);
         newView->activated(mViewActivationShowDialpad, mViewActivationArgs);
-        connect( &mMainWindow, SIGNAL( callKeyPressed() ), newView, SLOT( callKeyPressed() ) );
+        connect( &mMainWindow, SIGNAL(callKeyPressed()), 
+                 newView, SLOT(callKeyPressed()),
+                 Qt::UniqueConnection );
+        connect( &mMainWindow, SIGNAL(localeChanged()), 
+                 newView, SLOT(localeChanged()),
+                 Qt::UniqueConnection );
         
         // First activation completed, clear counter
         mComponentsRepository->model()->clearMissedCallsCounter();
@@ -431,7 +441,7 @@ void LogsViewManager::handleFirstActivation()
         mMainWindow.bringAppToForeground();
     } else if ( mFirstActivation && !mService.isStartedUsingService() && 
                 !mServiceOld.isStartedUsingService()) {
-        changeRecentView( LogsServices::ViewAll, false );
+        changeRecentView( XQService::LogsViewAll, false );
         mMainWindow.bringAppToForeground();
     }
 
@@ -475,4 +485,18 @@ void LogsViewManager::closeEmbeddedApplication()
         mViewStack.at(0)->cancelServiceRequest();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::closeEmbeddedApplication()" );
+}
+
+// -----------------------------------------------------------------------------
+// If application comes back to foreground while exit is pending due unfinished
+// operations, finising of those operations does not cause anymore real exit.
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::appGainedForeground()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appGainedForeground()" );
+    foreach ( LogsBaseView* view, mViewStack ){
+        disconnect( view, SIGNAL(exitAllowed()), this, SLOT(proceedExit()) );
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appGainedForeground()" );
 }

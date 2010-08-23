@@ -33,6 +33,8 @@
 #include <hblabel.h>
 #include <dialpad.h>
 #include <hblineedit.h>
+#include <hbnotificationdialog.h>
+#include <hbabstractviewitem.h>
 Q_DECLARE_METATYPE(LogsDetailsModel*)
 
 
@@ -92,12 +94,15 @@ void LogsDetailsView::activated(bool showDialer, QVariant args)
     }
     
     if ( mListView ){
-        mListView->setModel( mDetailsModel );//ownership not transferred
+        
+        mListView->setModel( mDetailsModel, new LogsDetailsViewItem());//ownership not transferred
     }
     
     updateMenu();
     
     scrollToTopItem(mListView);
+    
+    LogsBaseView::activationCompleted();
     
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::activated()" );
 }
@@ -217,6 +222,26 @@ void LogsDetailsView::openContact()
 }
 
 // -----------------------------------------------------------------------------
+// LogsDetailsView::copyNumberToClipboard()
+// -----------------------------------------------------------------------------
+//
+void LogsDetailsView::copyNumberToClipboard()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::copyNumberToClipboard()" );
+    if ( isDialpadInput() ){
+        mDialpad->editor().setSelection(0, mDialpad->editor().text().length());
+        mDialpad->editor().copy();
+        mDialpad->editor().setSelection(0, 0);
+    } else if ( mDetailsModel ) {
+        mDetailsModel->getNumberToClipboard();   
+    }
+    QString infoMessage;
+    infoMessage.append(hbTrId("txt_dialer_dpopinfo_number_copied"));
+    HbNotificationDialog::launchDialog(infoMessage);
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::copyNumberToClipboard()" );
+}
+
+// -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
 //
@@ -327,6 +352,10 @@ void LogsDetailsView::updateMenu()
             mRepository.findObject( logsCommonAddToContactsMenuActionId ) );
     HbAction* openContactAction = qobject_cast<HbAction*>( 
             mRepository.findObject( logsDetailsOpenContactMenuActionId ) );
+    HbAction* copyNumberAction = qobject_cast<HbAction*>( 
+                mRepository.findObject( logsDetailsCopyNumberMenuActionId ) );
+    
+    
     
     bool voiceCallAvailable(false);
     bool videoCallAvailable(false);
@@ -357,6 +386,7 @@ void LogsDetailsView::updateMenu()
             contactCanBeOpened = true;
         }
     }
+    bool copyNumberAllowed = !mDetailsModel->getLogsEvent().isRemotePartyPrivate();
     
     toggleActionAvailability(voiceCallAction, voiceCallAvailable);
     toggleActionAvailability(videoCallAction, videoCallAvailable);
@@ -364,7 +394,7 @@ void LogsDetailsView::updateMenu()
     toggleActionAvailability(messageAction, mMessage);
     toggleActionAvailability(addToContactsAction, contactCanBeAdded);
     toggleActionAvailability(openContactAction, contactCanBeOpened);
-    
+    toggleActionAvailability(copyNumberAction, copyNumberAllowed);
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::updateMenu()" );
 }
 
@@ -396,3 +426,31 @@ void LogsDetailsView::updateWidgetsSizeAndLayout()
     }
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::updateWidgetsSizeAndLayout()" );
 }
+
+LogsDetailsViewItem::LogsDetailsViewItem()
+: HbListViewItem(0)    
+{
+}
+
+LogsDetailsViewItem::~LogsDetailsViewItem( )
+{
+}
+
+void LogsDetailsViewItem::pressStateChanged(bool value, bool animate)
+{
+    Q_UNUSED(value);
+    Q_UNUSED(animate);
+}
+
+HbAbstractViewItem *LogsDetailsViewItem::createItem()
+{
+    return new LogsDetailsViewItem(*this);
+}
+
+void LogsDetailsViewItem::updateChildItems()
+{  
+    HbListViewItem::updateChildItems();
+}
+
+
+

@@ -60,6 +60,7 @@ private slots: //test methods
     void testCompleteViewActivation();
     void testSaveActivity();
     void testLoadActivity();
+    void testAppGainedForeground();
     
 private:
  

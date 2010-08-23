@@ -22,7 +22,7 @@
 #include <logsexport.h>
 
 //forward declarations
-class XQServiceRequest;
+class XQAiwRequest;
 class LogsDbConnector;
 class LogsEvent;
 
@@ -104,7 +104,7 @@ signals:
 private slots:
 
     void handleRequestCompleted(const QVariant& result);
-
+    void handleError(int,const QString&);
     
 private: 
     
@@ -120,11 +120,11 @@ private:
      */
     bool isContactInPhonebook();
     
-    bool save(QString message);
+    bool save(const QString& operation);
     
-    bool requestFetchService(QString message,
-                             const QList<QVariant> &arguments,
-                             bool sync = false );
+    bool requestPhonebookService(const QString& interface, 
+                                 const QString& operation,
+                                 const QList<QVariant>& arguments);
     
     
 private: //data 
@@ -132,7 +132,7 @@ private: //data
     LogsDbConnector& mDbConnector;
     QContact mContact;
     
-    XQServiceRequest* mService;
+    XQAiwRequest* mAiwRequest;
     RequestType mCurrentRequest;
     QString mNumber;
     unsigned int mContactId;

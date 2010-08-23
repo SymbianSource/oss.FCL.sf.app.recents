@@ -83,11 +83,17 @@ void UT_LogsEffectHandler::testStartDissappearAppearByMovingEffect()
     
     // Simulate animation progess, when dissappearing has completed effecthandler
     // sends signal, other progress in anim does not cause signal to be sent
-    QSignalSpy spy(mEffect, SIGNAL(dissappearByMovingComplete()));
+    QSignalSpy spyDissappearCompletion(mEffect, SIGNAL(dissappearByMovingComplete()));
+    QSignalSpy spyAppearStarting(mEffect, SIGNAL(appearStarting()));
     mEffect->moveAnimationChanged(mEffect->mMoveGroup->animationAt(1));
-    QVERIFY(spy.count() == 1 );
+    QVERIFY(spyDissappearCompletion.count() == 1 );
+    QVERIFY(spyAppearStarting.count() == 0 );
+    mEffect->moveAnimationChanged(mEffect->mMoveGroup->animationAt(2));
+    QVERIFY(spyDissappearCompletion.count() == 1 );
+    QVERIFY(spyAppearStarting.count() == 1 );
     mEffect->moveAnimationChanged(0);
-    QVERIFY(spy.count() == 1 );
+    QVERIFY(spyDissappearCompletion.count() == 1 );
+    QVERIFY(spyAppearStarting.count() == 1 );
     
     // When effect is running and new effect is requested, previous effect is stopped
     mEffect->startDissappearAppearByMovingEffect(*mLabel, *mLabel2, true, 0, 0); 

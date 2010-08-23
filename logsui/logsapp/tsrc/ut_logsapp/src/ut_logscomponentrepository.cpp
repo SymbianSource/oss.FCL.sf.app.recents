@@ -127,7 +127,7 @@ void UT_LogsComponentRepository::testLoadSection()
     QVERIFY( !mRepository->loadSection(LogsUnknownViewId, "default") );
     
     //loading of non-existing section
-    QVERIFY( mRepository->loadSection(LogsDetailsViewId, "dummy") );
+    QVERIFY( !mRepository->loadSection(LogsDetailsViewId, "dummy") );
 
     //loading of existing section is ok
     mRepository->matchesView();

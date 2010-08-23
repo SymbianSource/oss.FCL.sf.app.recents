@@ -22,6 +22,7 @@
 #include "logslogger.h"
 #include "logsremoveobserver.h"
 #include "logsmodel.h"
+#include "logsevent.h"
 #include <logview.h>
 #include <logwraplimits.h>
 
@@ -120,7 +121,7 @@ bool LogsRemoveStateDelete::deleteNextEvent()
 {
     bool deleting(false);
     if ( mRemoveIndex < mContext.removedEvents().count() ){
-        int currId = mContext.removedEvents().at(mRemoveIndex);
+        int currId = mContext.removedEvents().at(mRemoveIndex).logId();
         LOGS_QDEBUG_2( "logs [ENG]  LogsRemove::DeleteNextEvent, id: ", currId )
         mBaseContext.logClient().DeleteEvent( currId, mBaseContext.reqStatus() );
         deleting = true;

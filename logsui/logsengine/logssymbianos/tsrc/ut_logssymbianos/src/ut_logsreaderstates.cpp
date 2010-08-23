@@ -133,7 +133,7 @@ void UT_LogsReaderStates::testStateBase()
     logsEvent = 0;
     QVERIFY( mEvents.count() == 2 );
     QVERIFY( mEvents.at(1)->number() == "2234" );
-    QVERIFY( mEvents.at(1)->index() == 1 );
+    QVERIFY( mEvents.at(1)->index() == -1 ); // Not assigned at state machine
     QVERIFY( mEvents.at(1)->isInView() );
     QVERIFY( index == 2 );
     
@@ -424,6 +424,7 @@ void UT_LogsReaderStates::testStateFillDetails()
     mEvents.append( logsEvent2 );
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 0 );
+    QVERIFY(!logsEvent->contactMatched());
    
     // Some events, nothing yet in cache, match from phonebook not found
     QtContactsStubsHelper::setContactId( contactId );
@@ -432,6 +433,7 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 0 );
     QVERIFY( !logsEvent->contactLocalId() );
+    QVERIFY(!logsEvent->contactMatched());
     
     // Some events, nothing yet in cache, match from phonebook found (international format)
     QtContactsStubsHelper::setContactNames("first", "last");
@@ -439,6 +441,8 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 1 );
     QVERIFY( logsEvent->contactLocalId() == contactId );
+    QVERIFY(logsEvent->contactMatched());
+    QVERIFY(logsEvent->remoteParty().length() > 0);
     
     // Some events, nothing yet in cache, match from phonebook found (local format)
     mContactCache.clear();
@@ -448,6 +452,8 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 1 );
     QVERIFY( logsEvent->contactLocalId() == contactId );
+    QVERIFY(logsEvent->contactMatched());
+    QVERIFY(logsEvent->remoteParty().length() > 0);
     
     // Some events, matching info found from cache
     logsEvent->setLogsEventData(NULL);
@@ -457,6 +463,89 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( mContactCache.count() == 1 );
     QVERIFY( logsEvent->remoteParty().length() > 0 );
     QVERIFY( logsEvent->contactLocalId() == contactId );
+    
+    QtContactsStubsHelper::setContactNames("updated", "last");
+    QVERIFY( logsEvent->remoteParty() == "first last" );
+    mContactCache.clear();
+    logsEvent->setContactMatched( false );
+    logsEvent->setRemoteParty("");
+    QVERIFY(!logsEvent->contactMatched());
+    QVERIFY( mContactCache.count() == 0 );
+    QVERIFY( logsEvent->remoteParty().length() == 0 );
+    QVERIFY( !state.enterL() );
+    QVERIFY( mContactCache.count() == 1 );
+    QVERIFY( logsEvent->remoteParty().length() > 0 );
+    QVERIFY(logsEvent->contactMatched());
+    QVERIFY( logsEvent->remoteParty() == "updated last" );
+    
+    //matching info not found in cache
+    QtContactsStubsHelper::reset();
+    mContactCache.clear();
+    logsEvent->setContactMatched( false );
+    logsEvent->setRemoteParty("");
+    QVERIFY( mContactCache.count() == 0 );
+    QVERIFY( logsEvent->remoteParty().length() == 0 );
+    QVERIFY( !state.enterL() );
+    QVERIFY( mContactCache.count() == 0 );
+    QVERIFY( logsEvent->remoteParty().length() == 0 );
+    QVERIFY(!logsEvent->contactMatched());
+    
+}
+
+void UT_LogsReaderStates::testStateFillDetails2()
+{
+    // Test duplicate lookup
+    LogsReaderStateFillDetails state(*this, *this);
+    
+    // Event whithout remote party is not used in lookup
+    LogsEvent* logsEvent = new LogsEvent;
+    logsEvent->setIsInView(true);
+    logsEvent->setNumber( "222333" );
+    logsEvent->setDirection(LogsEvent::DirOut);
+    mEvents.append( logsEvent );
+    QVERIFY( !state.mDuplicateLookup.findDuplicate(*logsEvent) );
+    QVERIFY( !state.enterL() );
+    QVERIFY( !state.mDuplicateLookup.findDuplicate(*logsEvent) );
+    QVERIFY( logsEvent->isInView() );
+    
+    // Event with remote party and number is added to lookup
+    logsEvent->setRemoteParty( "remote" );
+    logsEvent->setNumber( "11112222" );
+    QVERIFY( !state.enterL() );
+    QVERIFY( state.mDuplicateLookup.findDuplicate(*logsEvent) );
+    QVERIFY( logsEvent->isInView() );
+    QCOMPARE( logsEvent->mergedDuplicates().count(), 0 );
+        
+    // Event with contact matched remote party is ignored as being
+    // duplicate for "historical" event
+    QtContactsStubsHelper::setContactNames("remote", "");
+    LogsEvent* logsEvent2 = new LogsEvent;
+    logsEvent2->setIsInView(true);
+    logsEvent2->setNumber( "11112222" );
+    logsEvent2->setDirection(LogsEvent::DirOut);
+    mEvents.append( logsEvent2 );
+    QVERIFY( !state.enterL() );
+    QVERIFY( state.mDuplicateLookup.findDuplicate(*logsEvent) );
+    QVERIFY( logsEvent->isInView() );
+    QVERIFY( !logsEvent2->isInView() );
+    QCOMPARE( logsEvent->mergedDuplicates().count(), 1 );
+       
+    // Event with contact matched remote party is not ignored
+    // because it is not in yet in lookup
+    mContactCache.clear();
+    QtContactsStubsHelper::setContactNames("otherremote", "party");
+    LogsEvent* logsEvent3 = new LogsEvent;
+    logsEvent3->setIsInView(true);
+    logsEvent3->setNumber( "11112222" );
+    logsEvent3->setDirection(LogsEvent::DirOut);
+    mEvents.append( logsEvent3 );
+    QVERIFY( !state.enterL() );
+    QVERIFY( state.mDuplicateLookup.findDuplicate(*logsEvent) );
+    QVERIFY( state.mDuplicateLookup.findDuplicate(*logsEvent3) );
+    QVERIFY( logsEvent->isInView() );
+    QVERIFY( logsEvent3->isInView() );
+    QCOMPARE( logsEvent->mergedDuplicates().count(), 1 );
+    QCOMPARE( logsEvent3->mergedDuplicates().count(), 0 );
 }
 
 void UT_LogsReaderStates::testStateDone()
@@ -466,14 +555,12 @@ void UT_LogsReaderStates::testStateDone()
     LogClientStubsHelper::setViewCount(3);
     QVERIFY( !state.enterL() );
     QVERIFY( mReadCompleted );
-    QVERIFY( mReadCount == 3 );
     
     // Reading hasn't gone through whole db view (e.g. maxsize has been defined)
     reset();
     mIndex = 2;
     QVERIFY( !state.enterL() );
     QVERIFY( mReadCompleted );
-    QVERIFY( mReadCount == 2 );
 }
 
 void UT_LogsReaderStates::testStateSearchingEvent()
@@ -585,6 +672,70 @@ void UT_LogsReaderStates::testStateReadingDuplicates()
     QVERIFY( mDuplicatedEvents.count() == 2 );
     
 }
+
+void UT_LogsReaderStates::testStateMergingDuplicates()
+{
+    LogsReaderStateMergingDuplicates state(*this, *this);
+    
+    // No event
+    LogsEvent* origDupl = new LogsEvent;
+    origDupl->setDirection(LogsEvent::DirMissed);
+    origDupl->setLogId(100);
+    QDateTime dateTime5thJan = QDateTime::fromString("M1d5y9800:01:02","'M'M'd'd'y'yyhh:mm:ss");
+    origDupl->setTime(dateTime5thJan);
+    mDuplicatedEvents.append(origDupl);
+    LogsEvent* origDupl2 = new LogsEvent;
+    origDupl2->setDirection(LogsEvent::DirMissed);
+    origDupl2->setLogId(101);
+    QDateTime dateTime4thJan = QDateTime::fromString("M1d4y9800:01:02","'M'M'd'd'y'yyhh:mm:ss");
+    origDupl2->setTime(dateTime4thJan);
+    mDuplicatedEvents.append(origDupl2);
+    QVERIFY( !state.enterL() );
+    QCOMPARE( mDuplicatedEvents.count(), 2 );
+    
+    // No events to merge
+    LogsEvent* logsEvent = new LogsEvent;
+    logsEvent->setIsInView(true);
+    logsEvent->setNumber( "222333" );
+    logsEvent->setDirection(LogsEvent::DirMissed);
+    logsEvent->setLogId(99);
+    mCurrentEventId = 99;
+    mEvents.append( logsEvent );
+    QVERIFY( !state.enterL() );
+    QCOMPARE( mDuplicatedEvents.count(), 2 );
+    
+    // No unseen events to merge
+    LogsEvent mergedEv;
+    mergedEv.setDirection(LogsEvent::DirMissed);
+    mergedEv.setLogId(111);
+    mergedEv.markedAsSeenLocally(true);
+    logsEvent->mergedDuplicates().append(mergedEv);
+    QVERIFY( !state.enterL() );
+    QCOMPARE( mDuplicatedEvents.count(), 2 );
+    
+    // Unseen events to merge, check also time based ordering
+    LogsEvent mergedEv2;
+    mergedEv2.setDirection(LogsEvent::DirMissed);
+    mergedEv2.setLogId(200);
+    mergedEv2.markedAsSeenLocally(false);
+    QDateTime dateTime4thJanLaterTime = QDateTime::fromString("M1d4y9800:02:02","'M'M'd'd'y'yyhh:mm:ss");
+    mergedEv2.setTime(dateTime4thJanLaterTime);
+    logsEvent->mergedDuplicates().append(mergedEv2);
+    LogsEvent mergedEv3;
+    mergedEv3.setDirection(LogsEvent::DirMissed);
+    mergedEv3.setLogId(300);
+    mergedEv3.markedAsSeenLocally(false);
+    QDateTime dateTime6thJan = QDateTime::fromString("M1d6y9800:01:02","'M'M'd'd'y'yyhh:mm:ss");
+    mergedEv3.setTime(dateTime6thJan);
+    logsEvent->mergedDuplicates().append(mergedEv3);
+    QVERIFY( !state.enterL() );
+    QCOMPARE( mDuplicatedEvents.count(), 4 );
+    QCOMPARE( mDuplicatedEvents.at(0)->logId(), mergedEv3.logId() );
+    QCOMPARE( mDuplicatedEvents.at(1)->logId(), origDupl->logId() );
+    QCOMPARE( mDuplicatedEvents.at(2)->logId(), mergedEv2.logId() );
+    QCOMPARE( mDuplicatedEvents.at(3)->logId(), origDupl2->logId() );
+}
+
 
 void UT_LogsReaderStates::testStateReadingDuplicatesDone()
 {
@@ -708,10 +859,9 @@ QList<LogsEvent*>& UT_LogsReaderStates::duplicatedEvents()
 // From LogsReaderObserver
 // ----------------------------------------------------------------------------
 //
-void UT_LogsReaderStates::readCompleted(int readCount)
+void UT_LogsReaderStates::readCompleted()
 {
     mReadCompleted = true;
-    mReadCount = readCount;
 }
 void UT_LogsReaderStates::errorOccurred(int err)
 {

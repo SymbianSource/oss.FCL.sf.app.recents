@@ -18,7 +18,7 @@
 #define LOGSSERVICEHANDLEROLD_H
 
 #include <xqserviceprovider.h>
-#include <logsservices.h>
+#include <xqaiwdecl.h>
 
 class LogsServiceHandlerOld : public XQServiceProvider
     {
@@ -33,7 +33,7 @@ class LogsServiceHandlerOld : public XQServiceProvider
         
     signals:
     
-        void activateView(LogsServices::LogsView activatedView, bool showDialpad, QString dialpadText);
+        void activateView(XQService::LogsViewIndex activatedView, bool showDialpad, QString dialpadText);
         void activateView(QString dialpadText);
     
     public:

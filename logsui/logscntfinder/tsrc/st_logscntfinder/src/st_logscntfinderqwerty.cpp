@@ -130,7 +130,7 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchNameAndEmailMatch()
     createContacts();
     
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContactLocalId cid;
     QContact contact;
@@ -160,9 +160,9 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchWithSpace()
 {
 
     createContacts();
-    
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContactLocalId cid;
     QContact contact;
@@ -186,7 +186,7 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchEmailMatch()
     createContacts();
     
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContactLocalId cid;
     QContact contact;
@@ -209,7 +209,7 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchNoEmails()
     createContacts();
     
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContact contact;
     QContactName contactName;
@@ -228,7 +228,7 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchOverLongPattern()
     createContacts();
     
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContactLocalId cid;
     QContact contact;
@@ -251,7 +251,7 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchSpecialCharsInPattern()
     createContacts();
     
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QContactLocalId cid;
     QContact contact;
@@ -269,3 +269,33 @@ void ST_LogsCntFinderQwerty::testPredictiveEmailSearchSpecialCharsInPattern()
 
 }
 
+//search "5sya' contact match
+void ST_LogsCntFinderQwerty::testPredictiveEmailSearchNumberAsFirstInPattern()
+{
+    // Remove all contacts from the database
+    QList<QContactLocalId> cnt_ids = m_manager->contactIds();
+    m_manager->removeContacts(cnt_ids, 0 );
+    QVERIFY(0 == cnt_ids.count());
+    
+    //         'id' first      last           phonenumber        email1                        email2                      email3  
+    ADD_CONTACT( 1, "Stefann", "Yadira",      "0035893424558",   "5syadira@gmail.com",          "stefann.yadira@nokia.com", "" );
+    
+    QContactDetailFilter df;
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setMatchFlags( QContactFilter::MatchKeypadCollation );
+    QContactLocalId cid;
+    QContact contact;
+    QContactName contactName;
+
+    //search "5sya' contact match
+    QString pattern = QString("5sya") + QChar(30) + QString("vqwerty");
+    df.setValue( pattern );
+    cnt_ids = m_manager->contactIds( df );
+    QCOMPARE( cnt_ids.count(), 1 );
+    cid = cnt_ids.at( 0 );    
+    contact = m_manager->contact( cid  );
+    contactName = contact.detail( QContactName::DefinitionName );
+    QCOMPARE( contactName.value( QContactName::FieldFirstName ), QString("Stefann" ) );
+
+
+}

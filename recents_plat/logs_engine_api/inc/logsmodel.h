@@ -112,7 +112,7 @@ public: // The exported API
      * @param configuration parameters
      * @return 0 if configured succesfully
      */
-    LOGSENGINE_EXPORT int updateConfiguration(LogsConfigurationParams& params);
+    LOGSENGINE_EXPORT virtual int updateConfiguration(LogsConfigurationParams& params);
     
     /**
      * Get details model.

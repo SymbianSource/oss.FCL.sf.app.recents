@@ -34,22 +34,20 @@
 *     "dialpad_text": QString, number to be prefilled into dialpad
 *          
 *  New params:
-*     "ViewIndex": int, 0 - all recent, 1 - received, 2 - called, 3 - missed
-*     "ShowDialpad": bool, if true view is shown with dialpad opened on top
-*     "DialpadText": QString, number to be prefilled into dialpad      
+*     XQLOGS_VIEW_INDEX: "ViewIndex": int, 0 - all recent, 1 - received, 2 - called, 3 - missed
+*     XQLOGS_SHOW_DIALPAD: "ShowDialpad": bool, if true view is shown with dialpad opened on top
+*     XQLOGS_DIALPAD_TEXT: "DialpadText": QString, number to be prefilled into dialpad      
 *            
 *  Example usage:
 *  XQApplicationManager appMgr;
-*  QScopedPointer<XQAiwRequest> request(appMgr.create(QString("logs"),
-*                  QString("com.nokia.symbian.ILogsView"), 
-*                  QString("show(QVariantMap)"), false));   
+*  QScopedPointer<XQAiwRequest> request(appMgr.create(XQI_LOGS_VIEW, XQOP_LOGS_SHOW, false));   
 *  if (!request.isNull()) {
 *      int retValue = -1; 
 *      QList<QVariant> arglist;
 *      QVariantMap map;
-*      map.insert("ViewIndex", QVariant(0));
-*      map.insert("ShowDialpad", QVariant(true));
-*      map.insert("DialpadText", QVariant(QString()));
+*      map.insert(XQLOGS_VIEW_INDEX, QVariant((int)XQService::LogsViewMissed));
+*      map.insert(XQLOGS_SHOW_DIALPAD, QVariant(true));
+*      map.insert(XQLOGS_DIALPAD_TEXT, QVariant(QString()));
 *      arglist.append(QVariant(map));
 *      request->setArguments(arglist);
 *      QVariant ret(retValue);        

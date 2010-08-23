@@ -185,7 +185,6 @@ QContactDetail  QContact::detail(const char* definitionId) const
      return detail;   
 }
 
-
 QContactDetail QContact::detail(const QString& definitionId) const
 {
     if ( definitionId == QContactName::DefinitionName ){
@@ -282,3 +281,4 @@ QString QContactDetail::value(const char* key) const
     }
     return QString("");    
 }
+

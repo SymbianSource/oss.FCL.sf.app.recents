@@ -20,6 +20,7 @@
 #include <qcontactname.h>
 #include <qcontactmanager.h>
 #include <qcontactavatar.h>
+#include <qcontactaction.h>
 
 #include "logscntentry.h"
 #include "logscntfinder.h"
@@ -175,7 +176,7 @@ void LogsCntFinder::doPredictiveContactQuery( LogsCntEntryList& recentResults )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::doPredictiveContactQuery()" )
     QContactDetailFilter df;
-    df.setDetailDefinitionName( QContactName::DefinitionName );
+    df.setDetailDefinitionName( QContactName::DefinitionName, QContactName::FieldFirstName );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     df.setValue( mCurrentInputPattern );
     QList<QContactLocalId> cntIds;
@@ -285,11 +286,16 @@ QString LogsCntFinder::phoneNumber(const QContact& contact) const
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::phoneNumber()" )
     QString number;
     if (mPreferDefaultNumber) {
-        number = contact.preferredDetail("call").value(
-                                    QContactPhoneNumber::FieldNumber );
-        if (number.isEmpty()) {
-            number = contact.detailWithAction("call").value(
-                                    QContactPhoneNumber::FieldNumber );
+            
+        QContactActionDescriptor callActionName("call");
+        
+        number = contact.preferredDetail( callActionName.actionName() ).value(
+                    QContactPhoneNumber::FieldNumber );
+        
+        if ( number.isEmpty() ) {
+            number = contact.detailWithAction( 
+                    QContactAction::action( callActionName ) ).value(
+                    QContactPhoneNumber::FieldNumber );
         }
     }
     

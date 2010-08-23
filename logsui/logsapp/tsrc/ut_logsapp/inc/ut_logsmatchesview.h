@@ -66,6 +66,7 @@ private slots: //test methods
     void testUpdateEmptyListWidgetsVisibility();
     void testUpdateAddContactButton();
     void testContactSearch();
+    void testLocaleChanged();
     
 private:
  

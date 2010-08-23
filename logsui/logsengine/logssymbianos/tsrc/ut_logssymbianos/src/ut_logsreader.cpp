@@ -255,15 +255,43 @@ void UT_LogsReader::testViewChange()
 void UT_LogsReader::testUpdateDetails()
 {
     QVERIFY( !mReader->IsActive() );
+    LogsEvent* ev = new LogsEvent;
+    ev->setContactMatched(true);
+    mReader->mEvents.append( ev);
     ContactCacheEntry contactEntry("name", 1);
     mReader->mContactCache.insert("12345", contactEntry);
     mReader->updateDetails(false);
-    QVERIFY( !mReader->IsActive() );
+    QVERIFY( mReader->IsActive() );
     QVERIFY( mReader->mContactCache.count() == 1 );
+    QVERIFY( ev->contactMatched() );
     
     mReader->updateDetails(true);
-    QVERIFY( !mReader->IsActive() );
+    QVERIFY( mReader->IsActive() );
     QVERIFY( mReader->mContactCache.count() == 0 );    
+    QVERIFY( !ev->contactMatched() );
+}
+
+void UT_LogsReader::testLock()
+{
+    QVERIFY( !mReader->mLocked );
+    
+    // No pending read when lock is released
+    mReader->lock(true);
+    QVERIFY( !mReader->IsActive() );
+    QVERIFY( mReader->mLocked );
+    mReader->lock(false);
+    QVERIFY( !mReader->mLocked );
+    QVERIFY( !mReader->IsActive() );
+    
+    // Pending read exists when lock is released -> read starts
+    mReader->lock(true);
+    QVERIFY( !mReader->IsActive() );
+    QVERIFY( mReader->mLocked );
+    QVERIFY( mReader->start() == KErrAccessDenied );
+    QVERIFY( !mReader->IsActive() );
+    mReader->lock(false);
+    QVERIFY( !mReader->mLocked );
+    QVERIFY( mReader->IsActive() );
 }
 
 
@@ -271,7 +299,7 @@ void UT_LogsReader::testUpdateDetails()
 // From LogsReaderObserver
 // ----------------------------------------------------------------------------
 //
-void UT_LogsReader::readCompleted(int /*readCount*/)
+void UT_LogsReader::readCompleted()
 {
 
 }

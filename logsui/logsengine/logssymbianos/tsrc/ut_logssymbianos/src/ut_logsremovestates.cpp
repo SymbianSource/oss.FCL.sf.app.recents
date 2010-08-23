@@ -23,6 +23,13 @@
 
 #include <QtTest/QtTest>
 
+#define ADD_EVENT_WITH_ID( id ) \
+{\
+LogsEvent ev;\
+ev.setLogId(id);\
+mRemovedEvents.append(ev);\
+}
+
 void UT_LogsRemoveStates::initTestCase()
 {
     int rfsDummy = 0;
@@ -106,9 +113,9 @@ void UT_LogsRemoveStates::testDelete()
     QVERIFY( !state.enterL() );
     
     // Delete several
-    mRemovedEvents.append(1);
-    mRemovedEvents.append(3);
-    mRemovedEvents.append(4);
+    ADD_EVENT_WITH_ID(1);
+    ADD_EVENT_WITH_ID(3);
+    ADD_EVENT_WITH_ID(4);
     
     QVERIFY( state.enterL() );
     QCOMPARE( state.mRemoveIndex, 1 );
@@ -124,13 +131,13 @@ void UT_LogsRemoveStates::testDeleteDuplicates()
     LogsRemoveStateDeleteDuplicates state(*this, *this);
     
     // More than one id, duplicate deletion not supported
-    mRemovedEvents.append(1);
-    mRemovedEvents.append(3);
+    ADD_EVENT_WITH_ID(1);
+    ADD_EVENT_WITH_ID(3);
     QVERIFY( !state.enterL() );
     
     // Dbview iterator is not at correct location
     mRemovedEvents.clear();
-    mRemovedEvents.append(99);
+    ADD_EVENT_WITH_ID(99);
     const_cast<CLogEvent&>( mLogView->Event() ).SetId( 100 );
     QVERIFY( !state.enterL() );
     
@@ -217,7 +224,7 @@ TRequestStatus& UT_LogsRemoveStates::reqStatus()
 int UT_LogsRemoveStates::currentEventId()
 {
     if ( !mRemovedEvents.isEmpty() ){
-        return mRemovedEvents.at(0);
+        return mRemovedEvents.at(0).logId();
     }
     return mCurrentEventId;
 }
@@ -242,7 +249,7 @@ LogsRemoveObserver& UT_LogsRemoveStates::observer()
 {
     return *this;
 }
-QList<int>& UT_LogsRemoveStates::removedEvents()
+QList<LogsEvent>& UT_LogsRemoveStates::removedEvents()
 {
     return mRemovedEvents;
 }

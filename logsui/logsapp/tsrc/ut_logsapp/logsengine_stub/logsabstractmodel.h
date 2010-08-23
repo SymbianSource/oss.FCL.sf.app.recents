@@ -26,6 +26,7 @@ class LogsEvent;
 class LogsDbConnector;
 class LogsModelItemContainer;
 class LogsContact;
+class LogsConfigurationParams;
 
 /**
  * Abstract logs model.
@@ -75,6 +76,7 @@ public:
      *          -1 in case of some error
      */
     int setPredictiveSearch(bool enabled);
+    int updateConfiguration(LogsConfigurationParams& params);
     
 public:
     
@@ -97,6 +99,7 @@ protected: //data
     
 public: // test data
     int mPredectiveSearchStatus;
+    static bool mParamUpdated;
     
 private:
     

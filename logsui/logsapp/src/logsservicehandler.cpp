@@ -56,7 +56,7 @@ int LogsServiceHandler::show(const QVariantMap& params)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsServiceHandler::show()" )
     int activatedView = params.value(logsViewIndexParam, 
-                            QVariant((int)LogsServices::ViewAll)).toInt();
+                            QVariant((int)XQService::LogsViewAll)).toInt();
     bool showDialpad = params.value(logsShowDialpadParam, 
                             QVariant(false)).toBool();
     QString dialpadText = params.value(logsDialpadTextParam, 
@@ -66,21 +66,21 @@ int LogsServiceHandler::show(const QVariantMap& params)
     LOGS_QDEBUG_2( "logs [UI] showDialpad:", showDialpad )
     LOGS_QDEBUG_2( "logs [UI] dialpadText:", dialpadText )
     
-    if (params.contains(logsViewIndexParamNew)) {
-        activatedView = params.value(logsViewIndexParamNew).toInt();
+    if (params.contains(XQLOGS_VIEW_INDEX)) {
+        activatedView = params.value(XQLOGS_VIEW_INDEX).toInt();
         LOGS_QDEBUG_2( "logs [UI] new activatedView:", activatedView )        
     }
-    if (params.contains(logsShowDialpadParamNew)) {
-        showDialpad = params.value(logsShowDialpadParamNew).toBool();
+    if (params.contains(XQLOGS_SHOW_DIALPAD)) {
+        showDialpad = params.value(XQLOGS_SHOW_DIALPAD).toBool();
         LOGS_QDEBUG_2( "logs [UI] new showDialpad:", showDialpad )        
     }
-    if (params.contains(logsDialpadTextParamNew)) {
-        dialpadText = params.value(logsDialpadTextParamNew).toString();
+    if (params.contains(XQLOGS_DIALPAD_TEXT)) {
+        dialpadText = params.value(XQLOGS_DIALPAD_TEXT).toString();
         LOGS_QDEBUG_2( "logs [UI] new dialpadText:", dialpadText )        
     }
     
-    if ( activatedView < LogsServices::ViewAll || 
-         activatedView > LogsServices::ViewMissed ){
+    if ( activatedView < XQService::LogsViewAll || 
+         activatedView > XQService::LogsViewMissed ){
         LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::show(), incorrect view" )
         return -1;
     }
@@ -90,7 +90,7 @@ int LogsServiceHandler::show(const QVariantMap& params)
     if (!dialpadText.isEmpty()) {
         emit activateView(dialpadText);
     } else {
-        emit activateView((LogsServices::LogsView)activatedView, showDialpad, dialpadText);
+        emit activateView((XQService::LogsViewIndex)activatedView, showDialpad, dialpadText);
     }
     LOGS_QDEBUG( "logs [UI] <- LogsServiceHandler::show()" )
     return 0;

@@ -115,7 +115,7 @@ QVariant LogsDetailsModel::data(const QModelIndex &index, int role) const
 {
     Q_UNUSED(index);
     
-    if ( role == RoleCall && mEvent ) {
+    if ( role == RoleCall && mEvent->eventType() != LogsEvent::TypeUndefined ) {
         LogsCall* logsCall = new LogsCall();
         QVariant var = qVariantFromValue(logsCall);
         return var;
@@ -123,7 +123,7 @@ QVariant LogsDetailsModel::data(const QModelIndex &index, int role) const
         LogsContact* logsContact = new LogsContact();
         QVariant var = qVariantFromValue(logsContact);
         return var;
-    } else if (role == RoleMessage && mEvent ) {
+    } else if (role == RoleMessage && mEvent->eventType() != LogsEvent::TypeUndefined  ) {
         LogsMessage* logsMessage = new LogsMessage();
         QVariant var = qVariantFromValue(logsMessage);
         return var;

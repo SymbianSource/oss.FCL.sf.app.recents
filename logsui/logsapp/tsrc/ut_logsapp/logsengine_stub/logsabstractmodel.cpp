@@ -30,6 +30,8 @@ Q_DECLARE_METATYPE(LogsCall *)
 Q_DECLARE_METATYPE(LogsMessage *)
 Q_DECLARE_METATYPE(LogsContact *)
 
+bool LogsAbstractModel::mParamUpdated = false;
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -92,6 +94,16 @@ int LogsAbstractModel::setPredictiveSearch(bool enabled)
 	  }
     
     return result;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::updateConfiguration(LogsConfigurationParams& /*params*/)
+{
+    mParamUpdated = true;
+    return 0;
 }
 
 // -----------------------------------------------------------------------------

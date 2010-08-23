@@ -49,7 +49,8 @@ signals:
 
     void dissappearByMovingComplete();
     void dissappearByFadingComplete();
-    void appearByMovingComplete();
+    void appearStarting();
+    void appearByMovingComplete();  
 
 private slots:
 

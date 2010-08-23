@@ -26,8 +26,8 @@
 #include <hbicon.h>
 #include <QStringBuilder>
 #include <hbextendedlocale.h>
-#include "logssystemtimeobserver.h"
-
+#include <hbstringutil.h>
+#include "logsconfigurationparams.h"
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -41,9 +41,7 @@ Q_DECLARE_METATYPE(LogsContact *)
 LogsAbstractModel::LogsAbstractModel() : QAbstractListModel(), mDbConnector(0)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::LogsAbstractModel()" )
-    mSystemTimeObserver = new LogsSystemTimeObserver(this);
-    connect(mSystemTimeObserver, SIGNAL(timeFormatChanged()),
-            this, SLOT(updateModel()));
+    mExtendedLocale = new HbExtendedLocale();
     LOGS_QDEBUG( "logs [ENG] <- LogsAbstractModel::LogsAbstractModel()" )
 }
 
@@ -56,6 +54,7 @@ LogsAbstractModel::~LogsAbstractModel()
     LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::~LogsAbstractModel()" )
 
     qDeleteAll( mIcons );
+    delete mExtendedLocale;
     
     LOGS_QDEBUG( "logs [ENG] <- LogsAbstractModel::~LogsAbstractModel()" )
 }
@@ -92,14 +91,19 @@ int LogsAbstractModel::setPredictiveSearch(bool enabled)
     return doSetPredictiveSearch(enabled);
 }
 
-
-// -----------------------------------------------------------------------------
-// 
 // -----------------------------------------------------------------------------
 //
-bool LogsAbstractModel::isCommunicationPossible(const LogsEvent& event) const
+// -----------------------------------------------------------------------------
+//
+int LogsAbstractModel::updateConfiguration(LogsConfigurationParams& params)
 {
-    return ( !event.isRemotePartyPrivate() && !event.isRemotePartyUnknown() );
+    LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::updateConfiguration()" )
+    if (params.localeChanged()) {
+        LOGS_QDEBUG( "logs [ENG] -> Locale changed, have to update model" )
+        updateModel();
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsAbstractModel::updateConfiguration()" )
+    return 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -117,7 +121,7 @@ void LogsAbstractModel::contactSavingCompleted(bool modified)
 //
 void LogsAbstractModel::updateModel()
 {
-    LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::updateModel(), SYSTEM TIME CHANGED!" )
+    LOGS_QDEBUG( "logs [ENG] -> LogsAbstractModel::updateModel()" )
     //reset();
     if (rowCount()) {
         emit dataChanged(createIndex(0,0), createIndex(rowCount(),0));
@@ -157,10 +161,6 @@ QVariant LogsAbstractModel::createCall(const LogsModelItemContainer& item) const
         return QVariant();
     }
     LogsCall* logscall = new LogsCall(*event);
-    if (!logscall->isAllowedCallType() || !isCommunicationPossible(*event)) {
-        delete logscall;
-        logscall = 0;
-    }
     QVariant var = qVariantFromValue(logscall);
     return var;         
 }
@@ -177,7 +177,7 @@ QVariant LogsAbstractModel::createMessage(const LogsModelItemContainer& item) co
         return QVariant();
     }
     LogsMessage* logsMessage = new LogsMessage(*event);
-    if (!logsMessage->isMessagingAllowed() || !isCommunicationPossible(*event)) {
+    if (!logsMessage->isMessagingAllowed() || !event->isCommunicationPossible()) {
         delete logsMessage;
         logsMessage = 0;
     }
@@ -198,7 +198,7 @@ QVariant LogsAbstractModel::createContact(const LogsModelItemContainer& item) co
     }
     Q_ASSERT(mDbConnector);
     LogsContact* logsContact = new LogsContact(*event, *mDbConnector);
-    if ( !logsContact->isContactRequestAllowed() || !isCommunicationPossible(*event) ) {
+    if ( !logsContact->isContactRequestAllowed() || !event->isCommunicationPossible() ) {
         delete logsContact;
         logsContact = 0;
     }
@@ -315,12 +315,11 @@ LogsDbConnector* LogsAbstractModel::dbConnector()
 //
 QString LogsAbstractModel::dateAndTimeString(const QDateTime& dateTime) const
 {
-    HbExtendedLocale locale = HbExtendedLocale::system();
     QString dateTimeString =
-                locale.format(dateTime.date(), r_qtn_date_usual_with_zero)
+                mExtendedLocale->format(dateTime.date(), r_qtn_date_usual_with_zero)
                 % QChar(' ')
-                % locale.format(dateTime.time(), r_qtn_time_usual_with_zero);
-    return dateTimeString;
+                % mExtendedLocale->format(dateTime.time(), r_qtn_time_usual_with_zero);
+    return HbStringUtil::convertDigits(dateTimeString);
 }
 
 // -----------------------------------------------------------------------------
@@ -329,7 +328,17 @@ QString LogsAbstractModel::dateAndTimeString(const QDateTime& dateTime) const
 //
 QString LogsAbstractModel::durationString(const QTime& time) const
 {
-    return HbExtendedLocale::system().format(time, r_qtn_time_durat_long_with_zero);
+    return HbStringUtil::convertDigits(
+        mExtendedLocale->format(time, r_qtn_time_durat_long_with_zero));
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsAbstractModel::phoneNumString(const QString& number) const
+{
+    return HbStringUtil::convertDigits(number);
 }
 
 // -----------------------------------------------------------------------------

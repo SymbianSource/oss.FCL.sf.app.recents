@@ -22,8 +22,10 @@
 #include "logscontact.h"
 #include "logsmessage.h"
 #include "logseventdata.h"
+#include "logsconfigurationparams.h"
 #include "qtcontacts_stubs_helper.h"
 #include "logsdbconnector_stub_helper.h"
+#include "hbstubs_helper.h"
 #include <hblineedit.h>
 #include <hbglobal.h>
 #include <hbextendedlocale.h>
@@ -57,6 +59,7 @@ void UT_LogsDetailsModel::cleanupTestCase()
 
 void UT_LogsDetailsModel::init()
 {
+    HbStubHelper::reset();
     testDetailsDateAndTime.setTime_t( 3000 );
     
     LogsEvent event;
@@ -92,13 +95,27 @@ void UT_LogsDetailsModel::testgetNumberToClipboard()
     cliptmp2->setText(" ");
     cliptmp2->selectAll();
     cliptmp2->copy();
-     
+    
+    // Make sure that number is converted to current locale
+    HbStubHelper::stringUtilDigitConversion(true);
     mModel->getNumberToClipboard();
     
     cliptmp2->setText(" ");
-    cliptmp2->paste();
+    cliptmp2->paste();   
+    QCOMPARE( cliptmp2->text(), "conv" + testDetailsRemoteNum  );
+
     
-    QVERIFY( cliptmp2->text() == testDetailsRemoteNum  );
+    // VoIP uri is not converted
+    mModel->mEvent->mNumber.clear();
+    LogsEventData* eventData = new LogsEventData;
+    eventData->mRemoteUrl = "test@1.2.3.4";
+    mModel->mEvent->setLogsEventData( eventData );
+    mModel->mEvent->mEventType = LogsEvent::TypeVoIPCall;
+    mModel->getNumberToClipboard();
+    cliptmp2->setText(" ");
+    cliptmp2->paste();   
+    QCOMPARE( cliptmp2->text(), eventData->mRemoteUrl  );
+    
     delete cliptmp2;
 }
 
@@ -152,13 +169,16 @@ void UT_LogsDetailsModel::testData()
     QVariant callData = mModel->data(mModel->index(0), LogsDetailsModel::RoleCall);
     LogsCall *call = qVariantValue<LogsCall *>( callData );
     QVERIFY( call );
+    QVERIFY( call->defaultCallType() != LogsCall::TypeLogsCallNotAvailable );
     delete call;
     
     // Test call, event type does not support call
     mModel->mEvent->setEventType(LogsEvent::TypeUndefined);
     QVariant callData2 = mModel->data(mModel->index(0), LogsDetailsModel::RoleCall);
     LogsCall *call2 = qVariantValue<LogsCall *>( callData2 );
-    QVERIFY( !call2 );
+    QVERIFY( call2 );
+    QVERIFY( call2->defaultCallType() == LogsCall::TypeLogsCallNotAvailable );
+    delete call2;
     
     // Test message
     QVariant messageData = mModel->data(mModel->index(0), LogsDetailsModel::RoleMessage);
@@ -192,6 +212,13 @@ void UT_LogsDetailsModel::testHeaderData()
     QCOMPARE(mModel->headerData(0, Qt::Vertical).toString(),
              testDetailsRemoteInfo);
     QVERIFY(mModel->headerData(0, Qt::Vertical, Qt::DecorationRole).isNull());
+    
+    // Number as header, check that it is converted to current local
+    HbStubHelper::stringUtilDigitConversion(true);
+    mModel->mEvent->mRemoteParty.clear();
+    mModel->initContent();
+    QCOMPARE(mModel->headerData(0, Qt::Vertical).toString(),
+        "conv" + testDetailsRemoteNum);
 }
 
 void UT_LogsDetailsModel::testgetRemoteUri()
@@ -405,9 +432,10 @@ void UT_LogsDetailsModel::testGetCallerId()
     event.setNumber("");
     QVERIFY( mModel->getCallerId(event) == QString("") );
     
-    // Both
+    // Both, check that number is converted to current local
+    HbStubHelper::stringUtilDigitConversion(true);
     event.setNumber(num);
-    QVERIFY( mModel->getCallerId(event) == num );
+    QCOMPARE( mModel->getCallerId(event), "conv" + num );
     
     //Only number
     event.setRemoteParty("");
@@ -457,4 +485,19 @@ void UT_LogsDetailsModel::testContactActionCompleted()
     mModel->contactActionCompleted(true);
     QVERIFY( mModel->mDetailTexts.count() > 0 );
     QVERIFY( mModel->mEvent->remoteParty().length() > 0 );
+}
+
+void UT_LogsDetailsModel::testUpdateConfiguration()
+{
+    //Locale not changed, model not updated
+    QCOMPARE( mModel->mDetailTexts.count(), 5 );
+    LogsConfigurationParams params;
+    QVERIFY( mModel->updateConfiguration(params) == 0 );
+    QCOMPARE( mModel->mDetailTexts.count(), 5 );
+
+    //Locale changed, model udpated
+    params.setLocaleChanged(true);
+    mModel->mEvent->setRemoteParty("");
+    QVERIFY( mModel->updateConfiguration(params) == 0 );
+    QCOMPARE( mModel->mDetailTexts.count(), 4 );
 }

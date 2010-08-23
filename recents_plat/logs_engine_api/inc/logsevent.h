@@ -22,6 +22,7 @@
 #include <logsexport.h>
 #include <QDateTime>
 #include <qmobilityglobal.h>
+#include <QList>
 
 // FORWARD DECLARATION
 class LogsEventData;
@@ -177,6 +178,12 @@ public:
          */
         LOGSENGINE_EXPORT bool serialize( QDataStream& serializeDestination );
         
+        /**
+        * Check whether event has private remoteparty
+        * @return true if event has private remoteparty
+        */
+        LOGSENGINE_EXPORT bool isRemotePartyPrivate() const;
+        
     public:
         
         /**
@@ -236,6 +243,18 @@ public:
         void setRemoteParty( const QString& remoteParty );
         
         /**
+        * Set indication of result of searching matching 
+        * contact from contacts
+        */
+        void setContactMatched( bool value );
+        
+        /**
+        * Get indication of result of searching matching 
+        * contact from contacts
+        */
+        bool contactMatched();
+        
+        /**
          * Check if event is valid.
          * @return true if valid, otherwise false
          */
@@ -274,7 +293,6 @@ public:
          */
         bool isSeenLocally() const;
         
-        bool isRemotePartyPrivate() const;
         bool isRemotePartyUnknown() const;
         
         /**
@@ -286,6 +304,26 @@ public:
         * Set remote party status as unknown of the event.
         */
         void setRemotePartyUnknown(bool markedAsUnknown);
+        
+        /**
+         * Merge relevant information
+         */
+        void merge( LogsEvent& event );
+        
+        /**
+         * Duplicate events
+         */
+        QList<LogsEvent>& mergedDuplicates();
+        
+        /**
+         * Comparison
+         */
+        bool operator==(const LogsEvent& other);
+        
+        /**
+         * Check if communication is possible.
+         */
+        bool isCommunicationPossible() const;
         
     private:                               
 
@@ -317,6 +355,8 @@ public:
         
         QString parseContactName(const QContactName& name);
         
+        bool isUnseenEvent( const LogsEvent& event ) const;
+        
         
     private:    // data
             
@@ -330,16 +370,18 @@ public:
         int mDuplicates;               
         QDateTime mTime;       
         int mRingDuration;
-	      bool mIsRead;  
-	      bool mIsALS;
-	      int mDuration;
-	    
-	      int mIndex;
-	      bool mIsInView;
-	      LogsEventState mEventState;
-	      bool mIsLocallySeen;
-	      bool mIsPrivate;
-	      bool mIsUnknown;
+        bool mIsRead;  
+        bool mIsALS;
+        int mDuration;
+        
+        int mIndex;
+        bool mIsInView;
+        LogsEventState mEventState;
+        bool mIsLocallySeen;
+        bool mIsPrivate;
+        bool mIsUnknown;
+		bool mContactMatched;
+	    QList<LogsEvent> mMergedDuplicates;
 	    
     private:
         
@@ -364,6 +406,9 @@ public:
         friend class UT_LogsMessage;
         friend class UT_LogsCustomFilter;
         friend class UT_LogsMatchesModel;
+        friend class UT_LogsRemoveStates;
+        friend class UT_LogsRemove;
+        friend class UT_LogsDuplicateLookup;
     };
 
 #endif      // LOGSEVENT_H

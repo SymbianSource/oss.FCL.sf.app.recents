@@ -22,6 +22,7 @@
 
 bool logsTestMessageSent = false;
 bool defaultMessageSent = false;
+QString lostTestMessageNumber;
 
 // -----------------------------------------------------------------------------
 //
@@ -71,6 +72,7 @@ bool LogsMessage::sendMessageToNumber(
     Q_UNUSED(displayName);
     Q_UNUSED(contactId);
     logsTestMessageSent = true;
+    lostTestMessageNumber = number;
 }
 
 bool LogsMessage::isMessageSent()
@@ -87,6 +89,11 @@ void LogsMessage::resetTestData()
 bool LogsMessage::isDefaultMessageSent()
 {
     return defaultMessageSent;
+}
+
+QString LogsMessage::sentToNumber()
+{
+    return lostTestMessageNumber;
 }
 
 // End of file

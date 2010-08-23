@@ -53,7 +53,7 @@ public:
     LOGSENGINE_EXPORT LogsCall::CallType defaultCallType();
     
     LOGSENGINE_EXPORT static void callToNumber(LogsCall::CallType callType, const QString& number,
-            unsigned int serviceId = 0);
+            unsigned int serviceId = 0, unsigned int contactId = 0);
     
     bool isAllowedCallType();
     
@@ -74,6 +74,7 @@ private: //data
     CallType mDefaultCall;
     QString mNumber;
     unsigned int mServiceId;
+    unsigned int mContactId;
     
 private:
     friend class UT_LogsCall;

@@ -26,6 +26,7 @@
 #include "qtcontacts_stubs_helper.h"
 #include "logscntfinder.h"
 #include "logsdbconnector_stub_helper.h"
+#include "hbstubs_helper.h"
 
 #include <QtTest/QtTest>
 
@@ -58,6 +59,7 @@ void UT_LogsMatchesModel::cleanupTestCase()
 //
 void UT_LogsMatchesModel::init()
 {
+    HbStubHelper::reset();
     mModel = new LogsModel();
     LogsDbConnectorStubHelper::setPredictiveSearch(1);
     mMatchesModel = mModel->logsMatchesModel();
@@ -156,6 +158,7 @@ void UT_LogsMatchesModel::testData()
             *mModel, *mMatchesModel->mIconManager, 0); 
     LogsEvent event;
     event.setRemoteParty( "Testing" );
+    event.setIndex(0);
     item->setEvent(event);
     item->mFormattedCallerId = "formattedCallerId";
     mMatchesModel->mMatches.append(item);
@@ -257,6 +260,7 @@ void UT_LogsMatchesModel::testDataAdded()
             *mModel, *mMatchesModel->mIconManager, 0); 
     mMatchesModel->mMatches.append(item);
     LogsEvent* event = new LogsEvent();
+    event->setIndex(0);
     mModel->mEvents.append(event);
     mMatchesModel->eventsAdded(QModelIndex(), 0, 0);
     QVERIFY( mMatchesModel->mSearchEvents.count() == 1 );
@@ -268,7 +272,9 @@ void UT_LogsMatchesModel::testDataAdded()
             *mModel, *mMatchesModel->mIconManager, 1); 
     mMatchesModel->mMatches.append(item);
     LogsEvent* event2 = new LogsEvent();
+    event2->setIndex(1);
     LogsEvent* event3 = new LogsEvent();
+    event3->setIndex(2);
     mModel->mEvents.insert(0, event2);
     mModel->mEvents.insert(0, event3);
     mMatchesModel->eventsAdded(QModelIndex(), 0, 1);
@@ -294,6 +300,7 @@ void UT_LogsMatchesModel::testDataUpdated()
     
     // Search event to update
     LogsEvent* event = new LogsEvent();
+    event->setIndex(0);
     mModel->mEvents.append(event);
     mMatchesModel->eventsAdded(QModelIndex(), 0, 0);
     mMatchesModel->eventsUpdated(mModel->index(0), mModel->index(0));
@@ -319,6 +326,7 @@ void UT_LogsMatchesModel::testDataRemoved()
     
     // Existing search event removed
     LogsEvent* event = new LogsEvent();
+    event->setIndex(0);
     mModel->mEvents.append(event);
     mMatchesModel->eventsAdded(QModelIndex(), 0, 0);
     mMatchesModel->eventsRemoved(QModelIndex(), 0, 0);
@@ -345,6 +353,9 @@ void UT_LogsMatchesModel::testDataResetted()
     LogsEvent* event3 = new LogsEvent();
     QString event3Name("event3");
     event3->setRemoteParty(event3Name);
+    event->setIndex(0);
+    event2->setIndex(1);
+    event3->setIndex(2);
     mModel->mEvents.append(event);
     mModel->mEvents.append(event2);
     mModel->mEvents.append(event3);
@@ -360,8 +371,11 @@ void UT_LogsMatchesModel::testDataResetted()
     LogsEvent* event4 = new LogsEvent();
     QString event4Name("event4");
     event4->setRemoteParty(event4Name);
-    mModel->mEvents.append(event4);
     
+    event4->setIndex(0);
+    event->setIndex(1);
+    event3->setIndex(2);
+    mModel->mEvents.append(event4);
     mModel->mEvents.append(event);
     mModel->mEvents.append(event3);
     
@@ -399,6 +413,7 @@ void UT_LogsMatchesModel::testLogsMatches()
     
     // Query ready when matching search events
     LogsEvent* event = new LogsEvent();
+    event->setIndex(0);
     mModel->mEvents.append(event);
     mMatchesModel->eventsAdded(QModelIndex(), 0, 0); // Causes immediate reset
     mMatchesModel->logsMatches( "4" );
@@ -493,13 +508,16 @@ void UT_LogsMatchesModel::testCreateCall()
     QVariant var = mMatchesModel->createCall(item);
     LogsCall *call = qVariantValue<LogsCall *>( var );
     QVERIFY( call );
+    QVERIFY( call->defaultCallType() != LogsCall::TypeLogsCallNotAvailable );
     delete call;
     
     // With contact, calling not supported
     LogsMatchesModelItemContainer item2(*mModel, *mMatchesModel->mIconManager, 1);  
     var = mMatchesModel->createCall(item2);
     call = qVariantValue<LogsCall *>( var );
-    QVERIFY( !call );
+    QVERIFY( call );
+    QVERIFY( call->defaultCallType() == LogsCall::TypeLogsCallNotAvailable );
+    delete call;
     
     // With contact, calling supported
     LogsMatchesModelItemContainer item3(*mModel, *mMatchesModel->mIconManager, 2);  
@@ -508,6 +526,7 @@ void UT_LogsMatchesModel::testCreateCall()
     var = mMatchesModel->createCall(item3);
     call = qVariantValue<LogsCall *>( var );
     QVERIFY( call );
+    QVERIFY( call->defaultCallType() != LogsCall::TypeLogsCallNotAvailable );
     delete call;
     
 }
@@ -594,7 +613,7 @@ void UT_LogsMatchesModel::testUpdateSearchEntry()
     LogsCntEntry entry2(0);
     mMatchesModel->updateSearchEntry(entry2, event2);
     QVERIFY( entry2.firstName().at(0).text() == "" );
-    QVERIFY( entry2.phoneNumber().text() == "55556666" );
+    QCOMPARE( entry2.phoneNumber().text(), QString("55556666") );
 
     // Only number starting with '+' exists
     LogsEvent event3;
@@ -647,9 +666,10 @@ void UT_LogsMatchesModel::testGetFormattedCallerId()
     QVERIFY( callerId == "long firstname" );
     
     // Firstname is missing, phone number is used
+    HbStubHelper::stringUtilDigitConversion(true);
     entry.setFirstName("");
     callerId = item.getFormattedCallerId(entry);
-    QVERIFY( callerId == "number" );
+    QCOMPARE( callerId, QString("conv number") );
 }
 
 // -----------------------------------------------------------------------------

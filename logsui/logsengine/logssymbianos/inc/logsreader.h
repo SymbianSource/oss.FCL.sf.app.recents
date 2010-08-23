@@ -116,6 +116,10 @@ class LogsReader : public LogsWorker,
          */
         int readDuplicates(int eventId);
 
+    public: // From LogsWorker
+        
+        virtual int lock(bool locked);
+        
     protected: // From CActive
 
         TInt RunError(TInt error);
@@ -186,6 +190,7 @@ class LogsReader : public LogsWorker,
         QList<LogsEvent*> mDuplicatedEvents;
 
         bool mGlobalObserverSet;
+        bool mPendingRead;
     };
 
 #endif      // LOGSREADER_H

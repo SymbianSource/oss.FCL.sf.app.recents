@@ -27,7 +27,6 @@ INCLUDEPATH += .
 INCLUDEPATH += ../symbianos_stub
 INCLUDEPATH += ../hbstubs
 INCLUDEPATH += ../stubs
-INCLUDEPATH += /orbit/include # This must be included after the HB stubs
 INCLUDEPATH += /epoc32/include
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 INCLUDEPATH += /epoc32/include/ecom
@@ -35,7 +34,6 @@ INCLUDEPATH += ../../inc
 INCLUDEPATH += ../../logssymbianos/inc
 INCLUDEPATH += ../../../inc
 INCLUDEPATH += ../../../tsrc/qtestutils/inc
-#INCLUDEPATH += ../../logssymbianos/tsrc/stubs
 
 DEFINES += QT_NO_DEBUG_OUTPUT
 
@@ -53,6 +51,7 @@ HEADERS += inc/ut_logseventdata.h
 HEADERS += inc/ut_logsthumbnailmanager.h
 HEADERS += inc/ut_logscommondata.h
 HEADERS += inc/ut_logsconfigurationparams.h
+HEADERS += inc/ut_logsduplicatelookup.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsabstractmodel.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsmodel.h
 HEADERS += ../../inc/logsdetailsmodel.h
@@ -67,11 +66,12 @@ HEADERS += ../../inc/logseventdata.h
 HEADERS += ../../inc/logsthumbnailmanager.h
 HEADERS += ../../inc/logscommondata.h
 HEADERS += ../../inc/logsconfigurationparams.h
+HEADERS += ../../inc/logsduplicatelookup.h
 HEADERS += ../../logssymbianos/inc/logseventparser.h
 HEADERS += ../../logssymbianos/inc/logseventdataparser.h
 HEADERS += ../../logssymbianos/inc/logsdbconnector.h
 HEADERS += ../../logssymbianos/inc/logsremove.h
-HEADERS += ../../logssymbianos/inc/logssystemtimeobserver.h
+
 HEADERS += ../stubs/logscntfinder.h
 
 SOURCES += src/main.cpp
@@ -88,6 +88,7 @@ SOURCES += src/ut_logseventdata.cpp
 SOURCES += src/ut_logsthumbnailmanager.cpp
 SOURCES += src/ut_logscommondata.cpp
 SOURCES += src/ut_logsconfigurationparams.cpp
+SOURCES += src/ut_logsduplicatelookup.cpp
 SOURCES += ../../src/logsabstractmodel.cpp
 SOURCES += ../../src/logsmodel.cpp
 SOURCES += ../../src/logsdetailsmodel.cpp
@@ -102,11 +103,11 @@ SOURCES += ../../src/logseventdata.cpp
 SOURCES += ../../src/logsthumbnailmanager.cpp
 SOURCES += ../../src/logscommondata.cpp
 SOURCES += ../../src/logsconfigurationparams.cpp
+SOURCES += ../../src/logsduplicatelookup.cpp
 SOURCES += ../hbstubs/hbstubs.cpp
 SOURCES += ../symbianos_stub/logsdbconnector_stub.cpp
 SOURCES += ../symbianos_stub/logseventparser_stub.cpp
 SOURCES += ../symbianos_stub/logseventdataparser_stub.cpp
-SOURCES += ../symbianos_stub/logssystemtimeobserver_stub.cpp
 SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
 SOURCES += ../stubs/qthighway_stub.cpp
 SOURCES += ../stubs/logscntfinder_stub.cpp
@@ -118,5 +119,5 @@ symbian: {
     TARGET.UID3 = 0xEfa329b2
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
-    LIBS += -lxqservice -lqtcontacts -lthumbnailmanagerqt
+    LIBS +=  -lqtcontacts -lthumbnailmanagerqt -lxqservice -lxqserviceutil
 }

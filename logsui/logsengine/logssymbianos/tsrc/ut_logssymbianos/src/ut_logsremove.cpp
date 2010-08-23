@@ -18,9 +18,24 @@
 #include "logsremove.h"
 #include "logsremoveobserver.h"
 #include "logclient_stubs_helper.h"
+#include "logsevent.h"
 #include <logcli.h>
 
 #include <QtTest/QtTest>
+
+#define ADD_EVENT_WITH_ID( arr, id ) \
+{\
+LogsEvent* ev = new LogsEvent;\
+ev->setLogId(id);\
+arr.append(ev);\
+}
+
+#define ADD_EVENT_WITH_ID_2( arr, id ) \
+{\
+LogsEvent ev;\
+ev.setLogId(id);\
+arr.append(ev);\
+}
 
 void UT_LogsRemove::initTestCase()
 {
@@ -88,7 +103,7 @@ void UT_LogsRemove::testclearList()
 void UT_LogsRemove::testClearEvents()
 {
     // Clearing with recent view (no ids)
-    QList<int> events;
+    QList<LogsEvent*> events;
     bool async( false );
     QVERIFY( mLogsRemove->clearEvents(events, async) == 0 );
     QVERIFY( !async );
@@ -96,14 +111,15 @@ void UT_LogsRemove::testClearEvents()
     QVERIFY( !mLogsRemove->IsActive() );
     
     // Clearing with recent view (ids)
-    events.append(2);
-    events.append(100);
+    ADD_EVENT_WITH_ID(events, 2);
+    ADD_EVENT_WITH_ID(events, 100);
     QVERIFY( mLogsRemove->clearEvents(events, async) == 0 );
     QVERIFY( async );
     QVERIFY( mLogsRemove->mRemovedEvents.count() == 2 );
     QVERIFY( mLogsRemove->IsActive() );
     
     // Clearing with all events (no ids)
+    qDeleteAll(events);
     events.clear();
     LogsRemove removeWithAllEvents(*this, true);
     QVERIFY( removeWithAllEvents.clearEvents(events, async) == 0 );
@@ -112,21 +128,59 @@ void UT_LogsRemove::testClearEvents()
     QVERIFY( !removeWithAllEvents.IsActive() );
     
     // Clearing with all events (ids)
-    events.append(99);
-    events.append(100);
+    ADD_EVENT_WITH_ID(events, 99);
+    ADD_EVENT_WITH_ID(events, 100);
     QVERIFY( removeWithAllEvents.clearEvents(events, async) == 0 );
     QVERIFY( async );
     QVERIFY( removeWithAllEvents.mRemovedEvents.count() == 2 );
-    QVERIFY( removeWithAllEvents.mRemovedEvents.at(0) == 99 );  
-    QVERIFY( removeWithAllEvents.mRemovedEvents.at(1) == 100 );   
+    QVERIFY( removeWithAllEvents.mRemovedEvents.at(0).logId() == 99 );  
+    QVERIFY( removeWithAllEvents.mRemovedEvents.at(1).logId() == 100 );   
     QVERIFY( removeWithAllEvents.IsActive() );
     
     // Clearing not allowed while previous is active
-    events.append(200);
+    ADD_EVENT_WITH_ID(events, 200);
     QVERIFY( removeWithAllEvents.clearEvents(events, async) != 0 );
     QVERIFY( mLogsRemove->mRemovedEvents.count() == 2 );
     QVERIFY( !async );
     QVERIFY( removeWithAllEvents.IsActive() );
+    qDeleteAll(events);
+}
+
+void UT_LogsRemove::testClearEventsWithMergedDuplicates()
+{
+    QList<LogsEvent*> events;
+    bool async( false );
+
+    ADD_EVENT_WITH_ID(events, 2);
+    ADD_EVENT_WITH_ID(events, 3);
+    ADD_EVENT_WITH_ID_2(events.at(0)->mergedDuplicates(), 5);
+    ADD_EVENT_WITH_ID_2(events.at(0)->mergedDuplicates(), 6);
+    ADD_EVENT_WITH_ID_2(events.at(1)->mergedDuplicates(), 7);
+    
+    QVERIFY( mLogsRemove->clearEvents(events, async) == 0 );
+    QVERIFY( async );
+    QCOMPARE( mLogsRemove->mRemovedEvents.count(), 2 );
+    QVERIFY( mLogsRemove->mRemovedEventDuplicates.count() == 3 );
+    QVERIFY( mLogsRemove->IsActive() );
+    QCOMPARE( mLogsRemove->mCurrentEventId, 2 );
+    
+    // Simulate completion, removing should continue with first item from duplicates list
+    mLogsRemove->removeCompleted();
+    QVERIFY( !mRemoveCompleted );
+    QCOMPARE( mLogsRemove->mCurrentEventId, 5 );
+    QVERIFY( mLogsRemove->mRemovedEventDuplicates.count() == 2 );
+    mLogsRemove->removeCompleted();
+    QVERIFY( !mRemoveCompleted );
+    QCOMPARE( mLogsRemove->mCurrentEventId, 6 );
+    QVERIFY( mLogsRemove->mRemovedEventDuplicates.count() == 1 );
+    mLogsRemove->removeCompleted();
+    QVERIFY( !mRemoveCompleted );
+    QCOMPARE( mLogsRemove->mCurrentEventId, 7 );
+    QVERIFY( mLogsRemove->mRemovedEventDuplicates.count() == 0 );
+    mLogsRemove->removeCompleted();
+    QVERIFY( mRemoveCompleted );
+    
+    qDeleteAll(events);
 }
 
 void UT_LogsRemove::testRunError()

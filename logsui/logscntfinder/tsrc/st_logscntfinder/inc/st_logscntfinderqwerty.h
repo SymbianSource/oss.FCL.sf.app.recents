@@ -55,7 +55,8 @@ private slots: //test methods
     void testPredictiveEmailSearchNoEmails();
     void testPredictiveEmailSearchOverLongPattern();
     void testPredictiveEmailSearchSpecialCharsInPattern();
-
+    void testPredictiveEmailSearchNumberAsFirstInPattern();
+    
 private:
 
     void createContacts();

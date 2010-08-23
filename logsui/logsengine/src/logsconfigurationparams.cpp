@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------------
 //
 LogsConfigurationParams::LogsConfigurationParams( QObject* parent ) : 
-    QObject(parent), mListItemTextWidth(0)
+    QObject(parent), mListItemTextWidth(0), mLocaleChanged(false)
 {
     
     LOGS_QDEBUG( "logs [ENG] <-> LogsConfigurationParams::LogsConfigurationParams()" )
@@ -40,6 +40,7 @@ LogsConfigurationParams& LogsConfigurationParams::operator=(
     
     LOGS_QDEBUG( "logs [ENG] <-> LogsConfigurationParams::operator=()" )
     mListItemTextWidth = params.mListItemTextWidth;
+    mLocaleChanged = params.mLocaleChanged;
     return *this;
 }
 
@@ -68,6 +69,24 @@ void LogsConfigurationParams::setListItemTextWidth(int width)
 int LogsConfigurationParams::listItemTextWidth() const
 {
     return mListItemTextWidth;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsConfigurationParams::setLocaleChanged(bool changed)
+{
+    mLocaleChanged = changed;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool LogsConfigurationParams::localeChanged() const
+{
+    return mLocaleChanged;
 }
 
 // End of file

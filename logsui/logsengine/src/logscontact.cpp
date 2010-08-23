@@ -26,8 +26,9 @@
 
 //SYSTEM
 #include <QVariant>
-#include <xqservicerequest.h>
 #include <qcontactmanager.h>
+#include <xqappmgr.h>
+#include <cntservicescontact.h>
 
 // -----------------------------------------------------------------------------
 //
@@ -36,7 +37,7 @@
 LogsContact::LogsContact(LogsEvent& event, LogsDbConnector& dbConnector)
   :  QObject(), 
      mDbConnector(dbConnector),
-     mService(0),
+     mAiwRequest(0),
      mCurrentRequest(TypeLogsContactSave),
      mContactId(0),
      mSaveAsOnlineAccount(false)
@@ -60,7 +61,7 @@ LogsContact::LogsContact(const QString& number,
                          unsigned int contactId)
   :  QObject(), 
      mDbConnector(dbConnector),
-     mService(0),
+     mAiwRequest(0),
      mCurrentRequest(TypeLogsContactSave),
      mNumber(number),
      mContactId(contactId),
@@ -76,7 +77,7 @@ LogsContact::LogsContact(const QString& number,
 LogsContact::~LogsContact()
 {
     LOGS_QDEBUG( "logs [ENG] <-> LogsContact::~LogsContact()" )
-    delete mService;
+    delete mAiwRequest;
 }
     
 // ----------------------------------------------------------------------------
@@ -116,9 +117,11 @@ bool LogsContact::open()
     if ( allowedRequestType() == TypeLogsContactOpen ) {
         mCurrentRequest = TypeLogsContactOpen;
 
+        QString interface("com.nokia.symbian.IContactsView");
+        QString operation("openContactCard(int)");
         QList<QVariant> arguments;
         arguments.append( QVariant(mContactId) );
-        ret = requestFetchService( "open(int)", arguments );
+        ret = requestPhonebookService( interface, operation, arguments );
     }
     
     LOGS_QDEBUG_2( "logs [ENG] <- LogsContact::open(): ", ret )
@@ -160,8 +163,8 @@ bool LogsContact::updateExisting()
 void LogsContact::cancelServiceRequest()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsContact::cancelServiceRequest()" )
-    delete mService;
-    mService = 0;
+    delete mAiwRequest;
+    mAiwRequest = 0;
     LOGS_QDEBUG( "logs [ENG] <- LogsContact::cancelServiceRequest()" )
 }
 
@@ -169,7 +172,7 @@ void LogsContact::cancelServiceRequest()
 //
 // ----------------------------------------------------------------------------
 //
-bool LogsContact::save(QString message)
+bool LogsContact::save(const QString& operation)
 {
     QList<QVariant> arguments;
  
@@ -188,7 +191,8 @@ bool LogsContact::save(QString message)
     
     if ( arguments.count() == 2 ) {
         mCurrentRequest = TypeLogsContactSave;
-        ret = requestFetchService( message, arguments );
+        QString interface("com.nokia.symbian.IContactsEdit");
+        ret = requestPhonebookService( interface, operation, arguments );        
     } else {
         LOGS_QDEBUG( "logs [ENG]  !No Caller ID, not saving the contact..")
     }
@@ -200,42 +204,58 @@ bool LogsContact::save(QString message)
 //
 // ----------------------------------------------------------------------------
 //
-bool LogsContact::requestFetchService( QString message, 
-        const QList<QVariant> &arguments, bool sync )
+bool LogsContact::requestPhonebookService(const QString& interface, 
+                             const QString& operation,
+                             const QList<QVariant>& arguments)
 {
-    QString service("com.nokia.services.phonebookservices.Fetch");
+    bool ret = false;
     cancelServiceRequest();
-    mService = new XQServiceRequest(service, message, sync);
-    connect(mService, SIGNAL(requestCompleted(QVariant)), this, 
-            SLOT(handleRequestCompleted(QVariant)));
+    XQApplicationManager appMng;
+    mAiwRequest = appMng.create( interface, operation, true); // embedded 
+    if (mAiwRequest) {
+        connect(mAiwRequest, SIGNAL(requestOk(const QVariant&)), 
+                this, SLOT(handleRequestCompleted(const QVariant&)));
+        connect(mAiwRequest, SIGNAL(requestError(int,const QString&)), 
+                this, SLOT(handleError(int,const QString&)));
 
-    mService->setArguments(arguments);
-    XQRequestInfo info;
-    info.setEmbedded(true);
-    mService->setInfo(info);
-    
-    QVariant retValue;
-    return mService->send(retValue);
+        mAiwRequest->setArguments(arguments);
+        mAiwRequest->setSynchronous(false);
+        ret = mAiwRequest->send();
+    }
+    return ret;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+void LogsContact::handleError(int errorCode, const QString& errorMessage)
+{
+    LOGS_QDEBUG_4( "logs [ENG] <-> LogsContact::handleError(): ", errorCode,
+            " ,msg: ", errorMessage)
+    cancelServiceRequest();
 }
 
 // ----------------------------------------------------------------------------
 // Phonebookservices define following return values:
-// - contact wasn't modified (-2)
-// - was deleted (-1)
-// - was saved (1)
-// - saving failed (0)
+// KCntServicesReturnValueContactNotModified = 0;
+// KCntServicesReturnValueContactDeleted     = -1;
+// KCntServicesReturnValueContactSaved       = 1;
+// KCntServicesTerminated = -2;
 // ----------------------------------------------------------------------------
 //
 void LogsContact::handleRequestCompleted(const QVariant& result)
 {
-    delete mService;
-    mService = 0;
+    delete mAiwRequest;
+    mAiwRequest = 0;
     bool retValOk = false;
     int serviceRetVal = result.toInt(&retValOk);
     LOGS_QDEBUG_3( "logs [ENG] -> LogsContact::handleRequestCompleted(), (retval, is_ok)", 
                    serviceRetVal, retValOk )
     
-    bool modified = ( retValOk && serviceRetVal == 1 );
+    bool modified = ( retValOk 
+                      && (serviceRetVal == KCntServicesReturnValueContactSaved 
+                      || serviceRetVal == KCntServicesReturnValueContactDeleted) );
     
     //If existing contact was modified, cached match for the contact should be 
     //cleaned up, since remote party info might have been changed.

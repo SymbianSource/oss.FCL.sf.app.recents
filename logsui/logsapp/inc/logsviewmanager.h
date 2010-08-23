@@ -21,7 +21,7 @@
 #include <QObject>
 #include <QList>
 #include <QVariant>
-#include <logsservices.h>
+#include <xqaiwdecl.h>
 #include "logsabstractviewmanager.h"
 
 class HbMainWindow;
@@ -56,9 +56,9 @@ public:
 public slots:
 
     void changeRecentViewViaService(
-        LogsServices::LogsView view, bool showDialpad, QString dialpadText);
+            XQService::LogsViewIndex view, bool showDialpad, QString dialpadText);
     void changeMatchesViewViaService(QString dialpadText);
-    void changeRecentView(LogsServices::LogsView view, bool showDialpad);
+    void changeRecentView(XQService::LogsViewIndex view, bool showDialpad);
     
 public: // From LogsAbstractViewManager
     
@@ -76,6 +76,7 @@ private slots:
     void completeViewActivation();
     void saveActivity();
     void closeEmbeddedApplication();
+    void appGainedForeground();
     
 private:
     

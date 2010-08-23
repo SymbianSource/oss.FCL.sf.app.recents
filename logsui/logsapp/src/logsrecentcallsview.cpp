@@ -43,8 +43,10 @@
 #include <hbmainwindow.h>
 #include <hbswipegesture.h>
 #include <hbmessagebox.h>
-#include <QTimer>
 #include <hbactivitymanager.h>
+#include <hbstyleloader.h>
+#include <QTimer>
+#include <QApplication>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
 
@@ -60,8 +62,8 @@ LogsRecentCallsView::LogsRecentCallsView(
       mViewName(0),
       mListView(0),
       mFilter(0),
-      mCurrentView(LogsServices::ViewAll),
-      mAppearingView(LogsServices::ViewAll),
+      mCurrentView(XQService::LogsViewAll),
+      mAppearingView(XQService::LogsViewAll),
       mMoveLeftInList(false),
       mEffectHandler(0),
       mListViewX(0),
@@ -69,8 +71,8 @@ LogsRecentCallsView::LogsRecentCallsView(
       mMatchesModel(0),
       mMarkingMissedAsSeen(false),
       mPageIndicator(0),
-      mFirstActivation(true),
-      mListScrollBarPolicy(HbScrollArea::ScrollBarAutoHide)
+      mListScrollBarPolicy(HbScrollArea::ScrollBarAutoHide),
+      mEffectInDissappearedPhase(false)
 {
     LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::LogsRecentCallsView()" );
     mModel = mRepository.model();
@@ -104,7 +106,6 @@ LogsRecentCallsView::~LogsRecentCallsView()
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::~LogsRecentCallsView()" );
 }
 
-
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::activated
 // -----------------------------------------------------------------------------
@@ -112,14 +113,16 @@ LogsRecentCallsView::~LogsRecentCallsView()
 void LogsRecentCallsView::activated(bool showDialer, QVariant args)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::activated()" );
+    HbStyleLoader::registerFilePath(":/hbgroupboxheadingwidget.css");
+    
     // base class handling first
     LogsBaseView::activated(showDialer, args);
     
     int internalViewId = args.toInt();
-    if ( internalViewId < 0 || internalViewId > LogsServices::ViewMissed ){
-        internalViewId = LogsServices::ViewAll;
+    if ( internalViewId < 0 || internalViewId > XQService::LogsViewMissed ){
+        internalViewId = XQService::LogsViewAll;
     }
-    LogsServices::LogsView view = static_cast<LogsServices::LogsView>( internalViewId );
+    XQService::LogsViewIndex view = static_cast<XQService::LogsViewIndex>( internalViewId );
 
     // View update is needed when we activate view for the first time (!mFilter)
     // or if view has to be changed
@@ -130,12 +133,14 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mCurrentView));
 
-    mFirstActivation = false;
-    
     if (mEmptyListLabel) {
         mEmptyListLabelX = mEmptyListLabel->pos().x();
     }
-  
+
+    qApp->installEventFilter(this);
+    
+    LogsBaseView::activationCompleted();
+ 
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::activated()" );  
 }
 
@@ -145,10 +150,13 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
 //
 void LogsRecentCallsView::deactivated()
 {
+    HbStyleLoader::unregisterFilePath(":/hbgroupboxheadingwidget.css");
+
     //base class handling first
     LogsBaseView::deactivated();
     
     deactivateEmptyListIndicator(mFilter);
+    qApp->removeEventFilter(this);
 }
 
 // -----------------------------------------------------------------------------
@@ -221,6 +229,7 @@ void LogsRecentCallsView::initView()
             this, SLOT(dissappearByFadingComplete()));
     connect(mEffectHandler, SIGNAL(appearByMovingComplete()), 
             this, SLOT(appearByMovingComplete()));
+    connect(mEffectHandler, SIGNAL(appearStarting()), this, SLOT(appearStarting()));
     mPageIndicator = qobject_cast<LogsPageIndicator*>
                         (mRepository.findWidget(logsPageIndicatorId));
     
@@ -367,7 +376,7 @@ void LogsRecentCallsView::toggleContactSearch()
 // LogsRecentCallsView::updateView
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::updateView(LogsServices::LogsView view)
+void LogsRecentCallsView::updateView(XQService::LogsViewIndex view)
 {
     LOGS_QDEBUG_2( "logs [UI] -> LogsRecentCallsView::updateView(), view:", view );
     mCurrentView = view;
@@ -385,8 +394,8 @@ void LogsRecentCallsView::updateView(LogsServices::LogsView view)
 void LogsRecentCallsView::changeFilter(HbAction* action)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::changeFilter()" );
-    LogsServices::LogsView view = mActionMap.key( action->objectName(),
-            LogsServices::ViewAll );
+    XQService::LogsViewIndex view = mActionMap.key( action->objectName(),
+            XQService::LogsViewAll );
     updateContextMenuItems(view);
     changeView(view);
 
@@ -415,10 +424,10 @@ void LogsRecentCallsView::addStringsToMap()
     mTitleMap.insert(LogsBaseView::ViewReceived, hbTrId("txt_dial_subhead_received_calls"));
     mTitleMap.insert(LogsBaseView::ViewMissed, hbTrId("txt_dialer_subhead_missed_calls"));
     
-    mConversionMap.insert(LogsServices::ViewAll, LogsBaseView::ViewAll);
-    mConversionMap.insert(LogsServices::ViewCalled, LogsBaseView::ViewCalled);
-    mConversionMap.insert(LogsServices::ViewReceived, LogsBaseView::ViewReceived);
-    mConversionMap.insert(LogsServices::ViewMissed, LogsBaseView::ViewMissed);        
+    mConversionMap.insert(XQService::LogsViewAll, LogsBaseView::ViewAll);
+    mConversionMap.insert(XQService::LogsViewCalled, LogsBaseView::ViewCalled);
+    mConversionMap.insert(XQService::LogsViewReceived, LogsBaseView::ViewReceived);
+    mConversionMap.insert(XQService::LogsViewMissed, LogsBaseView::ViewMissed);        
 }
 
 // -----------------------------------------------------------------------------
@@ -435,13 +444,14 @@ void LogsRecentCallsView::initListWidget()
     
      // Optimize memory usage, list reserves only memory for visible items
     mListView->setItemRecycling(true);
-    
     connect(mListView, SIGNAL(activated(const QModelIndex)),
-            this, SLOT(initiateCallback(const QModelIndex)));
+            this, SLOT(initiateCallback(const QModelIndex)), 
+            Qt::UniqueConnection);
     connect(mListView,
             SIGNAL(longPressed(HbAbstractViewItem*, const QPointF&)),
             this,
-            SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)));
+            SLOT(showListItemMenu(HbAbstractViewItem*, const QPointF&)), 
+            Qt::UniqueConnection);
     
     mListView->setFrictionEnabled(true);
     
@@ -499,7 +509,7 @@ void LogsRecentCallsView::updateViewName()
 // LogsRecentCallsView::updateContextMenuItems
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::updateContextMenuItems(LogsServices::LogsView view)
+void LogsRecentCallsView::updateContextMenuItems(XQService::LogsViewIndex view)
 {
     LOGS_QDEBUG_2( 
         "logs [UI] -> LogsRecentCallsView::updateContextMenuItems(), view:", view );
@@ -516,26 +526,55 @@ void LogsRecentCallsView::updateContextMenuItems(LogsServices::LogsView view)
 // LogsRecentCallsView::getFilter
 // -----------------------------------------------------------------------------
 //
-LogsFilter::FilterType LogsRecentCallsView::getFilter(LogsServices::LogsView view)
+LogsFilter::FilterType LogsRecentCallsView::getFilter(XQService::LogsViewIndex view)
 {
     LogsFilter::FilterType filter = LogsFilter::All;
     switch (view){
-        case LogsServices::ViewAll:
+        case XQService::LogsViewAll:
             filter = LogsFilter::All;
             break;
-        case LogsServices::ViewReceived:
+        case XQService::LogsViewReceived:
             filter = LogsFilter::Received;
             break;
-        case LogsServices::ViewCalled:
+        case XQService::LogsViewCalled:
             filter = LogsFilter::Called;
             break;
-        case LogsServices::ViewMissed:
+        case XQService::LogsViewMissed:
             filter = LogsFilter::Missed;
             break;
         default:
             break;
     }
     return filter;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::eventFilter
+// -----------------------------------------------------------------------------
+//
+bool LogsRecentCallsView::eventFilter(QObject *obj, QEvent *event)
+{
+    //This is a hack to fix ou1cimx1#481152(horizontal swiping initiates call)
+    //Since w26 HbAbstractViewItemPrivate is setting threshold for Tap gesture
+    //to be the bounding rect (i.e. if swiping is happening inside one list item
+    //it will also be considered as a tap => item activated => call)
+    //We are trying to prevent usage of the list item rect threshold by
+    //setting "horizontallyRestricted" property.
+    //See HbAbstractViewItemPrivate::tapTriggered() and 
+    //HbTapGestureLogic::handleMouseMove() for more info
+    if (event->type() == QEvent::Gesture) {
+        QGestureEvent* gesture = static_cast<QGestureEvent*> (event);
+        QTapGesture* tap = qobject_cast<QTapGesture*>(gesture->gesture(Qt::TapGesture));
+        //only change property if swiping on our list, since for the menu it is
+        //fine to generate tap gesture event during swiping on one item
+        bool tapOnListView = (mListView && mListView->currentViewItem() == obj);
+        if (tap && tapOnListView && tap->state() == Qt::GestureStarted) {
+            tap->setProperty("horizontallyRestricted", true);
+            LOGS_QDEBUG( "logs [UI] TapGesture on list, setting horizontallyRestricted" );
+        }
+    }
+    return LogsBaseView::eventFilter(obj,event);
 }
 
 // -----------------------------------------------------------------------------
@@ -553,66 +592,86 @@ void LogsRecentCallsView::gestureEvent(QGestureEvent *event)
             LOGS_QDEBUG_2( "logs [UI] swipeAngle: ", swipe->swipeAngle() );
             
             QSwipeGesture::SwipeDirection direction = swipe->sceneHorizontalDirection(); 
-            if (direction == QSwipeGesture::Left) {
-                leftFlick();
-                event->accept(Qt::SwipeGesture);
-            } else if (direction == QSwipeGesture::Right) {
-                rightFlick();
+            if ( decideListMoveDirection(direction) )
                 event->accept(Qt::SwipeGesture);
             }
         }
-    }
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::leftFlick
+// LogsRecentCallsView::decideListMoveDirection
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::leftFlick()
+bool LogsRecentCallsView::decideListMoveDirection(
+    QSwipeGesture::SwipeDirection direction)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::leftFlick()" );
+    bool moved( false );
+    if ( direction == QSwipeGesture::Left || direction == QSwipeGesture::Right ) {
+        bool moveForward( direction == QSwipeGesture::Left );
+        if ( layoutDirection() == Qt::RightToLeft ){
+            moveForward = !moveForward;
+        }
+        if ( moveForward ){
+            moveForwardInLists();
+        } else {
+            moveBackwardInLists();
+        }
+        moved = true;
+    }
+    return moved;
+}
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::moveForwardInLists
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::moveForwardInLists()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::moveForwardInLists()" );
 	if ( mConversionMap.value(mCurrentView) + 1 < mTitleMap.count() ){
     	LogsBaseView::LogsViewMap viewmap = 
             static_cast<LogsBaseView::LogsViewMap>(mConversionMap.value(mCurrentView) +1);
     	changeView( mConversionMap.key(viewmap) );
     } else {
         if (model() && model()->rowCount() > 0) {
-            mEffectHandler->startMoveNotPossibleEffect(*mListView, false, mListViewX);
+            mEffectHandler->startMoveNotPossibleEffect(
+                *mListView, moveToLeft(false), mListViewX);
         } else {
-            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, 
-                    false, mEmptyListLabelX);
+            mEffectHandler->startMoveNotPossibleEffect(
+                *mEmptyListLabel, moveToLeft(false), mEmptyListLabelX);
         }
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::leftFlick()" );
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::moveForwardInLists()" );
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::rightFlick
+// LogsRecentCallsView::moveBackwardInLists
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::rightFlick()
+void LogsRecentCallsView::moveBackwardInLists()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::rightFlick()" );
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::moveBackwardInLists()" );
     if ( mConversionMap.value(mCurrentView) > 0 ){
     	LogsBaseView::LogsViewMap viewmap = 
             static_cast<LogsBaseView::LogsViewMap>(mConversionMap.value(mCurrentView) - 1);
     	changeView( mConversionMap.key(viewmap) );	
     } else {
         if (model() && model()->rowCount() > 0) {
-            mEffectHandler->startMoveNotPossibleEffect(*mListView, true, mListViewX);
+            mEffectHandler->startMoveNotPossibleEffect(
+                *mListView, moveToLeft(true), mListViewX);
         } else {
-            mEffectHandler->startMoveNotPossibleEffect(*mEmptyListLabel, 
-                    true, mEmptyListLabelX);
+            mEffectHandler->startMoveNotPossibleEffect(
+                *mEmptyListLabel, moveToLeft(true), mEmptyListLabelX);
         }
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::rightFlick()" );
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::moveBackwardInLists()" );
 }
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::changeView
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::changeView(LogsServices::LogsView view)
+void LogsRecentCallsView::changeView(XQService::LogsViewIndex view)
 {
     LOGS_QDEBUG_2( "logs [UI] -> LogsRecentCallsView::changeView(), view:", view );
     
@@ -624,7 +683,8 @@ void LogsRecentCallsView::changeView(LogsServices::LogsView view)
         return;
     }
     
-    mMoveLeftInList = mConversionMap.value(view) < mConversionMap.value(mCurrentView);
+    mMoveLeftInList = 
+        moveToLeft( mConversionMap.value(view) < mConversionMap.value(mCurrentView) );
     mAppearingView = view;
     // Disable scrollbar while moving the list for more nice looks
     mListView->setVerticalScrollBarPolicy(HbScrollArea::ScrollBarAlwaysOff);  
@@ -661,11 +721,27 @@ void LogsRecentCallsView::dissappearByMovingComplete()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::dissappearByMovingComplete()" )
     
+    mEffectInDissappearedPhase = true;
+    mListView->setVisible(false); 
     updateView( mAppearingView ); 
     
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::dissappearByMovingComplete()" )
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::appearStarting()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::appearStarting()" )
+        
+    mEffectInDissappearedPhase = false;
+    mListView->setVisible(true);
+    updateEmptyListLabelVisibility();
+    
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::appearStarting()" )
+}
 
 // -----------------------------------------------------------------------------
 //
@@ -675,9 +751,9 @@ void LogsRecentCallsView::appearByMovingComplete()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::appearByMovingComplete()" )
     
-    // Restore scrollbar which was hidden when animation started
+    // Restore scrollbar which was hidden when animation started   
     mListView->setVerticalScrollBarPolicy(mListScrollBarPolicy);
-    
+
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::appearByMovingComplete()" )
 }
 
@@ -737,6 +813,19 @@ void LogsRecentCallsView::updateWidgetsSizeAndLayout()
 }
 
 // -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::updateEmptyListLabelVisibility()
+{
+    if ( mEmptyListLabel && model() ){
+        LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::updateEmptyListLabelVisibility()" );   
+        bool visible(model()->rowCount() == 0 && !mEffectInDissappearedPhase );
+        mEmptyListLabel->setVisible(visible);
+    }  
+}
+
+// -----------------------------------------------------------------------------
 // LogsRecentCallsView::getListItemTextWidth
 // -----------------------------------------------------------------------------
 //
@@ -791,7 +880,7 @@ void LogsRecentCallsView::updateCallButton()
 //
 void LogsRecentCallsView::handleMissedCallsMarking()
 {
-    if ( mFilter && !mMarkingMissedAsSeen && !mFirstActivation && 
+    if ( mFilter && !mMarkingMissedAsSeen && !mActivating && 
           ( mFilter->filterType() == LogsFilter::Missed || 
             mFilter->filterType() == LogsFilter::All ) ){
         // Don't care if timer would be already running, slot's implementation
@@ -810,9 +899,22 @@ bool LogsRecentCallsView::markMissedCallsSeen()
 {
     if ( !mMarkingMissedAsSeen ){
         connect( mModel, SIGNAL(markingCompleted(int)), 
-                 this, SLOT(markingCompleted(int)) );
+                 this, SLOT(markingCompleted(int)),
+                 Qt::UniqueConnection);
         mMarkingMissedAsSeen = 
             mModel->markEventsSeen(LogsModel::TypeLogsClearMissed);
     }
     return mMarkingMissedAsSeen;
+}
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::moveToLeft
+// -----------------------------------------------------------------------------
+//
+bool LogsRecentCallsView::moveToLeft(bool toLeft) const
+{
+    if ( layoutDirection() == Qt::RightToLeft ){
+        return !toLeft;
+    }
+    return toLeft;
 }

@@ -62,10 +62,14 @@ SOURCES += src/logspageindicatoritem.cpp
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0x101F4CD5
-    TARGET.CAPABILITY = CAP_APPLICATION
+    TARGET.CAPABILITY = CAP_APPLICATION NetworkControl
     LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad
     
 }
 
 SERVICE.FILE = service_conf.xml
 SERVICE.OPTIONS = embeddable
+
+DOCML += resources/recentCallsView.docml
+DOCML += resources/matchesView.docml
+DOCML += resources/detailsView.docml

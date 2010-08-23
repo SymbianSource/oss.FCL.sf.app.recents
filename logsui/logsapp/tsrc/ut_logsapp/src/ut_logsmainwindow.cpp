@@ -68,7 +68,6 @@ void UT_LogsMainWindow::testSendAppToBackground()
     QtHighwayStubHelper::reset();
     mMainWindow->sendAppToBackground();
     QVERIFY( QtHighwayStubHelper::utilToBackground() );  
-    QVERIFY( !mMainWindow->isForeground() );
 }
 
 void UT_LogsMainWindow::testBringAppToForeground()
@@ -77,12 +76,58 @@ void UT_LogsMainWindow::testBringAppToForeground()
     HbStubHelper::reset();
     mMainWindow->bringAppToForeground();
     QVERIFY( HbStubHelper::isWidgetRaised() ); 
-    QVERIFY( mMainWindow->isForeground() );
     
     // Subsequent call raise tries to raise regardless of current state
     HbStubHelper::reset();
     mMainWindow->bringAppToForeground();
     QVERIFY( HbStubHelper::isWidgetRaised() ); 
-    QVERIFY( mMainWindow->isForeground() );
 }
  
+void UT_LogsMainWindow::testEventFilter()
+{    
+    QSignalSpy spy( mMainWindow, SIGNAL(localeChanged()) );
+    QSignalSpy foregroundSpy( mMainWindow, SIGNAL(appGainedForeground()) );
+
+    //Event we are not interested in
+    QEvent event(QEvent::Show);
+    QVERIFY( !mMainWindow->eventFilter(this, &event) );
+    QVERIFY( !mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QCOMPARE( foregroundSpy.count(), 0 );
+   
+    //Coming foreground, locale not changed
+    QEvent eventFg(QEvent::ApplicationActivate);
+    QVERIFY( !mMainWindow->eventFilter(this, &eventFg) );
+    QVERIFY( mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QCOMPARE( foregroundSpy.count(), 1 );
+    foregroundSpy.clear();
+    
+    //LocaleChange event on FG
+    QEvent eventLocale(QEvent::LocaleChange);
+    QVERIFY( !mMainWindow->eventFilter(this, &eventLocale) );
+    QVERIFY( mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QVERIFY( spy.count() == 1 );
+    QCOMPARE( foregroundSpy.count(), 0 );
+    spy.clear();
+    
+    //Going background
+    QEvent eventBg(QEvent::ApplicationDeactivate);
+    QVERIFY( !mMainWindow->eventFilter(this, &eventBg) );
+    QVERIFY( !mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QCOMPARE( foregroundSpy.count(), 0 );
+    
+    //LocaleChange event on BG
+    QVERIFY( !mMainWindow->eventFilter(this, &eventLocale) );
+    QVERIFY( !mMainWindow->isForeground() );
+    QVERIFY( mMainWindow->mLocaleChanged );
+    QVERIFY( spy.count() == 0 );
+
+    //Coming foreground after locale cange event
+    QVERIFY( !mMainWindow->eventFilter(this, &eventFg) );
+    QVERIFY( mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QVERIFY( spy.count() == 1 );
+}

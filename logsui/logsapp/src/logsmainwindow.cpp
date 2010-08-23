@@ -18,14 +18,17 @@
 #include "logsmainwindow.h"
 #include "logslogger.h"
 #include <QKeyEvent>
+#include <QApplication>
 #include <xqserviceutil.h>
 
 // -----------------------------------------------------------------------------
 // LogsMainWindow::LogsMainWindow
 // -----------------------------------------------------------------------------
 //
-LogsMainWindow::LogsMainWindow() : HbMainWindow(), mForeground(false)
+LogsMainWindow::LogsMainWindow() 
+    : HbMainWindow(), mForeground(false), mLocaleChanged(false)
 {
+    qApp->installEventFilter(this);
 }
 
 // -----------------------------------------------------------------------------
@@ -43,7 +46,6 @@ LogsMainWindow::~LogsMainWindow()
 void LogsMainWindow::sendAppToBackground()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMainWindow::sendAppToBackground" );
-    mForeground = false;
     XQServiceUtil::toBackground(true);
     LOGS_QDEBUG( "logs [UI] <- LogsMainWindow::sendAppToBackground" );
 }
@@ -55,7 +57,6 @@ void LogsMainWindow::sendAppToBackground()
 void LogsMainWindow::bringAppToForeground()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMainWindow::bringAppToForeground" );
-    mForeground = true;
     show();
     raise();
     LOGS_QDEBUG( "logs [UI] <- LogsMainWindow::bringAppToForeground" );
@@ -87,3 +88,31 @@ void LogsMainWindow::keyPressEvent( QKeyEvent *event )
     HbMainWindow::keyPressEvent(event);
 }
 
+// -----------------------------------------------------------------------------
+// LogsMainWindow::eventFilter
+// -----------------------------------------------------------------------------
+//
+bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::ApplicationActivate) {
+        LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationActivate" );
+        mForeground = true;
+        if (mLocaleChanged) {
+            LOGS_QDEBUG( "logs [UI] -> locale changed when we were on BG" );
+            emit localeChanged();
+            mLocaleChanged = false;
+        }
+        emit appGainedForeground();
+    } else if (event->type() == QEvent::ApplicationDeactivate) {
+        LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationDeactivate" );
+        mForeground = false;
+    } else if (event->type() == QEvent::LocaleChange) {
+        if (mForeground) {
+            emit localeChanged();
+        } else {
+            mLocaleChanged = true;
+        }
+    }
+    
+    return HbMainWindow::eventFilter(obj,event);
+}

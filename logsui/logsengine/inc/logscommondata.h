@@ -60,12 +60,17 @@ class LogsCommonData
         
         int updateConfiguration(const LogsConfigurationParams& params);
         LogsConfigurationParams& currentConfiguration();
+        
+        void setTelNumMatchLen(int matchLen);
+        int telNumMatchLen() const;
+        
     private:
         
         QContactManager* mContactManager;
         int mMaxReadSize;
         LogsEvent::LogsDirection mMaxReadSizeDir;
         LogsConfigurationParams mConfiguration;
+        int mMatchLen;
     
     private:
         friend class UT_LogsCommonData;

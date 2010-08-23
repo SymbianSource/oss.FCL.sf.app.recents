@@ -57,7 +57,7 @@ EXPORT_C CRepository* CRepository::NewL( TUid aRepositoryUid )
 //
 // -----------------------------------------------------------------------------
 // 
-CRepository* CRepository::NewLC( TUid aRepositoryUid )
+CRepository* CRepository::NewLC( TUid /*aRepositoryUid*/ )
     {
     CRepository* self = new (ELeave) CRepository();
     CleanupStack::PushL( self );

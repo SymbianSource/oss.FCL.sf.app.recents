@@ -83,6 +83,7 @@ private slots: //test methods
     void testIsExitAllowed();
     void testAddToContacts();
     void testSendMessageToCurrentNum();
+    void testSaveNumberInDialpadToContacts();
     void testDeleteEvent();
     void testDeleteEventAnswer();
     void testMatchWithActivityId();

@@ -42,7 +42,8 @@ LogsReader::LogsReader(
    mStrings(strings), 
    mEvents(events), 
    mObserver(observer),
-   mGlobalObserverSet(false)
+   mGlobalObserverSet(false),
+   mPendingRead(false)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReader::LogsReader()" )
         
@@ -112,16 +113,20 @@ void LogsReader::stop()
 void LogsReader::updateDetails(bool clearCached)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReader::updateDetails()" )
-    foreach (LogsEvent* event, mEvents){
-        event->prepareForContactMatching();
-    }
-    if ( clearCached ) {
+
+    if ( clearCached ){
         mContactCache.clear();
     }
-    LogsReaderStateFillDetails* fillDetailsState = 
-                new LogsReaderStateFillDetails(*this, *this);
-    fillDetailsState->fillDetails();
-    delete fillDetailsState;
+    foreach (LogsEvent* event, mEvents){
+        event->prepareForContactMatching();
+        if ( clearCached && event->contactMatched() ){
+            event->setContactMatched( false );
+            event->setRemoteParty("");
+        }
+    }
+    
+    start();
+   
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::updateDetails()" )
 }
 
@@ -150,6 +155,23 @@ int LogsReader::readDuplicates(int eventId)
 }
 
 // ----------------------------------------------------------------------------
+// LogsReader::lock
+// ----------------------------------------------------------------------------
+//
+int LogsReader::lock(bool locked)
+{
+    bool prevLocked = mLocked;
+    mLocked = locked;
+    LOGS_QDEBUG_3( "logs [ENG] -> LogsReader::lock(), prev and new locked:", 
+                   prevLocked, mLocked )
+    if ( prevLocked && !mLocked && mPendingRead ){
+        // Read attempt occured while locked, read now when not anymore locked
+        start();
+    }
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
 // LogsReader::RunError
 // ----------------------------------------------------------------------------
 //
@@ -169,6 +191,11 @@ TInt LogsReader::RunError(TInt error)
 //
 void LogsReader::startL()
 {
+    if ( mLocked ){
+        LOGS_QDEBUG( "logs [ENG] <-> LogsReader::startL(), locked" )
+        mPendingRead = true;
+        User::Leave( KErrAccessDenied );
+    }
     prepareReadingL();
     
     initializeReadStates();
@@ -176,6 +203,8 @@ void LogsReader::startL()
     if ( currentState().enterL() ){
         SetActive();
     }
+    
+    mPendingRead = false;
 } 
 
 // ----------------------------------------------------------------------------
@@ -422,16 +451,20 @@ void LogsReader::initializeDuplicateReadingStates()
                     new LogsReaderStateFindingDuplicates(*this, *this);
         LogsReaderStateReadingDuplicates* readingDuplicates = 
                     new LogsReaderStateReadingDuplicates(*this, *this);
+        LogsReaderStateMergingDuplicates* mergingDuplicates = 
+                            new LogsReaderStateMergingDuplicates(*this, *this);
         LogsReaderStateReadingDuplicatesDone* done = 
                     new LogsReaderStateReadingDuplicatesDone(*this, *this);
         filtering->setNextState(*searching);
         searching->setNextState(*findingDuplicates);
         findingDuplicates->setNextState(*readingDuplicates);
-        readingDuplicates->setNextState(*done);
+        readingDuplicates->setNextState(*mergingDuplicates);
+        mergingDuplicates->setNextState(*done);
         mDuplicateReadingStates.append(filtering);
         mDuplicateReadingStates.append(searching); 
         mDuplicateReadingStates.append(findingDuplicates); 
         mDuplicateReadingStates.append(readingDuplicates);
+        mDuplicateReadingStates.append(mergingDuplicates);
         mDuplicateReadingStates.append(done);        
     }
     mCurrentStateMachine = &mDuplicateReadingStates;

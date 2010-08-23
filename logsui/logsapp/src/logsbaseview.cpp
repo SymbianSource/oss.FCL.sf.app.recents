@@ -25,6 +25,7 @@
 #include "logsabstractmodel.h"
 #include "logsmodel.h"
 #include "logsdetailsmodel.h"
+#include "logsconfigurationparams.h"
 
 //SYSTEM
 #include <hbaction.h>
@@ -73,7 +74,8 @@ LogsBaseView::LogsBaseView(
       mContact(0),
       mDetailsModel(0),
       mCallTypeMapper(0),
-      mOptionsMenu(0)
+      mOptionsMenu(0),
+      mActivating(false)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::LogsBaseView()" );
 
@@ -195,7 +197,8 @@ void LogsBaseView::activated(bool showDialer, QVariant args)
     if (!mInitialized) {
         initView();
     }
-        
+    mActivating = true;
+    
     connect( mDialpad, SIGNAL( aboutToClose() ), this, 
             SLOT( dialpadClosed() ), Qt::QueuedConnection );
     connect( mDialpad, SIGNAL( aboutToOpen() ), this, 
@@ -209,6 +212,16 @@ void LogsBaseView::activated(bool showDialer, QVariant args)
     
     updateWidgetsSizeAndLayout();
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::activated()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::activationCompleted()
+{
+    LOGS_QDEBUG( "logs [UI] <-> LogsBaseView::activationCompleted()" );
+    mActivating = false;
 }
 
 // -----------------------------------------------------------------------------
@@ -279,10 +292,10 @@ void LogsBaseView::initFilterMenu()
 void LogsBaseView::addActionNamesToMap()
 {
     mActionMap.clear();
-    mActionMap.insert(LogsServices::ViewReceived, logsShowFilterReceivedMenuActionId);
-    mActionMap.insert(LogsServices::ViewCalled, logsShowFilterDialledMenuActionId);
-    mActionMap.insert(LogsServices::ViewMissed, logsShowFilterMissedMenuActionId);
-    mActionMap.insert(LogsServices::ViewAll, logsShowFilterRecentMenuActionId);  
+    mActionMap.insert(XQService::LogsViewReceived, logsShowFilterReceivedMenuActionId);
+    mActionMap.insert(XQService::LogsViewCalled, logsShowFilterDialledMenuActionId);
+    mActionMap.insert(XQService::LogsViewMissed, logsShowFilterMissedMenuActionId);
+    mActionMap.insert(XQService::LogsViewAll, logsShowFilterRecentMenuActionId);  
 }
 
 // -----------------------------------------------------------------------------
@@ -338,7 +351,7 @@ void LogsBaseView::handleExit()
 }
 
 // -----------------------------------------------------------------------------
-// LogsBaseView::callKeyPressed
+//
 // -----------------------------------------------------------------------------
 //
 void LogsBaseView::callKeyPressed()
@@ -359,6 +372,21 @@ void LogsBaseView::callKeyPressed()
 //
 // -----------------------------------------------------------------------------
 //
+void LogsBaseView::localeChanged()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::localeChanged()" );
+    if (logsModel()) {
+        LogsConfigurationParams params;
+        params.setLocaleChanged(true);
+        logsModel()->updateConfiguration(params);
+    }
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::localeChanged()" ); 
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsBaseView::showFilterMenu()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showFilterMenu()" );
@@ -367,14 +395,19 @@ void LogsBaseView::showFilterMenu()
         QSizeF menuSize = mShowFilterMenu->size();
         LOGS_QDEBUG_2("logs [UI]    menusize:", menuSize)
         
-        QPointF pos( toolbarGeometry.bottomRight().x(),
-                     toolbarGeometry.topRight().y() ); 
-                     
-        pos.setX(toolbarGeometry.bottomRight().x());
-        pos.setY(toolbarGeometry.topRight().y());
-
-        mShowFilterMenu->setPreferredPos(pos,HbPopup::BottomRightCorner);
-        LOGS_QDEBUG_2("logs [UI]    menupos:", pos)
+        if ( layoutDirection() == Qt::LeftToRight ){
+            QPointF pos( toolbarGeometry.bottomRight().x(),
+                         toolbarGeometry.topRight().y() ); 
+    
+            mShowFilterMenu->setPreferredPos(pos,HbPopup::BottomRightCorner);
+            LOGS_QDEBUG_2("logs [UI]    menu br pos:", pos)
+        } else {
+            QPointF pos( toolbarGeometry.topLeft().x(),
+                         toolbarGeometry.topLeft().y() ); 
+               
+            mShowFilterMenu->setPreferredPos(pos,HbPopup::BottomLeftCorner);
+            LOGS_QDEBUG_2("logs [UI]    menu bl pos:", pos)
+        }
         mShowFilterMenu->open();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::showFilterMenu()" );
@@ -481,8 +514,8 @@ void LogsBaseView::dialpadEditorTextChanged()
 void LogsBaseView::changeFilter(HbAction* action)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::changeFilter()" );
-    LogsServices::LogsView view = mActionMap.key( action->objectName(),
-            LogsServices::ViewAll );
+    XQService::LogsViewIndex view = mActionMap.key( action->objectName(),
+            XQService::LogsViewAll );
     QVariant args(view);
     mViewManager.activateView( LogsRecentViewId, false, args );
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::changeFilter()" );
@@ -518,7 +551,9 @@ void LogsBaseView::saveNumberInDialpadToContacts()
     if (mDialpad->editor().text().length() > 0){
         delete mContact;
         mContact = 0;
-        mContact = logsModel()->createContact(mDialpad->editor().text());
+        QString phoneNumber = 
+            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
+        mContact = logsModel()->createContact(phoneNumber);
         saveContact();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::saveNumberInDialpadToContacts()" );
@@ -677,7 +712,9 @@ bool LogsBaseView::tryMessageToDialpadNumber()
     bool messageSent = false;
     if ( isDialpadInput() ){
         // Message to inputted number
-        LogsMessage::sendMessageToNumber( mDialpad->editor().text() );
+        QString phoneNumber = 
+            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
+        LogsMessage::sendMessageToNumber( phoneNumber );
         messageSent = true;
     }
     LOGS_QDEBUG_2( "logs [UI] <- LogsBaseView::tryMessageToDialpadNumber(), sent", 
@@ -845,11 +882,14 @@ void LogsBaseView::activateEmptyListIndicator(QAbstractItemModel* model)
     if ( model ){
          // Listen for changes in model and update empty list label accordingly
          connect( model, SIGNAL(rowsInserted(const QModelIndex&,int,int)), 
-             this, SLOT(updateEmptyListWidgetsVisibility()));
+             this, SLOT(updateEmptyListWidgetsVisibility()), 
+             Qt::UniqueConnection);
          connect( model, SIGNAL(rowsRemoved(const QModelIndex&,int,int)), 
-             this, SLOT(updateEmptyListWidgetsVisibility()));
+             this, SLOT(updateEmptyListWidgetsVisibility()), 
+             Qt::UniqueConnection);
          connect( model, SIGNAL(modelReset()), 
-             this, SLOT(updateEmptyListWidgetsVisibility()));
+             this, SLOT(updateEmptyListWidgetsVisibility()), 
+             Qt::UniqueConnection);
          // Update to reflect current situation
          updateEmptyListWidgetsVisibility();
     }

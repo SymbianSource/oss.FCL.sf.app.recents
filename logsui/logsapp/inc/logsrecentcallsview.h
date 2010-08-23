@@ -20,6 +20,7 @@
 #include "logsfilter.h"
 #include "logsbaseview.h"
 #include <hbscrollarea.h>
+#include <QGesture>
 
 class HbListView;
 class HbLabel;
@@ -69,22 +70,24 @@ protected slots: // from LogsBaseView
     void changeFilter(HbAction* action);
     virtual void updateEmptyListWidgetsVisibility();
     virtual void updateWidgetsSizeAndLayout();
+    virtual void updateEmptyListLabelVisibility();
     
 private slots:
 
     void clearList();
     void clearListAnswer(int action);
     void toggleContactSearch();
-    void updateView(LogsServices::LogsView view);
-    void leftFlick();
-    void rightFlick();
+    void updateView(XQService::LogsViewIndex view);
+    void moveForwardInLists();
+    void moveBackwardInLists();
     void dissappearByFadingComplete();
     void dissappearByMovingComplete();
+    void appearStarting();
     void appearByMovingComplete();
     bool markMissedCallsSeen();
     
 private: // from LogsBaseView
-    
+        
     virtual void initView();
     virtual QAbstractItemModel* model() const;
     virtual LogsAbstractModel* logsModel() const;
@@ -97,16 +100,20 @@ private:
     void initListWidget();
     void updateFilter(LogsFilter::FilterType type);
     void updateViewName();
-    void updateContextMenuItems(LogsServices::LogsView view);
-    LogsFilter::FilterType getFilter(LogsServices::LogsView view);  
-    void changeView(LogsServices::LogsView view);
+    void updateContextMenuItems(XQService::LogsViewIndex view);
+    LogsFilter::FilterType getFilter(XQService::LogsViewIndex view);  
+    void changeView(XQService::LogsViewIndex view);
     void updateMenu();
     void handleMissedCallsMarking();
     
     //from HbWidget
-    void gestureEvent(QGestureEvent *event);
+    void gestureEvent(QGestureEvent *event);    
+    bool eventFilter(QObject *obj, QEvent *event);
     
     int getListItemTextWidth();
+    bool decideListMoveDirection(
+        QSwipeGesture::SwipeDirection direction);
+    bool moveToLeft(bool toLeft) const;
     
     
 private:
@@ -116,12 +123,12 @@ private:
     LogsFilter* mFilter;  //owned
     
     QMap<LogsBaseView::LogsViewMap, QString>   mTitleMap;
-    QMap<LogsServices::LogsView, LogsBaseView::LogsViewMap>   mConversionMap;	
+    QMap<XQService::LogsViewIndex, LogsBaseView::LogsViewMap>   mConversionMap;	
     
     LogsModel* mModel;
 
-    LogsServices::LogsView mCurrentView;
-    LogsServices::LogsView mAppearingView;
+    XQService::LogsViewIndex mCurrentView;
+    XQService::LogsViewIndex mAppearingView;
     bool mMoveLeftInList;
     LogsEffectHandler* mEffectHandler;
     int mListViewX;
@@ -129,10 +136,9 @@ private:
     LogsMatchesModel* mMatchesModel; 
     bool mMarkingMissedAsSeen;
     LogsPageIndicator* mPageIndicator;
-    bool mFirstActivation;
     
     HbScrollArea::ScrollBarPolicy mListScrollBarPolicy;
-    
+    bool mEffectInDissappearedPhase;
 };
 
 #endif // LOGSRECENTCALLSVIEW_H

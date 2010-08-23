@@ -66,11 +66,13 @@ private slots: //test methods
     void testStateReading();
     void testStateReading2();
     void testStateFillDetails();
+    void testStateFillDetails2();
     void testStateDone();
     void testStateSearchingEvent();
     void testStateFindingDuplicates();
     void testStateMarkingDuplicates();
     void testStateReadingDuplicates();
+    void testStateMergingDuplicates();
     void testStateReadingDuplicatesDone();
     void testStateModifyingDone();
 
@@ -95,7 +97,7 @@ protected: // From LogsReaderStateContext
       
 protected: // From LogsReaderObserver
     
-      void readCompleted(int readCount);
+      void readCompleted();
       void errorOccurred(int err);
       void temporaryErrorOccurred(int err);
       void eventModifyingCompleted();

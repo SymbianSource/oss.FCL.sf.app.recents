@@ -24,6 +24,7 @@
 #include "logsstatebasecontext.h"
 #include "logsremovestatecontext.h"
 #include "logsremoveobserver.h"
+#include "logsevent.h"
 
 class CLogClient;
 class LogsEvent;
@@ -77,7 +78,7 @@ protected: // From LogsStateBaseContext
 protected: // From LogsRemoveStateContext
     
     LogsRemoveObserver& observer();
-    QList<int>& removedEvents(); 
+    QList<LogsEvent>& removedEvents(); 
     int clearType();
 
 protected: // From LogsRemoveObserver
@@ -105,7 +106,7 @@ private:
     bool mRemoveCompleted;
     
     int mCurrentEventId;
-    QList<int> mRemovedEvents;
+    QList<LogsEvent> mRemovedEvents;
     int mClearType;
 };
 

@@ -50,6 +50,7 @@ private slots: //test methods
     void testKeyPressEvent();
     void testSendAppToBackground();
     void testBringAppToForeground();
+    void testEventFilter();
     
 private:
  

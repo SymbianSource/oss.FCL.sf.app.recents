@@ -59,6 +59,7 @@ private slots: //test methods
 	void testgetNumberToClipboard();
 	void testCreateContact();
 	void testContactActionCompleted();
+	void testUpdateConfiguration();
     
 private:
  

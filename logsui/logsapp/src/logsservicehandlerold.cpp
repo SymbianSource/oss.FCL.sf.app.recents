@@ -57,14 +57,14 @@ int LogsServiceHandlerOld::start(int activatedView, bool showDialpad)
 {
     LOGS_QDEBUG_2( "logs [UI] -> LogsServiceHandlerOld::start(), view:", activatedView )
     
-    if ( activatedView < LogsServices::ViewAll || 
-         activatedView > LogsServices::ViewMissed ){
+    if ( activatedView < XQService::LogsViewAll || 
+         activatedView > XQService::LogsViewMissed ){
         LOGS_QDEBUG( "logs [UI] <- LogsServiceHandlerOld::start(), incorrect view" )
         return -1;
     }
     mIsAppStartedUsingService = true;
     
-    emit activateView((LogsServices::LogsView)activatedView, showDialpad, QString());
+    emit activateView((XQService::LogsViewIndex)activatedView, showDialpad, QString());
 
     LOGS_QDEBUG( "logs [UI] <- LogsServiceHandlerOld::start()" )
     return 0;
@@ -80,8 +80,8 @@ int LogsServiceHandlerOld::startWithNum(int activatedView, bool showDialpad, QSt
     
     Q_UNUSED(showDialpad);
     
-    if ( activatedView < LogsServices::ViewAll || 
-         activatedView > LogsServices::ViewMissed ){
+    if ( activatedView < XQService::LogsViewAll || 
+         activatedView > XQService::LogsViewMissed ){
         LOGS_QDEBUG( "logs [UI] <- LogsServiceHandlerOld::startWithNum(), incorrect view" )
         return -1;
     }

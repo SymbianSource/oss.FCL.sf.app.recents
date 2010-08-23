@@ -104,8 +104,10 @@ int LogsPredictive12KeyTranslator::hasPatternSeparators(
 const QChar LogsPredictive12KeyTranslator::translateChar( 
         const QChar character ) const
 {
-    const HbMappedKey* mappedKey = 
-            mKeyMap->keyForCharacter( HbKeyboardVirtual12Key, character );
+    const HbMappedKey* mappedKey = 0;
+    if ( mKeyMap ) {
+        mappedKey = mKeyMap->keyForCharacter( HbKeyboardVirtual12Key, character );
+    }
     return mappedKey ? mappedKey->keycode : QChar();
 }
 

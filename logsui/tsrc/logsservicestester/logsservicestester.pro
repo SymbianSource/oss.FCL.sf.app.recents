@@ -35,6 +35,6 @@ symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0xEC209DCF
     TARGET.CAPABILITY = CAP_APPLICATION PowerMgmt
-    LIBS += -llogsservices  -lxqservice 
+    LIBS += -llogsservices  -lxqservice -lapgrfx -lws32
 }
 

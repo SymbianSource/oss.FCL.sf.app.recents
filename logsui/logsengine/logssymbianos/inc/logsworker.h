@@ -57,6 +57,8 @@ class LogsWorker : public CActive,
         *   Destructor.
         */
         virtual ~LogsWorker();
+        
+        virtual int lock(bool locked);
 
     protected: // From CActive
 
@@ -92,6 +94,7 @@ class LogsWorker : public CActive,
         int mCurrentStateIndex;
         QList<LogsStateBase*>* mCurrentStateMachine;
         int mCurrentEventId;
+        bool mLocked;
     };
 
 #endif      // LOGSWORKER_H

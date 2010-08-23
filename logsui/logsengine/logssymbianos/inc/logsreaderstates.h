@@ -23,6 +23,7 @@
 #include <e32std.h>
 #include <logclientchangeobserver.h>
 #include <logviewchangeobserver.h>
+#include "logsduplicatelookup.h"
 
 // FORWARD DECLARATION
 class LogsReaderStateContext;
@@ -198,9 +199,18 @@ class LogsReaderStateFillDetails : public LogsReaderStateBase {
          * Synchronously fills details from phonebook
          */
         void fillDetails(); 
-        
+
     public: // From LogsReaderStateBase
         virtual bool enterL();
+    private:
+        void mergeDuplicates( LogsEvent& usedEvent, LogsEvent& discardedEvent ) const;
+        
+    private:
+        LogsDuplicateLookup mDuplicateLookup;
+        
+    private: // For testing
+        
+        friend class UT_LogsReaderStates;
 };
 
 /**
@@ -254,7 +264,7 @@ class LogsReaderStateMarkingDuplicates : public LogsReaderStateBase
 };
 
 /**
- * Marking duplicate events state
+ * Reading duplicate events state
  */
 class LogsReaderStateReadingDuplicates : public LogsReaderStateBase 
 {
@@ -267,6 +277,21 @@ class LogsReaderStateReadingDuplicates : public LogsReaderStateBase
     public: // From LogsReaderStateBase
         virtual bool enterL();   
         virtual bool continueL();
+};
+
+/**
+ * Merging duplicate events state
+ */
+class LogsReaderStateMergingDuplicates : public LogsReaderStateBase 
+{
+    friend class UT_LogsReaderStates;
+    
+    public:
+    LogsReaderStateMergingDuplicates(LogsStateBaseContext& context, LogsReaderStateContext& readerContext);
+        virtual ~LogsReaderStateMergingDuplicates(){}
+
+    public: // From LogsReaderStateBase
+        virtual bool enterL();   
 };
 
 /**

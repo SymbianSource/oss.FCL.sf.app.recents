@@ -78,9 +78,9 @@ LogsDetailsModel::~LogsDetailsModel()
 void LogsDetailsModel::clearEvent()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDetailsModel::clearEvent()" )
-    QList<int> eventIds;
-    eventIds.append(mEvent->logId());
-    mDbConnector->clearEvents(eventIds);    
+    QList<LogsEvent*> events;
+    events.append(mEvent);
+    mDbConnector->clearEvents(events);    
     LOGS_QDEBUG( "logs [ENG] <- LogsDetailsModel::clearEvent()" )
 }
 
@@ -232,7 +232,7 @@ QString LogsDetailsModel::getCallerId(const LogsEvent& event) const
 {
     QString callerId("");
     if (event.remoteParty().length() > 0 && event.number().length() > 0){
-    	callerId = event.number();
+    	callerId = phoneNumString(event.number());
     }
     
     if (event.remoteParty().length() > 0 && getRemoteUri(event).length() > 0){
@@ -257,7 +257,7 @@ QString LogsDetailsModel::getHeaderData(const LogsEvent& event) const
     }
     
     if ( headerdata.length() == 0 && event.number().length() > 0 ){
-        headerdata = event.number();
+        headerdata = phoneNumString(event.number());
     }
     
     if ( headerdata.length() == 0 ){
@@ -291,7 +291,15 @@ void LogsDetailsModel::getNumberToClipboard()
 {
     HbLineEdit *cliptmp = new HbLineEdit("");
  
-    QString num = mEvent->getNumberForCalling(); 
+    // Localize digits only if it is used only used in CS context (don't 
+    // localize any VoIP uri, not even if it would be tel uri).
+    QString num = mEvent->number();
+    if ( num.isEmpty() ){
+        num = mEvent->getNumberForCalling();
+    } else {
+        num = phoneNumString(num);
+    }
+    
     cliptmp->setText(num);
     cliptmp->setSelection(0, num.length());
     cliptmp->copy();
@@ -369,9 +377,7 @@ void LogsDetailsModel::initTexts()
         remotePartyRow << getCallerId(*mEvent);
         mDetailTexts.append(remotePartyRow);
 	}
-	
-	// TODO: if more than one date and time rows, first row has text "Last call event"
-	// but there's no localization string for that yet
+
 	bool firstOfMultipleDates( mDuplicates.count() > 0 );
 	addDateAndTimeTextRow(*mEvent, firstOfMultipleDates);
     

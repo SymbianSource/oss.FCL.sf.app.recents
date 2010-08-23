@@ -22,8 +22,8 @@ QT += testlib xml
 CONFIG += hb
 RESOURCES += ../../logsapp.qrc
 
+INCLUDEPATH = stubs $$INCLUDEPATH
 INCLUDEPATH += .
-INCLUDEPATH += stubs       #must be before orbit includes
 INCLUDEPATH += ../../
 INCLUDEPATH += ../../inc
 INCLUDEPATH += ../../../inc
@@ -31,7 +31,6 @@ INCLUDEPATH += logsengine_stub
 INCLUDEPATH += ../../../logsengine/inc
 INCLUDEPATH += ../../../logsengine/logssymbianos
 INCLUDEPATH += ../../../logsengine/logssymbianos/inc
-INCLUDEPATH += /orbit/include
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 INCLUDEPATH += ../../../tsrc/qtestutils/inc
 

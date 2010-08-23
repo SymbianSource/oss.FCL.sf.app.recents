@@ -21,6 +21,7 @@
 #include <QSharedDataPointer>
 #include <QContactName.h>
 #include <QContactDetail.h>
+#include <QContactAction.h>
 
 #include <QSharedData>
 #include <QContactAvatar.h>
@@ -41,7 +42,7 @@ QString ContactStubHelper::preferredNumber()
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::instance()
+// ContactQueryResults::instance()
 // -----------------------------------------------------------------------------
 //
 ContactQueryResults* ContactQueryResults::instance()
@@ -53,7 +54,7 @@ ContactQueryResults* ContactQueryResults::instance()
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::deleteInstance()
+// ContactQueryResults::deleteInstance()
 // -----------------------------------------------------------------------------
 //
 void ContactQueryResults::deleteInstance()
@@ -63,7 +64,7 @@ void ContactQueryResults::deleteInstance()
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::~ContactQueryResults()
+// ContactQueryResults::~ContactQueryResults()
 // -----------------------------------------------------------------------------
 //
 ContactQueryResults::~ContactQueryResults()
@@ -72,7 +73,7 @@ ContactQueryResults::~ContactQueryResults()
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::set()
+// ContactQueryResults::set()
 // -----------------------------------------------------------------------------
 //
 void ContactQueryResults::set( int count, QString fn, QString ln )
@@ -85,7 +86,7 @@ void ContactQueryResults::set( int count, QString fn, QString ln )
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::reset()
+// ContactQueryResults::reset()
 // -----------------------------------------------------------------------------
 //
 void ContactQueryResults::reset()
@@ -96,7 +97,7 @@ void ContactQueryResults::reset()
 
 
 // -----------------------------------------------------------------------------
-// ContactsDB::firstNameAt()
+// ContactQueryResults::firstNameAt()
 // -----------------------------------------------------------------------------
 //
 const QString& ContactQueryResults::firstNameAt( int index ) const
@@ -105,7 +106,7 @@ const QString& ContactQueryResults::firstNameAt( int index ) const
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::lastNameAt()
+// ContactQueryResults::lastNameAt()
 // -----------------------------------------------------------------------------
 //
 const QString& ContactQueryResults::lastNameAt( int index ) const
@@ -114,7 +115,7 @@ const QString& ContactQueryResults::lastNameAt( int index ) const
 }
 
 // -----------------------------------------------------------------------------
-// ContactsDB::contacts()
+// ContactQueryResults::contacts()
 // -----------------------------------------------------------------------------
 //
 int ContactQueryResults::contacts() const
@@ -153,9 +154,12 @@ public:
 // ----------------------------------------------------------------------------
 //
 QContactManager::QContactManager(
-        const QString& /*managerName*/, const QMap<QString, QString>& /*parameters*/, 
-        QObject* /*parent*/)
+        const QString& managerName, const QMap<QString, QString>& parameters, 
+        QObject* parent)
 {
+    Q_UNUSED(managerName)
+    Q_UNUSED(parameters)
+    Q_UNUSED(parent)
 
 }
 
@@ -166,9 +170,11 @@ QContactManager::~QContactManager()
 
 
 QList<QContactLocalId> QContactManager::contactIds(
-        const QContactFilter& /*filter*/, 
-        const QList<QContactSortOrder>& /*sortOrders*/) const
+        const QContactFilter& filter, 
+        const QList<QContactSortOrder>& sortOrders ) const
 {
+    Q_UNUSED(filter)
+    Q_UNUSED(sortOrders)
         
     QList<QContactLocalId> list;
     ContactQueryResults* resultSet = ContactQueryResults::instance();
@@ -184,8 +190,10 @@ QList<QContactLocalId> QContactManager::contactIds(
 
 QContact QContactManager::contact( 
         const QContactLocalId& contactId, 
-        const QContactFetchHint& /*fetchHint*/) const
+        const QContactFetchHint& fetchHint) const
 {
+    Q_UNUSED(fetchHint)
+            
     QContact contact;
     QContactId id;
     id.setLocalId(contactId  );
@@ -205,14 +213,17 @@ QContactDetailFilter::QContactDetailFilter()
 }
   
 void QContactDetailFilter::setDetailDefinitionName(
-        const QString& /*definition*/, const QString& /*fieldName*/)
+        const QString& definition, const QString& fieldName )
 {
+    Q_UNUSED(definition)
+    Q_UNUSED(fieldName)
 
 }
 
 
-void QContactDetailFilter::setMatchFlags(QContactFilter::MatchFlags /*flags*/)
+void QContactDetailFilter::setMatchFlags(QContactFilter::MatchFlags flags )
 {
+    Q_UNUSED(flags)
 
 }
 void QContactDetailFilter::setValue(const QVariant& value )
@@ -243,10 +254,17 @@ QContact::~QContact()
 }
 
 
-QContact& QContact::operator=(const QContact& /*other*/)
+QContact& QContact::operator=(const QContact& other )
 {
+    Q_UNUSED(other)
     return *this;
 }
+
+QContactDetail QContact::detail(const char* definitionId) const
+{
+    return detail( QString( definitionId ) );
+}
+
 
 QContactDetail QContact::detail(const QString& definitionId) const
 {
@@ -281,12 +299,18 @@ QContactDetail QContact::preferredDetail(const QString& actionName) const
     return number;
 }
 
-QContactDetail QContact::detailWithAction(const QString& actionName) const
+QContactDetail QContact::detailWithAction( QContactAction* action ) const
 {
-    Q_UNUSED(actionName)
+    Q_UNUSED(action)
     QContactPhoneNumber number;
     number.setValue(QContactPhoneNumber::FieldNumber, cntPhoneNumberWithActionCall );
     return number;
+}
+
+QContactAction* QContactAction::action(const QContactActionDescriptor& descriptor)
+{
+    Q_UNUSED(descriptor)
+    return 0;        
 }
 
 // ----------------------------------------------------------------------------
@@ -298,9 +322,9 @@ QContactDetail::QContactDetail()
 
 }
 
-QContactDetail::QContactDetail(const QString& /*definitionName*/) : d(new QContactDetailPrivate)
+QContactDetail::QContactDetail(const QString& definitionName ) : d(new QContactDetailPrivate)
 {
-
+    Q_UNUSED(definitionName)
 }
 
 QContactDetail::~QContactDetail()
@@ -309,8 +333,9 @@ QContactDetail::~QContactDetail()
 }
 
 
-QContactDetail& QContactDetail::operator=(const QContactDetail& /*other*/)
+QContactDetail& QContactDetail::operator=(const QContactDetail& other )
 {
+    Q_UNUSED(other)
     return *this;
 }
 

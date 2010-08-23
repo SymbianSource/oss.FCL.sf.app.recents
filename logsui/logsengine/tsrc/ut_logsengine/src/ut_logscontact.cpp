@@ -23,11 +23,13 @@
 #include "qtcontacts_stubs_helper.h"
 #include "qthighway_stub_helper.h"
 
-#include <xqservicerequest.h>
+#include <xqaiwrequest.h>
 #include <QtTest/QtTest>
 
 const int logsContactsLocalIdTest1 = 1;
-const QString logsFetchService = "com.nokia.services.phonebookservices.Fetch";
+const char logsIContactsView[] = "com.nokia.symbian.IContactsView";
+const char logsIContactsEdit[] = "com.nokia.symbian.IContactsEdit";
+
 
 void UT_LogsContact::initTestCase()
 {
@@ -61,7 +63,7 @@ void UT_LogsContact::cleanup()
 void UT_LogsContact::testConstructor()
 {
     QVERIFY( mLogsContact );
-    QVERIFY( !mLogsContact->mService );
+    QVERIFY( !mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     
     LogsContact contactWithoutEvent("2345", *mDbConnector, 2);
@@ -101,9 +103,9 @@ void UT_LogsContact::testAllowedRequestType()
 void UT_LogsContact::testOpen()
 {
     //contact not in phonebook, can't open
-    QVERIFY( !mLogsContact->mService );
+    QVERIFY( !mLogsContact->mAiwRequest );
     QVERIFY( !mLogsContact->open() );
-    QVERIFY( !mLogsContact->mService );
+    QVERIFY( !mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
 
     //contact is in phonebook, open is ok
@@ -114,21 +116,30 @@ void UT_LogsContact::testOpen()
     mLogsContact = 0;
     mLogsContact = new LogsContact(*mLogsEvent, *mDbConnector);
     QVERIFY( mLogsContact->open() );
-    QVERIFY( mLogsContact->mService );
+    QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactOpen );
-    QVERIFY( mLogsContact->mService->service() == logsFetchService );
-    QVERIFY( mLogsContact->mService->message() == "open(int)" );
+    QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
+             == logsIContactsView );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == "openContactCard(int)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
     
     // Same but without using logsevent at construction
     QtHighwayStubHelper::reset();
     LogsContact contactWithoutEvent("2345", *mDbConnector, 2);
     QVERIFY( contactWithoutEvent.open() );
-    QVERIFY( contactWithoutEvent.mService );
+    QVERIFY( contactWithoutEvent.mAiwRequest );
     QVERIFY( contactWithoutEvent.mCurrentRequest == LogsContact::TypeLogsContactOpen );
-    QVERIFY( contactWithoutEvent.mService->service() == logsFetchService );
-    QVERIFY( contactWithoutEvent.mService->message() == "open(int)" );
+    QVERIFY( contactWithoutEvent.mAiwRequest->descriptor().interfaceName()
+             == logsIContactsView );
+    QVERIFY( contactWithoutEvent.mAiwRequest->operation() == "openContactCard(int)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
+    
+    // Request sending failed
+    QtHighwayStubHelper::reset();
+    QtHighwayStubHelper::setFailCreateAiwRequest(true);
+    QVERIFY( !contactWithoutEvent.open() );
 }
 
 void UT_LogsContact::testAddNew()
@@ -137,7 +148,7 @@ void UT_LogsContact::testAddNew()
     mLogsEvent->setEventType(LogsEvent::TypeVoiceCall);
     QVERIFY( mLogsEvent->getNumberForCalling().isEmpty() );
     QVERIFY( !mLogsContact->addNew() );
-    QVERIFY( !mLogsContact->mService );
+    QVERIFY( !mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
 
     //called ID present, contact not in phonebook => save is ok
@@ -150,12 +161,14 @@ void UT_LogsContact::testAddNew()
     QVERIFY( !mLogsEvent->getNumberForCalling().isEmpty() );
     QVERIFY( !mLogsContact->isContactInPhonebook() );
     QVERIFY( mLogsContact->addNew() );
-    QVERIFY( mLogsContact->mService );
+    QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
-    QVERIFY( mLogsContact->mService->service() == logsFetchService );
-    QVERIFY( mLogsContact->mService->message() == "editCreateNew(QString,QString)" );
+    QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
+             == logsIContactsEdit );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == "editCreateNew(QString,QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
-        
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
+    
     //caller ID present, contact is in phonebook => save is ok
     QtHighwayStubHelper::reset();
     mLogsEvent->setEventType(LogsEvent::TypeVoIPCall);
@@ -168,11 +181,13 @@ void UT_LogsContact::testAddNew()
     mLogsContact = new LogsContact(*mLogsEvent, *mDbConnector);
     QVERIFY( mLogsContact->isContactInPhonebook() );
     QVERIFY( mLogsContact->addNew() );
-    QVERIFY( mLogsContact->mService );
+    QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
-    QVERIFY( mLogsContact->mService->service() == logsFetchService );
-    QVERIFY( mLogsContact->mService->message() == "editCreateNew(QString,QString)" );
+    QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
+             == logsIContactsEdit );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == "editCreateNew(QString,QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
 }
 
 void UT_LogsContact::testUpdateExisting()
@@ -188,11 +203,13 @@ void UT_LogsContact::testUpdateExisting()
     mLogsContact = new LogsContact(*mLogsEvent, *mDbConnector);
     QVERIFY( mLogsContact->isContactInPhonebook() );
     QVERIFY( mLogsContact->updateExisting() );
-    QVERIFY( mLogsContact->mService );
+    QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
-    QVERIFY( mLogsContact->mService->service() == logsFetchService );
-    QVERIFY( mLogsContact->mService->message() == "editUpdateExisting(QString,QString)" );
+    QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
+             == logsIContactsEdit );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == "editUpdateExisting(QString,QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
 }
 
 void UT_LogsContact::testIsContactInPhonebook()
@@ -288,8 +305,9 @@ void UT_LogsContact::testHandleRequestCompeted()
 
 void UT_LogsContact::testCancelServiceRequest()
 {
-    QVERIFY( !mLogsContact->mService );
-    mLogsContact->mService = new XQServiceRequest("service", "message", false);
+    XQAiwInterfaceDescriptor descr;
+    QVERIFY( !mLogsContact->mAiwRequest );
+    mLogsContact->mAiwRequest = new XQAiwRequest(descr, "message");
     mLogsContact->cancelServiceRequest();
-    QVERIFY( !mLogsContact->mService );
+    QVERIFY( !mLogsContact->mAiwRequest );
 }

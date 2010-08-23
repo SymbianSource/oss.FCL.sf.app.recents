@@ -27,6 +27,7 @@
 #include "logsdetailsview.h"
 #include "hbstubs_helper.h"
 #include "logscontact.h"
+#include "qthighway_stub_helper.h"
 
 //SYSTEM
 #include <HbMainWindow.h>
@@ -126,73 +127,73 @@ void UT_LogsViewManager::testActivateView()
 
 void UT_LogsViewManager::testchangeMatchesView()
 {
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     //Open Matches view, dialpad visible with predefined number
     mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->matchesView() );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
     
     // Contact search disabled, go to recent calls view instead
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     mLogsViewManager->mComponentsRepository->mModel->mPredectiveSearchStatus = 0;
     QString dialString("+123456777");
     mLogsViewManager->changeMatchesViewViaService(dialString);
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
         
     //Open Matches view, view stack not empty, embedded service canceled
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     QVERIFY( mLogsViewManager->mViewStack.count() );
     mLogsViewManager->mViewStack.at(0)->mContact = new LogsContact();
     mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
     QVERIFY( LogsContact::mServiceRequestCanceled );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
     
     //Open Matches view, view stack is empty, embedded service not canceled
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     LogsContact::reset();
     mLogsViewManager->mViewStack.clear();
     mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
     QVERIFY( !LogsContact::mServiceRequestCanceled );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
 }
 
 void UT_LogsViewManager::testchangeRecentView()
 {
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     QString dialString("+123456777");
-    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, dialString);
+    mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, dialString);
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
     
     // Empty string clears dialpad input
-    mLogsViewManager->mMainWindow.mForeground = false;
-    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
+    QtHighwayStubHelper::reset();
+    mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, "");
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text().isEmpty() );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
     
     //Open recent view, view stack not empty, embedded service canceled    
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     QVERIFY( mLogsViewManager->mViewStack.count() );
     mLogsViewManager->mViewStack.at(0)->mContact = new LogsContact();
-    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
+    mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, "");
     QVERIFY( LogsContact::mServiceRequestCanceled );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
     
     //Open recentt view, view stack is empty, embedded service not canceled
-    mLogsViewManager->mMainWindow.mForeground = false;
+    QtHighwayStubHelper::reset();
     LogsContact::reset();
     mLogsViewManager->mViewStack.clear();
-    mLogsViewManager->changeRecentViewViaService(LogsServices::ViewCalled, false, "");
+    mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, "");
     QVERIFY( !LogsContact::mServiceRequestCanceled );
-    QVERIFY( mLogsViewManager->mMainWindow.mForeground );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
 }
 
 void UT_LogsViewManager::testExitApplication()
@@ -200,19 +201,19 @@ void UT_LogsViewManager::testExitApplication()
     // Exit immediately possible, app sent to bg and data is compressed
     HbStubHelper::reset();
     mLogsViewManager->mComponentsRepository->model()->mCompressCalled = false;
-    mLogsViewManager->mMainWindow.mForeground = true;
+    QtHighwayStubHelper::reset();
     mLogsViewManager->exitApplication();
     QVERIFY( HbStubHelper::quitCalled() );
-    QVERIFY( !mLogsViewManager->mMainWindow.isForeground() );
+    QVERIFY( QtHighwayStubHelper::utilToBackground() );
     
     // Exit not yet possible, app sent only to bg
     mLogsViewManager->mComponentsRepository->model()->mCompressCalled = false;
-    mLogsViewManager->mMainWindow.mForeground = true;
+    QtHighwayStubHelper::reset();
     mLogsViewManager->mComponentsRepository->recentCallsView()->mMarkingMissedAsSeen = true;
     HbStubHelper::reset();
     mLogsViewManager->exitApplication();
     QVERIFY( !HbStubHelper::quitCalled() );
-    QVERIFY( !mLogsViewManager->mMainWindow.isForeground() );
+    QVERIFY( QtHighwayStubHelper::utilToBackground() );
     
     // Simulate view allowing exit after denying it first
     mLogsViewManager->mComponentsRepository->recentCallsView()->mMarkingMissedAsSeen = false;
@@ -319,4 +320,19 @@ void UT_LogsViewManager::testLoadActivity()
     // View activity not loaded
     HbStubHelper::setActivityId("unknownActivity");
     QVERIFY( !mLogsViewManager->loadActivity() );
+}
+
+void UT_LogsViewManager::testAppGainedForeground()
+{
+    // After foreground is gained, proceed exit does not cause exit
+    HbStubHelper::reset();
+    mLogsViewManager->activateView(LogsRecentViewId, false, QVariant());
+    connect( mLogsViewManager->mViewStack.at(0), SIGNAL(exitAllowed()), mLogsViewManager, SLOT(proceedExit()) );
+    emit mLogsViewManager->mViewStack.at(0)->exitAllowed();
+    QVERIFY( HbStubHelper::quitCalled() );
+    
+    HbStubHelper::reset();
+    mLogsViewManager->appGainedForeground();
+    emit mLogsViewManager->mViewStack.at(0)->exitAllowed();
+    QVERIFY( !HbStubHelper::quitCalled() );
 }

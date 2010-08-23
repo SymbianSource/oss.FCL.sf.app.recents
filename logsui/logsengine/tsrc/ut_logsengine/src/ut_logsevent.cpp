@@ -232,12 +232,19 @@ void UT_LogsEvent::testSerialization()
     QVERIFY( deserializedEvent.mIsLocallySeen == true );
     QVERIFY( deserializedEvent.mIsPrivate == false );
     QVERIFY( deserializedEvent.mIsUnknown == false );
+    QVERIFY( deserializedEvent.mMergedDuplicates.count() == 0 );
     
     // Serialize/deserialize, event data exists
     event.mLogsEventData = new LogsEventData();
     
     QByteArray serializedEvent2;
     QDataStream stream2(&serializedEvent2, QIODevice::WriteOnly | QIODevice::Append);
+    LogsEvent merge1;
+    merge1.setLogId(33);
+    event.mMergedDuplicates.append( merge1 );
+    LogsEvent merge2;
+    merge2.setLogId(34);
+    event.mMergedDuplicates.append( merge2 );
     event.serialize(stream2);  
     QDataStream readStream2(&serializedEvent2, QIODevice::ReadOnly);      
     LogsEvent deserializedEvent2(readStream2);
@@ -259,6 +266,9 @@ void UT_LogsEvent::testSerialization()
     QVERIFY( deserializedEvent2.mIsLocallySeen == true );
     QVERIFY( deserializedEvent2.mIsPrivate == false );
     QVERIFY( deserializedEvent2.mIsUnknown == false );
+    QVERIFY( deserializedEvent2.mMergedDuplicates.count() == 2 );
+    QVERIFY( deserializedEvent2.mMergedDuplicates.at(0).logId() == 33 );
+    QVERIFY( deserializedEvent2.mMergedDuplicates.at(1).logId() == 34 );
     
     // Incorrect stream
     QByteArray serializedEvent3;
@@ -282,5 +292,48 @@ void UT_LogsEvent::testSerialization()
     QVERIFY( deserializedEvent3.mIsLocallySeen == false );
     QVERIFY( deserializedEvent3.mIsPrivate == false );
     QVERIFY( deserializedEvent3.mIsUnknown == false );
+    QVERIFY( deserializedEvent3.mMergedDuplicates.count() == 0 );
+}
+
+void UT_LogsEvent::testMerge()
+{
+    LogsEvent ev;
+    ev.setDirection(LogsEvent::DirOut);
+    ev.setLogId(5);
+    LogsEvent mergedEv;
+    mergedEv.setDirection(LogsEvent::DirOut);
+    mergedEv.setLogId(10);
+    ev.merge(mergedEv);
+    QCOMPARE( ev.mMergedDuplicates.count(), 1 );
+    QCOMPARE( ev.mMergedDuplicates.at(0).logId(), 10 );
+    
+    // Adding again has no effect
+    ev.merge(mergedEv);
+    QCOMPARE( ev.mMergedDuplicates.count(), 1 );
+    QCOMPARE( ev.mMergedDuplicates.at(0).logId(), 10 );
+    
+    // Merging unseen missed events
+    ev.mMergedDuplicates.clear();
+    ev.setDirection(LogsEvent::DirMissed);
+    ev.setDuplicates(2);
+    mergedEv.setDirection(LogsEvent::DirMissed);
+    mergedEv.setDuplicates(0);
+    ev.merge(mergedEv);
+    QCOMPARE( ev.mMergedDuplicates.count(), 1 );
+    QCOMPARE( ev.mMergedDuplicates.at(0).logId(), 10 );
+    QCOMPARE( ev.duplicates(), 3 );
+    
+    // Simulate second reading round
+    ev.setDuplicates(2);
+    ev.merge(mergedEv);
+    QCOMPARE( ev.duplicates(), 3 );
+    
+    // Merging seen events does not cause duplicate increase
+    ev.markedAsSeenLocally(true);
+    ev.setDuplicates(0);
+    ev.merge(mergedEv);
+    QCOMPARE( ev.mMergedDuplicates.count(), 1 );
+    QCOMPARE( ev.mMergedDuplicates.at(0).logId(), 10 );
+    QCOMPARE( ev.duplicates(), 0 );
 }
 

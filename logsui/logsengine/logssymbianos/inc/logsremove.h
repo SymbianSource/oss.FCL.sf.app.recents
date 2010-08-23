@@ -22,6 +22,7 @@
 #include "logsworker.h"
 #include "logsmodel.h"
 #include "logsremovestatecontext.h"
+#include "logsremoveobserver.h"
 
 // FORWARDS DECLARATIONS
 class CLogClient;
@@ -33,7 +34,9 @@ class LogsRemoveObserver;
 /**
  *	Clearing class.
  */
-class LogsRemove : public LogsWorker, public LogsRemoveStateContext
+class LogsRemove : public LogsWorker, 
+                   public LogsRemoveStateContext, 
+                   public LogsRemoveObserver
     {
     public:
         friend class UT_LogsRemove;
@@ -54,7 +57,7 @@ class LogsRemove : public LogsWorker, public LogsRemoveStateContext
 
         bool clearList(LogsModel::ClearType cleartype);
         
-        int clearEvents(const QList<int>& eventIds, bool& async);
+        int clearEvents(const QList<LogsEvent*>& events, bool& async);
         
     protected: // from CActive
         
@@ -63,21 +66,28 @@ class LogsRemove : public LogsWorker, public LogsRemoveStateContext
     private: // From LogsRemoveStateContext
         
         inline LogsRemoveObserver& observer();
-        inline QList<int>& removedEvents();
+        inline QList<LogsEvent>& removedEvents();
         inline int clearType();
+        
+    private: // From LogsRemoveObserver
+        
+        void removeCompleted();
+        void logsRemoveErrorOccured(int err);
         
     private:
         
         void initL();
         bool clearListL(LogsModel::ClearType cleartype);
-        void clearEventsL(const QList<int>& eventIds, bool& async);
+        void clearEventsL(const QList<LogsEvent*>& events, bool& async);
         void initializeClearAllL();
         void initializeIdBasedRemovalL();
         bool startClearingL();
+        void removeAssociatedDuplicatesL();
         
     private: // data
         LogsRemoveObserver& mObserver;
-        QList<int> mRemovedEvents;
+        QList<LogsEvent> mRemovedEvents;
+        QList<LogsEvent> mRemovedEventDuplicates;
      
         RFs* mFsSession;
         

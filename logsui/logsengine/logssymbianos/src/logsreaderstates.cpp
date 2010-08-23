@@ -60,7 +60,6 @@ bool LogsReaderStateBase::updateAndInsertEventL(
 {
     Q_ASSERT( dest );
     dest->initializeEventL( source, mContext.strings() );
-    dest->setIndex(eventIndex);
     mContext.events().insert(eventIndex, dest);
     eventIndex++;
     return true;
@@ -80,7 +79,6 @@ bool LogsReaderStateBase::constructAndInsertEventL(
         delete dest;
         return false;
     } 
-    dest->setIndex(eventIndex);
     events.insert(eventIndex, dest);
     eventIndex++;
     return true;
@@ -121,10 +119,9 @@ LogsEvent* LogsReaderStateBase::eventById(int eventId)
 {
     LogsEvent* event = 0;
     QList<LogsEvent*> &events = mContext.events();
-    for ( int i = 0; i < events.count(); i++ ){
+    for ( int i = 0; i < events.count() && !event; i++ ){
         if ( events.at(i)->logId() == eventId ){
             event = events.at(i);
-            break;
         }
     }
     return event;
@@ -427,33 +424,58 @@ bool LogsReaderStateFillDetails::enterL()
 //
 void LogsReaderStateFillDetails::fillDetails()
 {
+    mDuplicateLookup.invalidate();
+    
     QHash<QString, ContactCacheEntry>& contactMappings = mContext.contactCache();
     QList<LogsEvent*> &events = mContext.events();
-    foreach ( LogsEvent* event, events ){
-        const QString& num = event->getNumberForCalling();
-        if ( !event->isInView() ){
-            // Not interested about to be removed event
-        } else if ( contactMappings.contains(num) ) {
-            // Matching cached contact found, use that
-            LOGS_QDEBUG_2( "logs [ENG]    Use existing contact for num:", num )
-            ContactCacheEntry entry = contactMappings.value(num);
-            event->setRemoteParty( entry.mRemoteParty );
-            event->setContactLocalId( entry.mContactLocalId );
-        } else if ( event->remoteParty().length() == 0 ) {
-            // No remote party name, search for match from phonebook
-            QString contactNameStr = event->updateRemotePartyFromContacts(
-                    LogsCommonData::getInstance().contactManager());
-            if (contactNameStr.length() > 0){
-                LOGS_QDEBUG_3( "LogsReaderStateFillDetails, (name, num):", 
-                               contactNameStr, num );
-                // Cache the new contact name
-                ContactCacheEntry contactEntry(contactNameStr, event->contactLocalId());
-                contactMappings.insert( num, contactEntry );
+    foreach ( LogsEvent* event, events ){  
+        if ( event->isInView() ){
+            const QString& num = event->getNumberForCalling();
+            if ( contactMappings.contains(num) ) {
+                // Matching cached contact found, use that
+                LOGS_QDEBUG_2( "logs [ENG]    Use existing contact for num:", num )
+                ContactCacheEntry entry = contactMappings.value(num);
+                event->setContactMatched( true );
+                event->setRemoteParty( entry.mRemoteParty );
+                event->setContactLocalId( entry.mContactLocalId );
+            } else if ( event->remoteParty().length() == 0 ) {
+                // No remote party name, search for match from phonebook
+                QString contactNameStr = event->updateRemotePartyFromContacts(
+                        LogsCommonData::getInstance().contactManager());
+                if (contactNameStr.length() > 0){
+                    LOGS_QDEBUG_3( "LogsReaderStateFillDetails, (name, num):", 
+                                   contactNameStr, num );
+                    // Cache the new contact name
+                    event->setContactMatched( true );
+                    ContactCacheEntry contactEntry(contactNameStr, event->contactLocalId());
+                    contactMappings.insert( num, contactEntry );
+                }
+            }
+            if ( mBaseContext.isRecentView() ){
+                LogsEvent* duplicateEvent = mDuplicateLookup.findDuplicate(*event);
+                if ( duplicateEvent ){
+                    mergeDuplicates( *duplicateEvent, *event ); 
+                } else {
+                    mDuplicateLookup.addLookupEntry(*event);
+                }
             }
         }
-    }    
-}
+    } 
     
+    mDuplicateLookup.cleanup();
+}
+ 
+// ----------------------------------------------------------------------------
+// LogsReaderStateFillDetails::mergeDuplicates
+// ----------------------------------------------------------------------------
+//
+void LogsReaderStateFillDetails::mergeDuplicates( 
+    LogsEvent& usedEvent, LogsEvent& discardedEvent ) const
+{
+    usedEvent.merge(discardedEvent);
+    discardedEvent.setIsInView(false);
+}
+
 // ----------------------------------------------------------------------------
 // LogsReaderStateDone::LogsReaderStateDone
 // ----------------------------------------------------------------------------
@@ -480,8 +502,7 @@ bool LogsReaderStateDone::enterL()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateDone::enterL" );
     
-    int numRead = qMin(mBaseContext.index(),viewCountL());
-    mContext.observer().readCompleted(numRead);
+    mContext.observer().readCompleted();
 
     LOGS_QDEBUG( "logs [ENG] <- LogsReaderStateDone::enterL" );
     
@@ -645,6 +666,50 @@ bool LogsReaderStateReadingDuplicates::continueL()
 
     LOGS_QDEBUG( "logs [ENG] <- LogsReaderStateReadingDuplicates::continueL" );
     
+    return enterNextStateL();
+}
+
+// ----------------------------------------------------------------------------
+// LogsReaderStateMergingDuplicates::LogsReaderStateMergingDuplicates
+// ----------------------------------------------------------------------------
+//
+LogsReaderStateMergingDuplicates::LogsReaderStateMergingDuplicates(
+    LogsStateBaseContext& context, LogsReaderStateContext& readerContext ) 
+ : LogsReaderStateBase(context, readerContext)
+{
+}
+
+// ----------------------------------------------------------------------------
+// LogsReaderStateMergingDuplicates::enterL
+// ----------------------------------------------------------------------------
+//
+bool LogsReaderStateMergingDuplicates::enterL()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsReaderStateMergingDuplicates::enterL" );
+
+    QList<LogsEvent*>& duplicates = mContext.duplicatedEvents();
+    
+    LogsEvent* event = eventById( mBaseContext.currentEventId() );
+    if ( event ){
+        for ( int i = 0; i < event->mergedDuplicates().count(); i++ ){
+            const LogsEvent& mergedDupl = event->mergedDuplicates().at(i);
+            if ( !mergedDupl.isSeenLocally() ){
+                // Search backwards duplicates list until later occured event is
+                // found and insert the merged duplicate after that.
+                // Event is added to beginning of the list if there's no
+                // later events.
+                int insertIndex = 0;
+                int lastIndex = duplicates.count() - 1;
+                for ( int j = lastIndex; j >= 0 && insertIndex == 0; j-- ) {
+                    if ( duplicates.at(j)->time() >= mergedDupl.time() ){
+                        insertIndex = j + 1; // break the loop
+                    }
+                }
+                duplicates.insert(insertIndex, new LogsEvent(mergedDupl) );
+            }
+        }
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsReaderStateMergingDuplicates::enterL" );   
     return enterNextStateL();
 }
 

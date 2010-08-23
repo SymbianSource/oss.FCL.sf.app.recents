@@ -84,6 +84,7 @@ private slots: //test methods
     void testDialpadOpened();
     void testSaveActivity();
     void testLoadActivity();
+    void testEventFilter();
     
 private: //helper functions
     

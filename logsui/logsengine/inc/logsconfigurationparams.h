@@ -35,10 +35,14 @@ public: // The exported API
     LOGSENGINE_EXPORT void setListItemTextWidth(int width);
     LOGSENGINE_EXPORT int listItemTextWidth() const;  
     
+    LOGSENGINE_EXPORT void setLocaleChanged(bool changed);
+    LOGSENGINE_EXPORT bool localeChanged() const;  
+
     LOGSENGINE_EXPORT LogsConfigurationParams& operator=(const LogsConfigurationParams& params);
 
 private:
     int mListItemTextWidth;
+    bool mLocaleChanged;
 
 };
                   

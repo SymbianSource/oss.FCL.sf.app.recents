@@ -192,6 +192,9 @@ const QString LogsPredictiveTranslator::translatePattern(
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::translatePattern()" )
     QString result = translate( pattern );
     
+    if ( !result.length() ) {
+        result = pattern;
+    }
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictiveTranslator::translatePattern()" )
     return result;
 }
@@ -205,10 +208,10 @@ const QString LogsPredictiveTranslator::translate( const QString& text,
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictiveTranslator::translate()" )
     LOGS_QDEBUG_2( "logs [FINDER] text ", text );
+    QString result;
+    bool isok = ok ? *ok : true;
     
     count = count == -1 ? text.length() : count;
-    bool isok = ok ? *ok : true;
-    QString result;
     const QChar* content = text.data();
     int index = 0;
     while( index < count && isok ) {
@@ -218,6 +221,7 @@ const QString LogsPredictiveTranslator::translate( const QString& text,
         }
         index++;
     }
+    
     if ( ok ) {
         *ok = isok;
     }

@@ -24,7 +24,7 @@
 #include "logsmessage.h"
 #include "logscontact.h"
 #include "hbstubs_helper.h"
-#include "logsrecentcallsview.h"
+#include "logsmodel.h"
 #include "logsdetailsmodel.h"
 
 //SYSTEM
@@ -120,6 +120,8 @@ void UT_LogsBaseView::testResetView()
 void UT_LogsBaseView::testShowFilterMenu()
 {
     HbStubHelper::reset();
+    mBaseView->setLayoutDirection(Qt::LeftToRight);
+    
     //no context menu
     QVERIFY( !mBaseView->mShowFilterMenu );
     mBaseView->showFilterMenu();
@@ -129,9 +131,19 @@ void UT_LogsBaseView::testShowFilterMenu()
     mBaseView->mShowFilterMenu = new HbMenu();
     QVERIFY( mBaseView->mShowFilterMenu );
     mBaseView->showFilterMenu();
+    QVERIFY( HbStubHelper::menuShown() ); 
+    QVERIFY( HbStubHelper::menuShownPlacement() == HbPopup::BottomRightCorner );
+    
+    // RTL layout dir
+    HbStubHelper::reset();
+    mBaseView->setLayoutDirection(Qt::RightToLeft);
+    mBaseView->showFilterMenu();
     QVERIFY( HbStubHelper::menuShown() );
+    QVERIFY( HbStubHelper::menuShownPlacement() == HbPopup::BottomLeftCorner );
+    
     delete mBaseView->mShowFilterMenu;
     mBaseView->mShowFilterMenu = 0;
+    
 }
 
 void  UT_LogsBaseView::testOpenDialpad()
@@ -525,11 +537,32 @@ void UT_LogsBaseView::testSendMessageToCurrentNum()
     mBaseView->sendMessageToCurrentNum();
     QVERIFY( !LogsMessage::isMessageSent() );
     
-    // Input
+    // Input, check that conversion to western digits is done
+    QString number("4546626262");
+    HbStubHelper::stringUtilDigitConversion(true);
     mBaseView->mDialpad->mIsOpen = true;
-    mBaseView->mDialpad->mLineEdit->setText("4546626262");
+    mBaseView->mDialpad->mLineEdit->setText(number);
     mBaseView->sendMessageToCurrentNum();
     QVERIFY( LogsMessage::isMessageSent() );
+    QCOMPARE( LogsMessage::sentToNumber(), QString("conv") + number );
+}
+
+void UT_LogsBaseView::testSaveNumberInDialpadToContacts()
+{
+    // No input
+    mBaseView->mDialpad->mIsOpen = false;
+    mBaseView->mDialpad->mLineEdit->setText("");
+    mBaseView->saveNumberInDialpadToContacts();
+    QVERIFY( !mBaseView->mContact );
+    
+    // Input, check that conversion to western digits is done
+    QString number("4546626262");
+    HbStubHelper::stringUtilDigitConversion(true);
+    mBaseView->mDialpad->mIsOpen = true;
+    mBaseView->mDialpad->mLineEdit->setText(number);
+    mBaseView->saveNumberInDialpadToContacts();
+    QVERIFY( mBaseView->mContact );
+    QCOMPARE( mBaseView->mContact->mNumber, QString("conv") + number );
 }
 
 void UT_LogsBaseView::testDeleteEvent()

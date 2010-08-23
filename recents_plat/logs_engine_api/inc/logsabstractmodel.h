@@ -20,13 +20,15 @@
 
 #include <QAbstractListModel>
 #include <logsexport.h>
+#include <hbextendedlocale.h>
 
 class LogsEvent;
 class LogsDbConnector;
 class LogsModelItemContainer;
 class HbIcon;
 class LogsContact;
-class LogsSystemTimeObserver;
+class LogsConfigurationParams;
+
 
 /**
  * Abstract logs model.
@@ -76,9 +78,15 @@ public:
      * @ return 0 if cenrep key value modified succesfully,
      *          -1 in case of some error
      */
-    LOGSENGINE_EXPORT int setPredictiveSearch(bool enabled);   
+    LOGSENGINE_EXPORT int setPredictiveSearch(bool enabled);
     
-    LOGSENGINE_EXPORT bool isCommunicationPossible(const LogsEvent& event) const;
+    /**
+     * Configuration.
+     * @param configuration parameters
+     * @return 0 if configured succesfully
+     */
+    LOGSENGINE_EXPORT virtual int updateConfiguration(LogsConfigurationParams& params);
+
 public:
     
     static QString directionIconName(const LogsEvent& event);
@@ -101,6 +109,8 @@ public:
      * Construct a duration string using separator from system locale
      */
     QString durationString(const QTime& time) const;
+    
+    QString phoneNumString(const QString& number) const;
 
 
 protected slots:
@@ -123,7 +133,7 @@ protected: //data
     
     LogsDbConnector* mDbConnector;
     QMap<QString, HbIcon*> mIcons;
-    LogsSystemTimeObserver* mSystemTimeObserver;
+    HbExtendedLocale* mExtendedLocale;
     
 private:  // Testing related friend definitions
     

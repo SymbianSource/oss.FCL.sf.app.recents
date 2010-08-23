@@ -27,7 +27,8 @@
 #include <hbcheckbox.h>
 #include <xqappmgr.h>
 #include <xqaiwrequest.h>
-#include <logsservices.h>
+#include <xqaiwdecl.h>
+#include <logsservices.h> 
 
 #include "logsservicetesterwidget.h"
 #include "logsservicetesterappcloser.h"
@@ -53,10 +54,10 @@ LogsServiceTesterWidget::LogsServiceTesterWidget(QGraphicsItem *parent ) :
     HbLabel* comboLabel = new HbLabel("Select logs view:");
     
     mComboBox = new HbComboBox();
-    mComboBox->addItem( "Recent view", QVariant(LogsServices::ViewAll));
-    mComboBox->addItem( "Received view", QVariant(LogsServices::ViewReceived));
-    mComboBox->addItem( "Called view", QVariant(LogsServices::ViewCalled));
-    mComboBox->addItem( "Missed view", QVariant(LogsServices::ViewMissed));
+    mComboBox->addItem( "Recent view", QVariant(XQService::LogsViewAll));
+    mComboBox->addItem( "Received view", QVariant(XQService::LogsViewReceived));
+    mComboBox->addItem( "Called view", QVariant(XQService::LogsViewCalled));
+    mComboBox->addItem( "Missed view", QVariant(XQService::LogsViewMissed));
 
     mCheckBox = new HbCheckBox("Show dialpad");
     
@@ -125,17 +126,15 @@ void LogsServiceTesterWidget::startNewService()
     fetchData();
 
     XQApplicationManager appMgr;
-    QScopedPointer<XQAiwRequest> request(appMgr.create( QLatin1String(logsServiceName),
-                    QLatin1String(logsInterfaceName),
-                    QLatin1String(logsOperationName),
-                    false));
+    QScopedPointer<XQAiwRequest> request(
+                    appMgr.create(XQI_LOGS_VIEW, XQOP_LOGS_SHOW, false) );
     if (!request.isNull()) {
         int retValue = -1; 
         QList<QVariant> arglist;
         QVariantMap map;
-        map.insert(logsViewIndexParam, QVariant(mViewIndex));
-        map.insert(logsShowDialpadParam, QVariant(mShowDialpad));
-        map.insert(logsDialpadTextParam, QVariant(mDialpadText));
+        map.insert(XQLOGS_VIEW_INDEX, QVariant(mViewIndex));
+        map.insert(XQLOGS_SHOW_DIALPAD, QVariant(mShowDialpad));
+        map.insert(XQLOGS_DIALPAD_TEXT, QVariant(mDialpadText));
         
         arglist.append(QVariant(map));
         request->setArguments(arglist);

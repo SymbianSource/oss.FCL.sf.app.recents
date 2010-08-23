@@ -124,11 +124,13 @@ void UT_LogsMatchesView::testActivated()
     QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
     
     // After passing model as input arg, do not pass model
+    mMatchesView->mActivating = true;
     mMatchesView->activated( true,QVariant() );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel );
     QVERIFY( mMatchesView->mModel->mLastCall == QLatin1String("constructor") );
-    delete view;
+    QVERIFY( !mMatchesView->mActivating );
+    delete view;   
 }
 
 
@@ -370,7 +372,7 @@ void UT_LogsMatchesView::testUpdateEmptyListWidgetsVisibility()
     QVERIFY( mMatchesView->mEmptyListLabel->isVisible() );
     QVERIFY( mMatchesView->mAddToContactsButton->isVisible() );
     
-    mMatchesView->mAddToContactsButtonDisabled = true;
+    mMatchesView->mActivating = true;
     mMatchesView->updateEmptyListWidgetsVisibility();
     QVERIFY( mMatchesView->mEmptyListLabel->isVisible() );
     QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
@@ -440,7 +442,19 @@ void UT_LogsMatchesView::testContactSearch()
     QVERIFY( status == 2 );
     QVERIFY( mViewManager->mViewId == LogsRecentViewId );
     QVERIFY( mMatchesView->mDialpad->editor().text() == "1234" );
-    delete view;
+    delete view;    
+}
+
+void UT_LogsMatchesView::testLocaleChanged()
+{
+    //No model
+    QVERIFY( !mMatchesView->mModel );
+    mMatchesView->localeChanged();
+    QVERIFY( !LogsAbstractModel::mParamUpdated );
     
+    LogsDbConnector* dbConnector = 0;
+    mMatchesView->mModel = new LogsMatchesModel(*dbConnector);
+    mMatchesView->localeChanged();
+    QVERIFY( LogsAbstractModel::mParamUpdated );   
 }
 

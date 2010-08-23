@@ -144,18 +144,19 @@ class LogsDbConnector :
          * Starts removing events and all their duplicates. Clearing
          * can be sync or async. In case of async, completion is
          * indicated by clearingCompleted signal.
-         * @param eventIds, ids of the events to be removed
+         * @param events, events to be removed, events are removed only from
+         *  database, passed event objects themselves are not touched.
          * @return true if async clearing started
          */
-        bool clearEvents(const QList<int>& eventIds);
+        bool clearEvents(const QList<LogsEvent*>& events);
         
         /**
          * Mark events as seen. Completion is indicated by
          * markingCompleted signal.
-         * @param eventIds, ids of the events to be marked
+         * @param events, events to be marked
          * @return true if marking started
          */
-        bool markEventsSeen(const QList<int>& eventIds);
+        bool markEventsSeen(const QList<LogsEvent*>& events);
         
         /**
          * Clear missed calls counter.
@@ -202,7 +203,7 @@ class LogsDbConnector :
         
     protected: // From LogsReaderObserver
         
-        virtual void readCompleted(int readCount);
+        virtual void readCompleted();
         virtual void errorOccurred(int err);
 		virtual void temporaryErrorOccurred(int err);
 		virtual void eventModifyingCompleted();
@@ -215,9 +216,10 @@ class LogsDbConnector :
     private:
 		void initL();
 		void handleTemporaryError(int& error);
-		void deleteRemoved(int newEventCount);
+		void deleteInvalidEvents(int newEventCount);
 		int doMarkEventSeen();
 		bool handleModifyingCompletion(int err=0);
+		void getTelNumMatchLenL(int& matchLen);
 
     private: // data
 
@@ -237,7 +239,7 @@ class LogsDbConnector :
         QList<int> mRemovedEventIndexes;
         QList<int> mUpdatedEventIndexes;
         QList<int> mAddedEventIndexes;
-        QList<int> mEventsSeen;
+        QList<LogsEvent> mEventsSeen;
         
     private: // Testing related friend definitions
         

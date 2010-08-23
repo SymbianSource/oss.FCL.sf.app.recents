@@ -32,10 +32,13 @@
 #include <hblistview.h>
 #include <hblistviewitem.h>
 #include <hbmessagebox.h>
+#include <hbnotificationdialog.h>
+#include <hbstringutil.h>
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
 bool testMenuShown = false;
+HbPopup::Placement testPopupShowPlacement = HbPopup::TopLeftCorner;
 bool testDialogShown = false;
 HbMainWindow* testWindow = 0;
 HbView* testView = 0;
@@ -56,6 +59,8 @@ QString testActivityId = "LogsViewMatches";
 QList<HbListViewItem*> testViewItems;
 bool testEnsureVisibleCalled = false;
 bool testScrollToCalled = false;
+Qt::LayoutDirection testLayoutDirection = Qt::LeftToRight;
+bool testConversionEnabled = false;
 
 void HbStubHelper::reset()
 {
@@ -73,6 +78,8 @@ void HbStubHelper::reset()
     testViewItems.clear();
     testScrollToCalled = false;
     testEnsureVisibleCalled = false;
+    testPopupShowPlacement = HbPopup::TopLeftCorner;
+    testConversionEnabled = false;
 }
 
 int HbStubHelper::widgetActionsCount()
@@ -83,6 +90,11 @@ int HbStubHelper::widgetActionsCount()
 bool HbStubHelper::menuShown()
 {
     return testMenuShown;
+}
+
+int HbStubHelper::menuShownPlacement()
+{
+    return testPopupShowPlacement;
 }
 
 bool HbStubHelper::dialogShown()
@@ -158,6 +170,18 @@ bool HbStubHelper::listEnsureVisibleCalled()
     return testEnsureVisibleCalled;
 }
 
+void HbStubHelper::stringUtilDigitConversion(bool enabled)
+{
+    testConversionEnabled = enabled;
+}
+
+QString testNotifDialogText;
+void HbNotificationDialog::launchDialog(const QString &title, QGraphicsScene *scene)
+{
+    Q_UNUSED(scene);
+    testNotifDialogText = title;
+}
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -184,9 +208,20 @@ QApplication::~QApplication()
     
 }
 
+void QApplication::setLayoutDirection(Qt::LayoutDirection direction)
+{
+    testLayoutDirection = direction;
+}
+
+Qt::LayoutDirection QApplication::layoutDirection()
+{
+    return testLayoutDirection;
+}
+
 bool QGraphicsWidget::close()
 {
     testIsWidgetOpen = false;
+    return true;
 }
 
 void QWidget::setVisible(bool visible)
@@ -222,12 +257,15 @@ HbActivityManager::~HbActivityManager()
 bool HbActivityManager::addActivity(const QString &activityId, const QVariant &data, const QVariantHash &parameters)
 {
     testActivities.append(parameters);
+    return true;
 }
+
 bool HbActivityManager::removeActivity(const QString &activityId)
 {
     if ( !testActivities.isEmpty() ){
         testActivities.takeFirst();
     }
+    return true;
 }
 QList<QVariantHash> HbActivityManager::activities() const
 {
@@ -288,6 +326,16 @@ void HbMenu::open(QObject *receiver, const char *member)
    Q_UNUSED(receiver)
    Q_UNUSED(member)   
    testMenuShown = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void HbPopup::setPreferredPos(const QPointF& position, HbPopup::Placement placement)
+{
+    Q_UNUSED(position);
+    testPopupShowPlacement = placement;
 }
 
 void HbDialog::open(QObject *receiver, const char *member)
@@ -370,7 +418,9 @@ QRectF HbMainWindow::layoutRect() const
 HbView *HbMainWindow::addView(QGraphicsWidget *widget)
 {
     testViewCount++;
-    testViews.append( static_cast<HbView*>(widget) );
+    HbView* view = static_cast<HbView*>(widget);
+    testViews.append( view );
+    return view;
 }
 
 void HbMainWindow::setCurrentView(HbView *view, bool animate, Hb::ViewSwitchFlags flags)
@@ -473,4 +523,29 @@ void HbScrollArea::ensureVisible(const QPointF &position, qreal xMargin, qreal y
     Q_UNUSED(xMargin);
     Q_UNUSED(yMargin);
     testEnsureVisibleCalled = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString HbStringUtil::convertDigitsTo( const QString str, const DigitType digitType )
+{
+    Q_UNUSED(digitType);
+    if ( testConversionEnabled ){
+        return ( QString("conv") + str );
+    }
+    return str;
+}
+
+bool QObject::eventFilter(QObject *obj, QEvent *event)
+{
+    Q_UNUSED(obj)
+    Q_UNUSED(event)
+    return false;
+}
+
+void QObject::installEventFilter(QObject *obj)
+{
+    Q_UNUSED(obj)
 }

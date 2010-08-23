@@ -43,6 +43,8 @@ LogsEvent::LogsEvent()
     mDuration(0),
     mIndex(0),
     mIsInView(false),
+    mContactMatched(false),
+    mIsPrivate(false),
     mEventState(EventAdded)
 {
 }
@@ -73,6 +75,7 @@ LogsEvent::LogsEvent( const LogsEvent& event )
     
     mIndex = event.mIndex;
     mIsInView = event.mIsInView;
+    mContactMatched = event.mContactMatched;
     mEventState = event.mEventState;
 }
 
@@ -178,6 +181,29 @@ void LogsEvent::setRemoteParty( const QString& remoteParty )
         mEventState = LogsEvent::EventUpdated;
     }
     mRemoteParty = remoteParty;
+}
+
+bool LogsEvent::isRemotePartyPrivate() const
+{
+   return mIsPrivate;
+}
+
+// ----------------------------------------------------------------------------
+// LogsEvent::setContactMatched
+// ----------------------------------------------------------------------------
+//
+void LogsEvent::setContactMatched( bool value )
+{
+    mContactMatched = value;
+}
+
+// ----------------------------------------------------------------------------
+// LogsEvent::contactMatched
+// ----------------------------------------------------------------------------
+//
+bool LogsEvent::contactMatched()
+{
+   return mContactMatched;
 }
 
 // ----------------------------------------------------------------------------

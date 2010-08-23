@@ -32,6 +32,7 @@
 #include <QtGui>
 #include <hbfontspec.h>
 #include <hbinstance.h>
+#include <hbstringutil.h>
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -94,7 +95,8 @@ bool LogsModel::clearList(LogsModel::ClearType cleartype)
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::clearList()" )
     
     connect( mDbConnector, SIGNAL(clearingCompleted(int)), 
-         this, SIGNAL(clearingCompleted(int)) );
+         this, SIGNAL(clearingCompleted(int)), 
+         Qt::UniqueConnection );
     return mDbConnector->clearList(cleartype);
 }
 
@@ -106,14 +108,15 @@ bool LogsModel::markEventsSeen(LogsModel::ClearType cleartype)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::markEventsSeen()" )
 
-    QList<int> markedEvents;
+    QList<LogsEvent*> markedEvents;
     foreach ( LogsEvent* event, mEvents ){
         if ( matchEventWithClearType(*event, cleartype) && !event->isSeenLocally() ){
-            markedEvents.append(event->logId());
+            markedEvents.append(event);
         }
     }
     connect( mDbConnector, SIGNAL(markingCompleted(int)), 
-             this, SIGNAL(markingCompleted(int)) );
+             this, SIGNAL(markingCompleted(int)),
+             Qt::UniqueConnection );
     bool retVal = mDbConnector->markEventsSeen(markedEvents);
     LOGS_QDEBUG_2( "logs [ENG] <- LogsModel::markEventsSeen()", retVal )
     return retVal;
@@ -162,24 +165,30 @@ int LogsModel::compressData()
 int LogsModel::updateConfiguration(LogsConfigurationParams& params)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::updateConfiguration()" )
-    int currWidth = 
-        LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
-    int newWidth = params.listItemTextWidth();
-    LOGS_QDEBUG_3( "logs [ENG]    Curr and new width", currWidth, newWidth )   
-    int retVal = LogsCommonData::getInstance().updateConfiguration(params);
-    
-    // Do model reset if list item width has changed as we need to ensure 
-    // missed call's duplicate info visibility
-    bool unseenExists = false;
-    for ( int i = 0; i < mEvents.count() && !unseenExists; i++ ){
-        LogsEvent* event = mEvents.at(i);
-        if ( event->duplicates() > 0 && !event->isSeenLocally() ){
-            unseenExists = true;
+    int retVal = 0;
+    if (params.localeChanged()) {
+        LOGS_QDEBUG( "logs [ENG] -> Locale changed, have to update model" )
+        updateModel();
+    } else {
+        int currWidth = 
+            LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
+        int newWidth = params.listItemTextWidth();
+        LOGS_QDEBUG_3( "logs [ENG]    Curr and new width", currWidth, newWidth )   
+        retVal = LogsCommonData::getInstance().updateConfiguration(params);
+        
+        // Do model reset if list item width has changed as we need to ensure 
+        // missed call's duplicate info visibility
+        bool unseenExists = false;
+        for ( int i = 0; i < mEvents.count() && !unseenExists; i++ ){
+            LogsEvent* event = mEvents.at(i);
+            if ( event->duplicates() > 0 && !event->isSeenLocally() ){
+                unseenExists = true;
+            }
         }
-    }
-    if ( unseenExists && currWidth > 0 && currWidth != newWidth ){
-        LOGS_QDEBUG( "logs [ENG]    Do model reset" )
-        resetModel();
+        if ( unseenExists && newWidth > 0 && currWidth != newWidth ){
+            LOGS_QDEBUG( "logs [ENG]    Do model reset" )
+            resetModel();
+        } 
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsModel::updateConfiguration()" )
     return retVal;
@@ -342,7 +351,7 @@ QString LogsModel::getCallerId(const LogsEvent& event) const
 {
     QString callerId(event.remoteParty());
     if ( callerId.length() == 0 ){
-        callerId = event.number();
+        callerId = phoneNumString(event.number());
     }
     if ( callerId.length() == 0 && event.logsEventData() ){
         callerId = event.logsEventData()->remoteUrl();
@@ -359,7 +368,8 @@ QString LogsModel::getCallerId(const LogsEvent& event) const
     int duplicates = event.duplicates();
     if ( duplicates > 0 && !event.isSeenLocally() ){
         QString callerIdBaseString = callerId;
-        QString callerIdDupString = "(" + QString::number(duplicates + 1) + ")";
+        QString callerIdDupString = "(" + 
+            HbStringUtil::convertDigits(QString::number(duplicates + 1)) + ")";
         int width = LogsCommonData::getInstance().currentConfiguration().listItemTextWidth();
         callerId =  SqueezedString(callerIdBaseString,callerIdDupString,width);
     }

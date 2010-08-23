@@ -15,22 +15,20 @@
 *
 */
 
+#ifndef HBSTUB_HELPER_H
+#define HBSTUB_HELPER_H
+
+
 /**
-* Helper class to control logcli stub behavior
+* Helper class to control logsdbconnector stub behavior
 *
 */ 
-class QtHighwayStubHelper{
+class HbStubHelper 
+{
     public:
         static void reset();
-        static QString service();
-        static QString message();
-        static bool isRequestBg();
-        static bool isRequestEmbedded();
-        static bool isRequestSynchronous();
-        static void setFailCreateAiwRequest(bool fail);    
+        static QString notificationDialogTxt();
+        static void stringUtilDigitConversion(bool enabled);
 };
 
-class QtAppManagerStubHelper{
-    public:
-        static void reset();
-};
+#endif

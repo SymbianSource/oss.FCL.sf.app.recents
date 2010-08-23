@@ -58,10 +58,8 @@ void LogsEventParser::parseL(
         dest.setRemoteParty( newRemoteParty );
     }
     
-    if ( remotePartyPrivate ){
-        dest.setRemotePartyPrivate(true);
-    } else {
-        dest.setRemotePartyPrivate(false);
+    dest.setRemotePartyPrivate(remotePartyPrivate);
+    if ( !remotePartyPrivate ) {
         dataChanged |= dest.setNumber( 
               QString::fromUtf16( source.Number().Ptr(), source.Number().Length() ) );
     }

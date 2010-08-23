@@ -59,6 +59,9 @@ const int logsDeleteCountInit = -1;
 const int logsReadSizeCompressEnabled = 10;
 const int logsReadSizeUndefined = -1;
 
+// Default tel number match length
+const int logsDefaultMatchLength = 7;
+
 // MACROS
 #define DESC_TO_QSTRING( desc )\
     QString::fromUtf16( desc.Ptr(), desc.Length() );

@@ -23,6 +23,7 @@
 
 // FORWARD DECLARATION
 class LogsRemoveObserver;
+class LogsEvent;
 
 // CLASS DECLARATION
 
@@ -42,7 +43,7 @@ class LogsRemoveStateContext {
          * Get ids of removed events
          * @return ids of removed events
          */
-        virtual QList<int>& removedEvents() = 0;
+        virtual QList<LogsEvent>& removedEvents() = 0;
         
         virtual int clearType() = 0;
         

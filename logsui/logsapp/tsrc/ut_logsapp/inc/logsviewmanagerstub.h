@@ -77,11 +77,11 @@ public: // From LogsAbstractViewManager
     
 public:   
     
+     HbMainWindow& mMainWindow;
      LogsAppViewId mViewId;
      bool mShowDialer; 
      QVariant mArgs;
      bool mPreviousActivated;
-     HbMainWindow& mMainWindow;
      bool mExitCalled;
 
 };

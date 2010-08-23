@@ -30,6 +30,14 @@
 
 // CONSTANTS
 
+// Telephony Configuration API
+// Keys under this category are used in defining telephony configuration.
+const TUid logsTelConfigurationCRUid = {0x102828B8};
+
+// Amount of digits to be used in contact matching.
+// This allows a customer to variate the amount of digits to be matched.
+const TUint32 logsTelMatchDigits = 0x00000001;
+
 
 // ----------------------------------------------------------------------------
 // LogsDbConnector::LogsDbConnector
@@ -151,7 +159,6 @@ int LogsDbConnector::updateDetails(bool clearCached)
         return -1;
     }
     mReader->updateDetails(clearCached);    
-    readCompleted( mEvents.count() ); //to notify of model update
     return 0;    
 }
 
@@ -199,6 +206,16 @@ void LogsDbConnector::initL()
                 logsReadSizeCompressEnabled, LogsEvent::DirUndefined);
         mCompressionEnabled = true;
     }
+    
+    //Get number of digits used to match   
+    int matchLen;
+    TRAPD( err, getTelNumMatchLenL(matchLen) )
+    if ( err ){
+        LOGS_QDEBUG( "logs [ENG]    Getting tel num match len failed, use default" );
+        matchLen = logsDefaultMatchLength;
+    }
+    LOGS_QDEBUG_2( "logs [ENG]    Tel number match length", matchLen )
+    LogsCommonData::getInstance().setTelNumMatchLen(matchLen);
 }
 
 // ----------------------------------------------------------------------------
@@ -218,14 +235,22 @@ bool LogsDbConnector::clearList(LogsModel::ClearType cleartype)
 // LogsDbConnector::clearEvent
 // ----------------------------------------------------------------------------
 //
-bool LogsDbConnector::clearEvents(const QList<int>& eventIds)
+bool LogsDbConnector::clearEvents(const QList<LogsEvent*>& events)
 {
     bool asyncClearingStarted(false);
     if ( mLogsRemove ){
         bool async(false);
-        int err = mLogsRemove->clearEvents(eventIds, async);
+        int err = mLogsRemove->clearEvents(events, async);
         asyncClearingStarted = ( !err && async );
-    }    
+    } 
+    
+    if ( asyncClearingStarted ){
+        // Lock reader while removing events one-by-one as reading
+        // might have chance to run while removing is still in progress
+        // which looks bad at UI layer.
+        mReader->lock(true);
+    }
+    
     return asyncClearingStarted;
 }
 
@@ -233,7 +258,7 @@ bool LogsDbConnector::clearEvents(const QList<int>& eventIds)
 // LogsDbConnector::markEventsSeen
 // ----------------------------------------------------------------------------
 //
-bool LogsDbConnector::markEventsSeen(const QList<int>& eventIds)
+bool LogsDbConnector::markEventsSeen(const QList<LogsEvent*>& events)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::markEventsSeen()" )
     
@@ -241,13 +266,16 @@ bool LogsDbConnector::markEventsSeen(const QList<int>& eventIds)
         return false;
     }
     
-    foreach( int currId, eventIds ){
-        if ( !mEventsSeen.contains(currId) ){
-            mEventsSeen.append(currId);
+    foreach( LogsEvent* ev, events ){
+        if ( !mEventsSeen.contains(*ev) ){
+            mEventsSeen.append(*ev);
+            foreach ( const LogsEvent& mergedEv, ev->mergedDuplicates() ){
+                if ( !mEventsSeen.contains(mergedEv) ){
+                    mEventsSeen.append(mergedEv);
+                }
+            }
         }
     }
-
-    LOGS_QDEBUG_2( "logs [ENG] -> event ids:", mEventsSeen );  
     
     int err = doMarkEventSeen();
     LOGS_QDEBUG_2( "logs [ENG] <- LogsDbConnector::markEventsSeen(), marking err:", 
@@ -357,7 +385,7 @@ int LogsDbConnector::compressData()
             }
         }
         emit dataRemoved(removedIndexes);
-        deleteRemoved( numEventsLeftInMemory );
+        deleteInvalidEvents( numEventsLeftInMemory );
         mReader->stop();
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::compressData()" )
@@ -416,10 +444,10 @@ void LogsDbConnector::handleTemporaryError(int& error)
 }
 
 // ----------------------------------------------------------------------------
-// LogsDbConnector::deleteRemoved
+// LogsDbConnector::deleteInvalidEvents
 // ----------------------------------------------------------------------------
 //
-void LogsDbConnector::deleteRemoved(int newEventCount)
+void LogsDbConnector::deleteInvalidEvents(int newEventCount)
 {
     // Remove events which are not anymore in db nor in model,
     // such events are always at end of list
@@ -435,6 +463,7 @@ void LogsDbConnector::deleteRemoved(int newEventCount)
 void LogsDbConnector::removeCompleted()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::removeCompleted()" )
+    mReader->lock(false);
     emit clearingCompleted(0);
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::removeCompleted()" )
 }
@@ -447,6 +476,7 @@ void LogsDbConnector::logsRemoveErrorOccured(int err)
 {
     LOGS_QDEBUG_2( "logs [ENG] <-> LogsDbConnector::logsRemoveErrorOccured(), err:", err )
     
+    mReader->lock(false);
     emit clearingCompleted(err);
     // TODO: error handling
     
@@ -457,7 +487,7 @@ void LogsDbConnector::logsRemoveErrorOccured(int err)
 // LogsDbConnector::readCompleted
 // ----------------------------------------------------------------------------
 //
-void LogsDbConnector::readCompleted(int readCount)
+void LogsDbConnector::readCompleted()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::readCompleted()" )
     LOGS_QDEBUG_EVENT_ARR(mEvents)
@@ -466,24 +496,24 @@ void LogsDbConnector::readCompleted(int readCount)
     mRemovedEventIndexes.clear();
     mUpdatedEventIndexes.clear();
     mAddedEventIndexes.clear();
+    mModelEvents.clear();
+    QList<LogsEvent*> toBeDeletedEvents;
     for ( int i = 0; i < mEvents.count(); i++ ){
-        if ( !mEvents.at(i)->isInView() ){
-            mRemovedEventIndexes.append( mEvents.at(i)->index() );
-        } else if ( mEvents.at(i)->eventState() == LogsEvent::EventUpdated ) {
-            mUpdatedEventIndexes.append( mEvents.at(i)->index() );
-        } else if ( mEvents.at(i)->eventState() == LogsEvent::EventAdded ) {
-            mAddedEventIndexes.append( mEvents.at(i)->index() );
-        }
-    }
-
-    bool doModelDataReset( !mRemovedEventIndexes.isEmpty() ||
-                           !mAddedEventIndexes.isEmpty() || 
-                           !mUpdatedEventIndexes.isEmpty() );
-    if ( doModelDataReset ){
-        mModelEvents.clear();
-        int numValidEvents = qMin(mEvents.count(), readCount);
-        for ( int i = 0; i < numValidEvents; i++ ){    
-            mModelEvents.append(mEvents.at(i));
+        LogsEvent* currEvent = mEvents.at(i);
+        if ( !currEvent->isInView() ){
+            if ( currEvent->index() >= 0 ){
+                mRemovedEventIndexes.append( currEvent->index() );
+            }
+            toBeDeletedEvents.append( mEvents.takeAt(i) );
+            i--;
+        } else {
+            currEvent->setIndex(i);
+            if ( currEvent->eventState() == LogsEvent::EventUpdated ) {
+                mUpdatedEventIndexes.append(i);
+            } else if ( currEvent->eventState() == LogsEvent::EventAdded ) {
+                mAddedEventIndexes.append(i);
+            }
+            mModelEvents.append(currEvent);
         }
     }
     
@@ -508,7 +538,7 @@ void LogsDbConnector::readCompleted(int readCount)
         }
     }
     
-    deleteRemoved(readCount);
+    qDeleteAll(toBeDeletedEvents);
 
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::readCompleted()" )
 }
@@ -585,7 +615,7 @@ int LogsDbConnector::doMarkEventSeen()
 {
     int err = -1;
     if ( mEventsSeen.count() > 0 ){
-        err = mReader->markEventSeen(mEventsSeen.at(0));
+        err = mReader->markEventSeen(mEventsSeen.at(0).logId());
     }
     return err;
 }
@@ -609,4 +639,18 @@ bool LogsDbConnector::handleModifyingCompletion(int err)
     
     }
     return continueModify;
+}
+
+// ----------------------------------------------------------------------------
+// LogsDbConnector::getTelNumMatchLenL
+// ----------------------------------------------------------------------------
+//
+void LogsDbConnector::getTelNumMatchLenL(int& matchLen)
+{
+    TInt tempMatchLen;
+    CRepository* repository = CRepository::NewL(logsTelConfigurationCRUid);
+    CleanupStack::PushL(repository);
+    User::LeaveIfError( repository->Get(logsTelMatchDigits, tempMatchLen) );
+    CleanupStack::PopAndDestroy(repository);
+    matchLen = tempMatchLen;
 }
