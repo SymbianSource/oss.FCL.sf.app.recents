@@ -23,7 +23,7 @@
 
 class LogsRecentCallsView;
 class LogsComponentRepository;
-class HbMainWindow;
+class LogsMainWindow;
 class QModelIndex;
 
 class UT_LogsRecentCallsView : public QObject
@@ -84,7 +84,6 @@ private slots: //test methods
     void testDialpadOpened();
     void testSaveActivity();
     void testLoadActivity();
-    void testEventFilter();
     
 private: //helper functions
     
@@ -94,7 +93,7 @@ private:
  
     LogsRecentCallsView* mRecentCallsView;
     LogsComponentRepository* mRepository;
-    HbMainWindow* mMainWindow;
+    LogsMainWindow* mMainWindow;
     LogsViewManagerStub* mViewManager;
 };
 

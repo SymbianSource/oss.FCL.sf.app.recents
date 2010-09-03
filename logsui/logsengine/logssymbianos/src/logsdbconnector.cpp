@@ -25,18 +25,9 @@
 #include "logscommondata.h"
 #include <logcli.h>
 #include <f32file.h>
-#include <centralrepository.h>
-#include <LogsDomainCRKeys.h>
-
+#include <QApplication>
 // CONSTANTS
 
-// Telephony Configuration API
-// Keys under this category are used in defining telephony configuration.
-const TUid logsTelConfigurationCRUid = {0x102828B8};
-
-// Amount of digits to be used in contact matching.
-// This allows a customer to variate the amount of digits to be matched.
-const TUint32 logsTelMatchDigits = 0x00000001;
 
 
 // ----------------------------------------------------------------------------
@@ -52,8 +43,8 @@ LogsDbConnector::LogsDbConnector(
   mLogClient( 0 ), 
   mReader( 0 ),
   mLogsRemove( 0 ),
-  mRepository( 0 ),
-  mCompressionEnabled(false)
+  mCompressionEnabled(false),
+  mFirstReadCompleted(false)
 {
     LOGS_QDEBUG( "logs [ENG] <-> LogsDbConnector::LogsDbConnector()" )
     mFsSession = new RFs();
@@ -77,8 +68,6 @@ LogsDbConnector::~LogsDbConnector()
     
     qDeleteAll( mEvents );
     qDeleteAll( mDuplicatedEvents );
-    
-    delete mRepository;
     
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::~LogsDbConnector()" )
 }
@@ -198,8 +187,6 @@ void LogsDbConnector::initL()
     mReader = new LogsReader( 
         *mFsSession, *mLogClient, mLogEventStrings, mEvents, *this, mCheckAllEvents );
     
-    mRepository = CRepository::NewL( KCRUidLogs );
-    
     if ( mResourceControl ){
         LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::initL(), resource control enabled" )
         LogsCommonData::getInstance().configureReadSize(
@@ -209,13 +196,8 @@ void LogsDbConnector::initL()
     
     //Get number of digits used to match   
     int matchLen;
-    TRAPD( err, getTelNumMatchLenL(matchLen) )
-    if ( err ){
-        LOGS_QDEBUG( "logs [ENG]    Getting tel num match len failed, use default" );
-        matchLen = logsDefaultMatchLength;
-    }
+    LogsCommonData::getInstance().getTelNumMatchLen(matchLen);
     LOGS_QDEBUG_2( "logs [ENG]    Tel number match length", matchLen )
-    LogsCommonData::getInstance().setTelNumMatchLen(matchLen);
 }
 
 // ----------------------------------------------------------------------------
@@ -284,25 +266,6 @@ bool LogsDbConnector::markEventsSeen(const QList<LogsEvent*>& events)
 }
 
 // ----------------------------------------------------------------------------
-// LogsDbConnector::clearMissedCallsCounter
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::clearMissedCallsCounter()
-{
-    LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::clearMissedCallsCounter()" )
-    if ( !mRepository ){
-        return -1;
-    }
-    TInt value(0);
-    int err = mRepository->Get( KLogsNewMissedCalls, value );
-    if ( !err && value != 0 ){
-        err = mRepository->Set( KLogsNewMissedCalls, 0 );
-    }
-    LOGS_QDEBUG_2( "logs [ENG] <- LogsDbConnector::clearMissedCallsCounter(), err", err )
-    return err;
-}
-
-// ----------------------------------------------------------------------------
 // LogsDbConnector::readDuplicates
 // ----------------------------------------------------------------------------
 //
@@ -351,6 +314,9 @@ int LogsDbConnector::refreshData()
             err = mReader->start();
         }
     }
+    if ( !mLogsRemove ){
+        mLogsRemove = new LogsRemove( *this, mCheckAllEvents );
+    }   
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::refreshData()" )
     return err;
 }
@@ -386,47 +352,12 @@ int LogsDbConnector::compressData()
         }
         emit dataRemoved(removedIndexes);
         deleteInvalidEvents( numEventsLeftInMemory );
-        mReader->stop();
     }
+    
+    releaseDbConnections();
+    
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::compressData()" )
     return 0;
-}
-
-// ----------------------------------------------------------------------------
-// LogsDbConnector::predictiveSearchStatus
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::predictiveSearchStatus()
-{
-    LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::predictiveSearchStatus()" )
-    int status(-1);   
-    if ( mRepository ) {
-        TInt value(0);
-        status = mRepository->Get( KLogsPredictiveSearch, value );
-        if ( !status ) { 
-            status = value;
-        }
-    }    
-    LOGS_QDEBUG_2( "logs [ENG] <- LogsDbConnector::predictiveSearchStatus(), status:",
-            status )
-    return status;
-}
-
-// ----------------------------------------------------------------------------
-// LogsDbConnector::setPredictiveSearch
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::setPredictiveSearch(bool enabled)
-{
-    int err(-1);
-    int status = predictiveSearchStatus();
-    //if status == 0, it means that predictive search is permanently Off
-    //and we are not allowed to modify it
-    if (status != 0 && mRepository) {
-        int value = enabled ? 1 : 2;
-        err = mRepository->Set( KLogsPredictiveSearch, value );
-    }
-    return err;
 }
 
 // ----------------------------------------------------------------------------
@@ -536,10 +467,17 @@ void LogsDbConnector::readCompleted()
         if ( !mUpdatedEventIndexes.isEmpty() ){
             emit dataUpdated(mUpdatedEventIndexes);
         }
-    }
-    
+    }  
     qDeleteAll(toBeDeletedEvents);
-
+	
+    if ( qApp && !mFirstReadCompleted){
+        // Just used for testing purposes
+        QMetaObject::invokeMethod(qApp, "testLogsAppEngineReady" );
+        mFirstReadCompleted = true;
+    }
+    if ( mCompressionEnabled ){
+        releaseDbConnections();
+    }    
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::readCompleted()" )
 }
 
@@ -642,15 +580,16 @@ bool LogsDbConnector::handleModifyingCompletion(int err)
 }
 
 // ----------------------------------------------------------------------------
-// LogsDbConnector::getTelNumMatchLenL
+//
 // ----------------------------------------------------------------------------
 //
-void LogsDbConnector::getTelNumMatchLenL(int& matchLen)
+void LogsDbConnector::releaseDbConnections()
 {
-    TInt tempMatchLen;
-    CRepository* repository = CRepository::NewL(logsTelConfigurationCRUid);
-    CleanupStack::PushL(repository);
-    User::LeaveIfError( repository->Get(logsTelMatchDigits, tempMatchLen) );
-    CleanupStack::PopAndDestroy(repository);
-    matchLen = tempMatchLen;
+    LOGS_QDEBUG( "logs [ENG] -> LogsDbConnector::releaseDbConnections()" )
+    if ( mReader ){
+        mReader->stop();
+    }
+    delete mLogsRemove;
+    mLogsRemove = 0;
+    LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::releaseDbConnections()" )
 }

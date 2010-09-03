@@ -23,11 +23,9 @@ CONFIG += qtestlib
 CONFIG += hb
 
 DEPENDPATH += .
-INCLUDEPATH = ../stubs/ $$INCLUDEPATH
+PREPEND_INCLUDEPATH = ../stubs
 INCLUDEPATH += .
-INCLUDEPATH += /epoc32/include
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
-INCLUDEPATH += /epoc32/include/ecom
 INCLUDEPATH += ../../
 INCLUDEPATH += ../../inc
 INCLUDEPATH += ../../../
@@ -45,7 +43,6 @@ HEADERS += inc/ut_logseventparser.h
 HEADERS += inc/ut_logseventdataparser.h
 HEADERS += inc/ut_logsremove.h
 HEADERS += inc/ut_logsremovestates.h
-HEADERS += inc/ut_logssystemtimeobserver.h
 HEADERS += ../../inc/logsdbconnector.h
 HEADERS += ../../inc/logsworker.h
 HEADERS += ../../inc/logsreader.h
@@ -53,7 +50,6 @@ HEADERS += ../../inc/logsreaderstates.h
 HEADERS += ../../inc/logsreaderobserver.h
 HEADERS += ../../inc/logsremove.h
 HEADERS += ../../inc/logsremovestates.h
-HEADERS += ../../inc/logssystemtimeobserver.h
 HEADERS += ../../../../../recents_plat/logs_engine_api/inc/logsevent.h
 HEADERS += ../../../inc/logseventdata.h
 HEADERS += ../../../inc/logscommondata.h
@@ -84,10 +80,10 @@ SOURCES += ../../../src/logscommondata.cpp
 SOURCES += ../../../src/logsconfigurationparams.cpp
 SOURCES += ../../../src/logsduplicatelookup.cpp
 
-SOURCES += ../../../../tsrc/qtestutils/src/testresultxmlparser.cpp
+SOURCES += ../../../../tsrc/qtestutils/src/testrunner.cpp
 SOURCES += ../stubs/logclient_stubs.cpp
 SOURCES += ../stubs/qtcontacts_stubs.cpp
-SOURCES += ../stubs/centralrepository_stub.cpp
+SOURCES += ../stubs/xqsettingsmanager_stub.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE

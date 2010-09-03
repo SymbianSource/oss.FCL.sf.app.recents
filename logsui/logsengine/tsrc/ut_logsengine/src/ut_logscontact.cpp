@@ -30,6 +30,8 @@ const int logsContactsLocalIdTest1 = 1;
 const char logsIContactsView[] = "com.nokia.symbian.IContactsView";
 const char logsIContactsEdit[] = "com.nokia.symbian.IContactsEdit";
 
+const int groupId = 99;
+
 
 void UT_LogsContact::initTestCase()
 {
@@ -90,6 +92,16 @@ void UT_LogsContact::testAllowedRequestType()
     QVERIFY( mLogsEvent->logsEventData()->contactLocalId() );
     QVERIFY( mLogsContact->allowedRequestType() == LogsContact::TypeLogsContactOpen );
     
+    //group is in phonebook => open is allowed
+    mLogsEvent->logsEventData()->setContactLocalId(groupId);
+    QtContactsStubsHelper::setContactId(groupId);
+    delete mLogsContact;
+    mLogsContact = 0;
+    mLogsContact = new LogsContact(*mLogsEvent, *mDbConnector);
+    QVERIFY( mLogsEvent->logsEventData()->contactLocalId() );
+    QVERIFY( mLogsContact->allowedRequestType() == LogsContact::TypeLogsContactOpenGroup );
+    
+    
     //contact not in phonebook, but caller ID present => save allowed
     QtContactsStubsHelper::reset();
     delete mLogsContact;
@@ -122,7 +134,7 @@ void UT_LogsContact::testOpen()
              == logsIContactsView );
     QVERIFY( mLogsContact->mAiwRequest->operation() == "openContactCard(int)" );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
-    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );    
     
     // Same but without using logsevent at construction
     QtHighwayStubHelper::reset();
@@ -136,6 +148,22 @@ void UT_LogsContact::testOpen()
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
     
+    //group is in phonebook, open is ok
+    QtHighwayStubHelper::reset();
+    mLogsEvent->logsEventData()->setContactLocalId(groupId);
+    QtContactsStubsHelper::setContactId(groupId);
+    delete mLogsContact;
+    mLogsContact = 0;
+    mLogsContact = new LogsContact(*mLogsEvent, *mDbConnector);
+    QVERIFY( mLogsContact->open() );
+    QVERIFY( mLogsContact->mAiwRequest );
+    QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactOpenGroup );
+    QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
+             == logsIContactsView );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == "openGroup(int)" );
+    QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
+    QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
+
     // Request sending failed
     QtHighwayStubHelper::reset();
     QtHighwayStubHelper::setFailCreateAiwRequest(true);

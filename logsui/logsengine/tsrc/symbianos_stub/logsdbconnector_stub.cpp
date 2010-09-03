@@ -23,22 +23,15 @@
 // CONSTANTS
 
 QString logsLastCalledFunction = "";
-int logsPredictiveSearchStatus = 0;
 
 void LogsDbConnectorStubHelper::reset()
 {
     logsLastCalledFunction = "";
-    logsPredictiveSearchStatus = 0;
 }
 
 QString LogsDbConnectorStubHelper::lastCalledFunction()
 {
     return logsLastCalledFunction;
-}
-
-void LogsDbConnectorStubHelper::setPredictiveSearch(int status)
-{
-    logsPredictiveSearchStatus = status;
 }
 
 // ----------------------------------------------------------------------------
@@ -101,16 +94,6 @@ bool LogsDbConnector::clearList(LogsModel::ClearType /*cleartype*/)
 {
     logsLastCalledFunction = "clearList";
     return true;
-}
-
-// ----------------------------------------------------------------------------
-// LogsDbConnector::clearMissedCallsCounter
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::clearMissedCallsCounter()
-{
-    logsLastCalledFunction = "clearMissedCallsCounter";
-    return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -251,29 +234,4 @@ void LogsDbConnector::duplicatesReadingCompleted(QList<LogsEvent*> duplicates)
 int LogsDbConnector::doMarkEventSeen()
 {
     return 0;
-}
-
-// ----------------------------------------------------------------------------
-// LogsDbConnector::predictiveSearchStatus
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::predictiveSearchStatus()
-{
-    logsLastCalledFunction = "predictiveSearchStatus";
-    return logsPredictiveSearchStatus;
-}
-
-// ----------------------------------------------------------------------------
-// LogsDbConnector::setPredictiveSearch
-// ----------------------------------------------------------------------------
-//
-int LogsDbConnector::setPredictiveSearch(bool enabled)
-{
-    logsLastCalledFunction = "setPredictiveSearch";
-    if (logsPredictiveSearchStatus != 0) {
-        logsPredictiveSearchStatus = enabled ? 1 : 2;
-        return 0;
-    } else {
-        return -1;
-    }
 }

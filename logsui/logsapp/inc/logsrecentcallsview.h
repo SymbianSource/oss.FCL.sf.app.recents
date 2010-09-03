@@ -105,16 +105,15 @@ private:
     void changeView(XQService::LogsViewIndex view);
     void updateMenu();
     void handleMissedCallsMarking();
+    void handleMissedCallsCounter();
     
     //from HbWidget
     void gestureEvent(QGestureEvent *event);    
-    bool eventFilter(QObject *obj, QEvent *event);
     
     int getListItemTextWidth();
     bool decideListMoveDirection(
         QSwipeGesture::SwipeDirection direction);
     bool moveToLeft(bool toLeft) const;
-    
     
 private:
     

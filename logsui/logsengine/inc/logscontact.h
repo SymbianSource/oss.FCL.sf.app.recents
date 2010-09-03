@@ -18,7 +18,7 @@
 #define LOGSCONTACT_H
 
 #include <QObject>
-#include <qtcontacts.h>
+#include <qcontact.h>
 #include <logsexport.h>
 
 //forward declarations
@@ -38,8 +38,9 @@ class LogsContact : public QObject
     
 public:
     enum RequestType {
-        TypeLogsContactOpen,    //contact is in phonebook, can open it
-        TypeLogsContactSave     //contact isn't in phonebook, can save it
+        TypeLogsContactOpen,     //contact is in phonebook, can open it
+        TypeLogsContactSave,     //contact isn't in phonebook, can save it
+        TypeLogsContactOpenGroup //contact is a group in phonebook, can open it
     };
 
 public: 
@@ -126,6 +127,8 @@ private:
                                  const QString& operation,
                                  const QList<QVariant>& arguments);
     
+    bool isContactGroup();
+
     
 private: //data 
     

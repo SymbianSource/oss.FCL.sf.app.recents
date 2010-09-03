@@ -131,10 +131,9 @@ bool LogsBaseView::isExitAllowed()
 void LogsBaseView::resetView()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::resetView()" );
-    mDialpad->editor().setText(QString());
-    if ( mDialpad->isOpen() ){
-        mDialpad->closeDialpad();
-    }
+    
+    scrollToTopItem(listView());
+    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::resetView()" );
 }
 
@@ -637,6 +636,11 @@ void LogsBaseView::populateListItemMenu(HbMenu& menu)
             contactAction->setText(hbTrId("txt_dialer_ui_menu_open_contact"));
             QObject::connect( contactAction, SIGNAL(triggered()), 
                               mContact, SLOT(open()) );
+        } else if (mContact->allowedRequestType() ==
+                LogsContact::TypeLogsContactOpenGroup) {
+            contactAction->setText(hbTrId("txt_dialer_menu_open_group"));
+            QObject::connect( contactAction, SIGNAL(triggered()), 
+                              mContact, SLOT(open()) );
         }
         else {
             contactAction->setText(hbTrId("txt_common_menu_add_to_contacts"));
@@ -983,7 +987,7 @@ void LogsBaseView::deleteEvent()
                 SLOT(deleteEventAnswer(int)),
                 HbMessageBox::Ok | HbMessageBox::Cancel,
                 new HbLabel(hbTrId("txt_dialer_ui_title_delete_event")));
-    }
+    }    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::deleteEvent()" );
 }
 
@@ -1096,7 +1100,8 @@ void LogsBaseView::updateListSize( HbListView& list )
     mRepository.loadSection( viewId(), newSection );
     
     if ( sectionChanged ){
-        ensureListPositioning( list );
+        bool listSizeDecreased(mDialpad->isOpen());
+        ensureListPositioning( list, listSizeDecreased );
     }
     
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::updateListSize()" );
@@ -1218,39 +1223,60 @@ bool LogsBaseView::isDialpadInput() const
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::ensureListPositioning( HbListView& list )
+void LogsBaseView::ensureListPositioning(HbListView& list, bool listSizeDecreased)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::ensureListPositioning()" );
-
+    
     HbWidget* content = 
         qobject_cast<HbWidget*>( mRepository.findWidget( logsContentId ) );
     QList<HbAbstractViewItem *> visibleItems = list.visibleItems();
     if ( content && visibleItems.count() > 0 ){
-        LOGS_QDEBUG_2( "logs [UI]   contentsRect:", content->contentsRect() );
         QRectF rect = content->contentsRect();
-        rect.adjust( 0, list.pos().y(), 0, -list.pos().y() );
-        LOGS_QDEBUG_2( "logs [UI]   listRect:", rect );
-        list.setGeometry(rect);
+        LOGS_QDEBUG_2( "logs [UI]   contentsRect:", rect );
         
-        HbScrollArea::ScrollBarPolicy prevPolicy = list.verticalScrollBarPolicy();
-        list.setVerticalScrollBarPolicy(HbScrollArea::ScrollBarAlwaysOff);
-        list.setVerticalScrollBarPolicy(prevPolicy);
+        // Important to force geometry as otherwise in dialpad opening case,
+        // list is not scrollable if having few items (e.g. 4), find out current
+        // fully visible item before geometry change so that list can be positioned
+        // correctly  
+        HbAbstractViewItem* firstFullyVisibleItem = visibleItems.at(0);
+        qreal itemHeight = firstFullyVisibleItem->size().height();
         
-        qreal itemHeight = visibleItems.at(0)->size().height();
+        // If at least 3/4 of the item is visible, it is considered as first fully visible
+        bool fullyVisible = ( firstFullyVisibleItem->mapRectToItem(
+            &list, firstFullyVisibleItem->boundingRect()).y() + itemHeight / 4 >= 0 );
+        if ( !fullyVisible && visibleItems.count() > 1 ){
+            firstFullyVisibleItem = visibleItems.at(1);
+        }
+        QRectF listRect = rect;
+        listRect.adjust(0, list.pos().y(), 0, 0);
+        LOGS_QDEBUG_2( "logs [UI]   listRect:", listRect );
+        list.setGeometry(listRect);
+        
         HbModelIterator* modelIt = list.modelIterator();
+        bool allItemsFitToReservedRect = true;
         if ( modelIt && itemHeight > 0 ) {
             int maxVisibleItems = rect.height() / itemHeight;
             LOGS_QDEBUG_2( "logs [UI]   max visible items:", maxVisibleItems );
-            if ( modelIt->indexCount() <= maxVisibleItems ){
+            allItemsFitToReservedRect = ( modelIt->indexCount() <= maxVisibleItems );
+            if ( allItemsFitToReservedRect ){
                 // All items can fit the rect reserved for the list, force them to fit
                 list.ensureVisible(QPointF(0,0));
-            } else if ( visibleItems.count() < maxVisibleItems ) {
+            } else {
                 // All items cannot fit the rect reserved, force to reserve whole
-                // area so that current index is tried to be centered
-                list.scrollTo(list.currentIndex(), HbAbstractItemView::PositionAtCenter);
+                // area so that current fully visible item is tried to be set to top
+                list.scrollTo(firstFullyVisibleItem->modelIndex(), 
+                              HbAbstractItemView::PositionAtTop);
+               
             }
         }
-    }
+        if ( listSizeDecreased && !allItemsFitToReservedRect ){
+            // Make sure that user understands that list is scrollable after geometry
+            // changed to smaller
+            HbScrollArea::ScrollBarPolicy prevPolicy = list.verticalScrollBarPolicy();
+            list.setVerticalScrollBarPolicy(HbScrollArea::ScrollBarAlwaysOff);
+            list.setVerticalScrollBarPolicy(prevPolicy);
+        }
+    }   
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::ensureListPositioning()" );
 }
 
@@ -1261,9 +1287,16 @@ void LogsBaseView::ensureListPositioning( HbListView& list )
 void LogsBaseView::scrollToTopItem( HbListView* list )
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::scrollToTopItem()" );
-    
-    if ( list && list->verticalScrollBar() ){
-        list->verticalScrollBar()->setValue(0.0);
+
+    if ( list ){
+        if ( model() && model()->hasIndex(0,0) ) {
+            QModelIndex topIndex = model()->index(0,0);
+            list->scrollTo( topIndex );
+        }
+        // Force also scrollbar to show itself correctly
+        if ( list->verticalScrollBar() ){
+            list->verticalScrollBar()->setValue(0.0);
+        }
     }
     
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::scrollToTopItem()" );

@@ -25,50 +25,46 @@
 #include "ut_logspredictivethai12keytranslator.h"
 #include "ut_logscntentry.h"
 
-#include "testresultxmlparser.h"
-
-
-#define UTEST_CLASS( tc )\
-    tc tc##_instance;\
-    QStringList tc##_args( #tc );\
-    resultFileName = QString("c:/") + QString( #tc ) + QString(".xml");\
-    tc##_args << "-xml" << "-o" << resultFileName;\
-    QTest::qExec(&tc##_instance, tc##_args);\
-    parser.parseAndPrintResults(resultFileName,true)
-    
+#include "testrunner.h"
 
 
 int main(int argc, char *argv[]) 
-{
-    bool promptOnExit(true);
-    bool useQApplication(true);
-    for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-noprompt")
-            promptOnExit = false;
-        else if (QString(argv[i]) == "-noqapp")
-            useQApplication = false;
-    }
+{    
     printf("Running tests...\n");
-    
-    QApplication* app = 0;
-    if ( useQApplication ) 
-        app = new QApplication(argc, argv);
-    
-    TestResultXmlParser parser;
-    QString resultFileName;
-    
-    UTEST_CLASS( UT_LogsPredictiveTranslator );
-    UTEST_CLASS( UT_LogsPredictive12KeyTranslator );
-    UTEST_CLASS( UT_LogsPredictiveLatin12KeyTranslator );
-    UTEST_CLASS( UT_LogsPredictiveThai12KeyTranslator );
-    UTEST_CLASS( UT_LogsCntEntry );
-    UTEST_CLASS( UT_LogsCntFinder );
-    
-    if (promptOnExit) {
-        printf("Press any key...\n");
-        getchar(); 
+            
+    QApplication app(argc, argv);
+    QStringList args = app.arguments();
+    QString combinedOutputFileName;
+    for ( int i = 0; i < args.count(); i++ ){
+        QString arg = args.at(i);
+        if ( arg == QString("-o") && i + 1 < args.count() ){
+            i++;
+            combinedOutputFileName = args.at(i);
+        }
     }
-    delete app;
+    
+    TestRunner testRunner("LogsCntFinder", combinedOutputFileName);
+    
+    UT_LogsPredictiveTranslator ut_logsPredictiveTranslator;
+    testRunner.runTests(ut_logsPredictiveTranslator);
+    
+    UT_LogsPredictive12KeyTranslator ut_logsPredictive12KeyTranslator;
+    testRunner.runTests(ut_logsPredictive12KeyTranslator);
+    
+    UT_LogsPredictiveLatin12KeyTranslator ut_logsPredictiveLatin12KeyTranslator;
+    testRunner.runTests(ut_logsPredictiveLatin12KeyTranslator);
+    
+    UT_LogsPredictiveThai12KeyTranslator ut_logsPredictiveThai12KeyTranslator;
+    testRunner.runTests(ut_logsPredictiveThai12KeyTranslator);
+    
+    UT_LogsCntEntry ut_logsCntEntry;
+    testRunner.runTests(ut_logsCntEntry);
+    
+    UT_LogsCntFinder ut_logsCntFinder;
+    testRunner.runTests(ut_logsCntFinder);
+    
+    testRunner.printResults();
+    
     return 0;   
 }
 

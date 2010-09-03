@@ -22,14 +22,14 @@
 #include "logsmatchesview.h"
 #include "logscomponentrepository.h"
 #include "logsdefs.h"
+#include "logsmainwindow.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
-#include <hbmainwindow.h>
 
 void UT_LogsComponentRepository::initTestCase()
 {
-    mMainWindow = new HbMainWindow();
+    mMainWindow = new LogsMainWindow();
     mViewManager = new LogsViewManagerStub(*mMainWindow);
 }
 
@@ -159,11 +159,9 @@ void UT_LogsComponentRepository::testLazyInit()
     QVERIFY( !mRepository->mRecentCallsView );
     QVERIFY( !mRepository->mDetailsView );
     QVERIFY( !mRepository->mMatchesView );
-    QVERIFY( !mRepository->model()->mRefreshCalled );
     mRepository->lazyInit();
     QVERIFY( mRepository->mRecentCallsView );
     QVERIFY( mRepository->mDetailsView );
     QVERIFY( mRepository->mMatchesView );
-    QVERIFY( mRepository->model()->mRefreshCalled );
     QVERIFY( mRepository->mCurrentObjectTree == &dummyObjList );
 }

@@ -193,7 +193,7 @@ protected:
     void updateDialpadCallAndMessagingActions();
     bool tryMatchesViewTransition();
     bool isDialpadInput() const;
-    void ensureListPositioning( HbListView& list );
+    void ensureListPositioning( HbListView& list, bool listSizeDecreased );
     void scrollToTopItem( HbListView* list );
     
     void updateMenuVisibility();

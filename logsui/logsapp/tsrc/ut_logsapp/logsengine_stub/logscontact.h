@@ -34,7 +34,8 @@ class LogsContact : public QObject
 public:
     enum RequestType {
         TypeLogsContactOpen,    //contact is in phonebook, can open it
-        TypeLogsContactSave     //contact isn't in phonebook, can save it
+        TypeLogsContactSave,    //contact isn't in phonebook, can save it
+        TypeLogsContactOpenGroup //contact is a group in phonebook, can open it
     };
 
 public: 

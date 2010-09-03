@@ -19,10 +19,10 @@
 #include "logslogger.h"
 
 #include <QStringList>
-#include <QContactManager.h>
-#include <QContact.h>
-#include <QContactName.h>
-#include <QContactPhoneNumber.h>
+#include <qcontactmanager.h>
+#include <qcontact.h>
+#include <qcontactname.h>
+#include <qcontactphonenumber.h>
 
 QString testHighlights;
 

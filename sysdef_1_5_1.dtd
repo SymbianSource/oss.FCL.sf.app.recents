@@ -27,7 +27,8 @@
   bldFile CDATA #REQUIRED
   priority CDATA #IMPLIED
   contract CDATA #IMPLIED
-  proFile CDATA #IMPLIED>
+  proFile CDATA #IMPLIED
+  qmakeArgs CDATA #IMPLIED>
  <!ELEMENT package EMPTY>
  <!ATTLIST package
   name CDATA #REQUIRED

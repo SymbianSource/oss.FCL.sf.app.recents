@@ -31,6 +31,7 @@
 #include <hbicon.h>
 #include <QtTest/QtTest>
 #include <hbfontspec.h>
+#include <xqsettingsmanager.h>
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -522,6 +523,8 @@ void UT_LogsModel::testMarkEventsSeen()
 
 void UT_LogsModel::testClearMissedCallsCounter()
 {
+    XQSettingsManager::mFailed = false;
+    XQSettingsManager::mCurrentVal = 1;
     QVERIFY( mModel->clearMissedCallsCounter() == 0 );
 }
 
@@ -539,16 +542,16 @@ void UT_LogsModel::testCompressData()
 
 void UT_LogsModel::testPredictiveSearchStatus()
 {
-    LogsDbConnectorStubHelper::setPredictiveSearch(1);
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = 1;
     QVERIFY( mModel->predictiveSearchStatus() == 1 );
-    QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "predictiveSearchStatus" );
 }
 
 void UT_LogsModel::testSetPredictiveSearch()
 {
-    LogsDbConnectorStubHelper::setPredictiveSearch(2);
+    XQSettingsManager::mCurrentVal = 2;
     QVERIFY( mModel->setPredictiveSearch(true) == 0 );
-    QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "setPredictiveSearch" );
+    QVERIFY( mModel->predictiveSearchStatus() == 1 );
 }
 
 void UT_LogsModel::testUpdateConfiguration()

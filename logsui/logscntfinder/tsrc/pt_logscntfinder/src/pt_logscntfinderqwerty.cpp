@@ -25,7 +25,7 @@ void PtTest::execute( QContactManager& manager )
 {
 
     QContactDetailFilter df;
-    df.setDetailDefinitionName(QContactName::DefinitionName, QContactEmailAddress::FieldEmailAddress );
+    df.setDetailDefinitionName(QContactEmailAddress::DefinitionName, QContactEmailAddress::FieldEmailAddress );
     df.setMatchFlags( QContactFilter::MatchKeypadCollation );
     QString pattern = mPattern + QChar(30) + QString("vqwerty");
     df.setValue( pattern );

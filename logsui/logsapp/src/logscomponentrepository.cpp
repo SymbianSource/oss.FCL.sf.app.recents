@@ -260,7 +260,6 @@ bool LogsComponentRepository::loadSection(  LogsAppViewId viewId,
 //
 void LogsComponentRepository::lazyInit()
 {
-    mModel->refreshData();
     recentCallsView(true);
     detailsView(true);
     matchesView(true);

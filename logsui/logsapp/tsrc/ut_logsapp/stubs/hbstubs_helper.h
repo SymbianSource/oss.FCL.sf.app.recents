@@ -45,6 +45,11 @@ class HbStubHelper
         static bool listEnsureVisibleCalled();
         static int menuShownPlacement();
         static void stringUtilDigitConversion(bool enabled);
+        static bool listScrollBarPolicySet();
+        static void resetListScrolling();
+        static void createWindowSurface();
+        static bool isTsTaskVisibilitySet();
+        static bool tsTaskVisibility();
 };
 
 #endif

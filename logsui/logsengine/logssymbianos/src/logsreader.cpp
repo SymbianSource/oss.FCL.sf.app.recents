@@ -102,6 +102,14 @@ void LogsReader::stop()
     Cancel(); 
     deleteLogViews();
     clearGlobalObserver();
+    cleanContactCache();
+    
+    qDeleteAll( mReadStates );
+    mReadStates.clear();
+    qDeleteAll( mModifyingStates );
+    mModifyingStates.clear();
+    qDeleteAll( mDuplicateReadingStates );
+    mDuplicateReadingStates.clear();
     
     LOGS_QDEBUG( "logs [ENG] <- LogsReader::stop()" )
     }
@@ -114,16 +122,8 @@ void LogsReader::updateDetails(bool clearCached)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsReader::updateDetails()" )
 
-    if ( clearCached ){
-        mContactCache.clear();
-    }
-    foreach (LogsEvent* event, mEvents){
-        event->prepareForContactMatching();
-        if ( clearCached && event->contactMatched() ){
-            event->setContactMatched( false );
-            event->setRemoteParty("");
-        }
-    }
+    Q_UNUSED( clearCached );
+    cleanContactCache();
     
     start();
    
@@ -612,5 +612,17 @@ void LogsReader::clearGlobalObserver()
     if ( mGlobalObserverSet ){
         TRAP_IGNORE( mLogClient->SetGlobalChangeObserverL( 0 ) )
         mGlobalObserverSet = false;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// LogsReader::cleanContactCache
+// ----------------------------------------------------------------------------
+//
+void LogsReader::cleanContactCache()
+{
+    mContactCache.clear();
+    foreach (LogsEvent* event, mEvents){
+        event->prepareForContactMatching();
     }
 }

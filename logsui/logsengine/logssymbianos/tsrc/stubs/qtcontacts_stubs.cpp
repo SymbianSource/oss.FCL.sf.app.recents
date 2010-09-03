@@ -33,6 +33,8 @@ QContactLocalId logsTestContactLocalId = 0;
 QString logsTestAvatar = "";
 QString logsFirstName = "";
 QString logsLastName = "";
+int testContactIdsMethodCallCount = 0;
+
 Q_DECLARE_METATYPE(QContactAvatar *)
 
 void QtContactsStubsHelper::reset()
@@ -42,6 +44,7 @@ void QtContactsStubsHelper::reset()
     logsTestContactLocalId = 0;
     logsFirstName = "";
     logsLastName = "";
+    testContactIdsMethodCallCount = 0;
 }
         
 void QtContactsStubsHelper::setContactId(int id)
@@ -53,6 +56,11 @@ void QtContactsStubsHelper::setContactNames(const QString& first, const QString&
 {
     logsFirstName = first;
     logsLastName = last;
+}
+
+int QtContactsStubsHelper::contactIdsMethodCallCount()
+{
+    return testContactIdsMethodCallCount;
 }
 
 // ----------------------------------------------------------------------------
@@ -111,6 +119,7 @@ QList<QContactLocalId> QContactManager::contactIds(
     if ( QString("11112222").endsWith(matchNum) ){
         list.append( logsTestContactId );
     }
+    testContactIdsMethodCallCount++;
     return list;
 }
 
@@ -149,6 +158,11 @@ void QContactDetailFilter::setMatchFlags(QContactFilter::MatchFlags flags)
 void QContactDetailFilter::setValue(const QVariant& value)
 {
     logsTestNumber = value.toString();
+}
+
+QVariant QContactDetailFilter::value() const
+{
+    return QVariant(logsTestNumber);
 }
 
 // ----------------------------------------------------------------------------
@@ -216,6 +230,14 @@ QContactLocalId QContact::localId() const
     return logsTestContactLocalId;
 }
 
+QString QContact::type() const
+{
+    if (logsTestContactLocalId == 99) {
+        return QContactType::TypeGroup;
+    } else {
+        return QContactType::TypeContact;
+    }
+}
 
 // ----------------------------------------------------------------------------
 // QContactDetail

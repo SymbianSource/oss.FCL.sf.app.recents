@@ -20,7 +20,8 @@
 #include "logsmodel.h"
 #include "logsreader.h"
 #include "logscommondata.h"
-#include "centralrepository_stub_helper.h"
+#include "logsremove.h"
+#include <xqsettingsmanager.h>
 
 #include <QtTest/QtTest>
 
@@ -92,7 +93,7 @@ void UT_LogsDbConnector::testInit()
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeUndefined );
     
     // Resource control enabled
-    CentralRepositoryStubHelper::setCurrentVal(logsDefaultMatchLength + 2);
+    XQSettingsManager::mCurrentVal = logsDefaultMatchLength + 2;
     LogsDbConnector* connector = new LogsDbConnector(mEvents, false, true);
     QVERIFY( connector->init() == 0 );
     QVERIFY( connector->mReader );
@@ -101,10 +102,11 @@ void UT_LogsDbConnector::testInit()
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeCompressEnabled );
     QCOMPARE( LogsCommonData::getInstance().telNumMatchLen(), logsDefaultMatchLength + 2 );
     delete connector;
+    LogsCommonData::getInstance().freeCommonData();
     
     // Match len not found, default is used
-    CentralRepositoryStubHelper::setCurrentVal(logsDefaultMatchLength + 2);
-    CentralRepositoryStubHelper::setFailCode( -1 );
+    XQSettingsManager::mCurrentVal = logsDefaultMatchLength + 2;
+    XQSettingsManager::mFailed = true;
     connector = new LogsDbConnector(mEvents);
     QVERIFY( connector->init() == 0 );
     QVERIFY( connector->mReader );
@@ -350,13 +352,14 @@ void UT_LogsDbConnector::testReadCompleted()
     QVERIFY( mDbConnector->mEvents.count() == 1 );
     QVERIFY( mEvents.count() == 1 );
 
-    // Read completed when compression is enabled, reader is not stopped
+    // Read completed when compression is enabled, reader is stopped
     QVERIFY( mDbConnector->init() == 0 );
     QVERIFY( mDbConnector->start() == 0 );
     QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
     mDbConnector->mCompressionEnabled = true;
     mDbConnector->readCompleted();
-    QVERIFY( mDbConnector->mReader->mLogViewRecent != 0 );
+    QVERIFY( !mDbConnector->mReader->mLogViewRecent );
+    QVERIFY( !mDbConnector->mLogsRemove );
 }
 
 void UT_LogsDbConnector::testErrorOccurred()
@@ -385,28 +388,6 @@ void UT_LogsDbConnector::testUpdateDetails()
     QVERIFY( spyUpdated.count() == 0 ); // Will happen asynchronously
 }
 
-void UT_LogsDbConnector::testClearMissedCallsCounter()
-{
-    // Not ready
-    QVERIFY( mDbConnector->clearMissedCallsCounter() != 0 );
-    
-    // Ready and value is changed
-    mDbConnector->init();
-    CentralRepositoryStubHelper::reset();
-    CentralRepositoryStubHelper::setCurrentVal(5);
-    QVERIFY( mDbConnector->clearMissedCallsCounter() == 0 );
-    QVERIFY( CentralRepositoryStubHelper::currentVal() == 0 );
-    
-    // Ready and no need to change value as it is already zero
-    QVERIFY( mDbConnector->clearMissedCallsCounter() == 0 );
-    QVERIFY( CentralRepositoryStubHelper::currentVal() == 0 );
-    
-    // Fails with some error
-    CentralRepositoryStubHelper::setCurrentVal(100);
-    CentralRepositoryStubHelper::setFailCode(KErrNotFound);
-    QVERIFY( mDbConnector->clearMissedCallsCounter() != 0 );
-}
-
 void UT_LogsDbConnector::testRefreshData()
 {
     QVERIFY( mDbConnector->refreshData() != 0 );
@@ -423,11 +404,14 @@ void UT_LogsDbConnector::testRefreshData()
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeUndefined );
     
     // Reader exists, compressed before, reading started
+    delete mDbConnector->mLogsRemove;
+    mDbConnector->mLogsRemove = 0;
     mDbConnector->mCompressionEnabled = true;
     QVERIFY( mDbConnector->refreshData() == 0 );
     QVERIFY( mDbConnector->mReader->IsActive() );
     QVERIFY( !mDbConnector->mCompressionEnabled );
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeUndefined );
+    QVERIFY( mDbConnector->mLogsRemove );
     
     // Reading not started again as already active
     LogsCommonData::getInstance().configureReadSize(30, LogsEvent::DirUndefined);
@@ -436,6 +420,7 @@ void UT_LogsDbConnector::testRefreshData()
     QVERIFY( mDbConnector->mReader->IsActive() );
     QVERIFY( !mDbConnector->mCompressionEnabled );
     QVERIFY( LogsCommonData::getInstance().maxReadSize() == logsReadSizeUndefined );
+    QVERIFY( mDbConnector->mLogsRemove );
 }
 
 void UT_LogsDbConnector::testCompressData()
@@ -455,6 +440,7 @@ void UT_LogsDbConnector::testCompressData()
     QVERIFY( spyRemoved.count() == 1 );
     QList<int> removedIndexes = qvariant_cast< QList<int> >(spyRemoved.at(0).at(0));
     QVERIFY( removedIndexes.count() == 0 );
+    QVERIFY( !mDbConnector->mLogsRemove );
         
     // Less events than compression limit is, nothing really done
     int numEvents = 3;
@@ -488,49 +474,3 @@ void UT_LogsDbConnector::testCompressData()
     QVERIFY( removedIndexes3.at(2) == ( numEventsMoreThanCompressLimit - 1 ) );
     QVERIFY( mDbConnector->mModelEvents.count() == logsReadSizeCompressEnabled );
 }
-
-void UT_LogsDbConnector::testPredictiveSearchStatus()
-{
-    // Not ready
-    QVERIFY( mDbConnector->predictiveSearchStatus() != 0 );
-    
-    // Ready and value returned
-    mDbConnector->init();
-    CentralRepositoryStubHelper::reset();
-    CentralRepositoryStubHelper::setCurrentVal(2);
-    QVERIFY( mDbConnector->predictiveSearchStatus() == 2 );
-    
-    // Fails with some error
-    CentralRepositoryStubHelper::setCurrentVal(2);
-    CentralRepositoryStubHelper::setFailCode(KErrNotSupported);
-    QVERIFY( mDbConnector->predictiveSearchStatus() == KErrNotSupported );
-}
-
-void UT_LogsDbConnector::testSetPredictiveSearch()
-{
-    // Not ready
-    QVERIFY( mDbConnector->setPredictiveSearch(true) != 0 );
-    
-    // Ready and value change is not allowed
-    mDbConnector->init();
-    CentralRepositoryStubHelper::reset();
-    CentralRepositoryStubHelper::setCurrentVal(0);
-    QVERIFY( mDbConnector->setPredictiveSearch(true) != 0 );
-    QVERIFY( CentralRepositoryStubHelper::currentVal() == 0 );
-    
-    // Ready and value is changed
-    CentralRepositoryStubHelper::setCurrentVal(2);
-    QVERIFY( mDbConnector->setPredictiveSearch(true) == 0 );
-    QVERIFY( CentralRepositoryStubHelper::currentVal() == 1 );
-    
-    // Ready and value is changed
-    CentralRepositoryStubHelper::setCurrentVal(1);
-    QVERIFY( mDbConnector->setPredictiveSearch(false) == 0 );
-    QVERIFY( CentralRepositoryStubHelper::currentVal() == 2 );
-        
-    // Fails with some error
-    CentralRepositoryStubHelper::setCurrentVal(1);
-    CentralRepositoryStubHelper::setFailCode(KErrNotFound);
-    QVERIFY( mDbConnector->setPredictiveSearch(false) == KErrNotFound ); 
-}
-

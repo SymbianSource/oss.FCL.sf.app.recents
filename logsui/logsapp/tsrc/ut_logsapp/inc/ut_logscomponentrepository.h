@@ -23,7 +23,7 @@
 #include "logsviewmanagerstub.h"
 
 class LogsComponentRepository;
-class HbMainWindow;
+class LogsMainWindow;
 
 class UT_LogsComponentRepository : public QObject
 {
@@ -60,7 +60,7 @@ private slots: //test methods
     
 private:
  
-    HbMainWindow* mMainWindow;
+    LogsMainWindow* mMainWindow;
     LogsComponentRepository* mRepository;
     LogsViewManagerStub* mViewManager;
 };

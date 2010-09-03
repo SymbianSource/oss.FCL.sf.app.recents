@@ -24,10 +24,10 @@
 #include "logsmessage.h"
 #include "logsdefs.h"
 #include "logscontact.h"
+#include "logsmainwindow.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
-#include <hbmainwindow.h>
 #include <hblistview.h>
 #include <hblabel.h>
 #include <hbaction.h>
@@ -43,7 +43,7 @@ Q_DECLARE_METATYPE(LogsDetailsModel *)
 
 void UT_LogsDetailsView::initTestCase()
 {
-    mMainWindow = new HbMainWindow();
+    mMainWindow = new LogsMainWindow();
     mViewManager = new LogsViewManagerStub(*mMainWindow);
 }
 

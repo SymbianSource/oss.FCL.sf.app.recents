@@ -206,7 +206,7 @@ QVariant LogsMatchesModel::createContact(const LogsModelItemContainer& item) con
 int LogsMatchesModel::doSetPredictiveSearch(bool enabled)
 {    
     LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::doSetPredictiveSearch()" )
-    int err = mDbConnector->setPredictiveSearch(enabled);    
+    int err = LogsCommonData::getInstance().setPredictiveSearch(enabled);    
     if (!err) {
        //in case of search is turned off, getLogMatches will only reset 
        //previous search results
@@ -334,7 +334,7 @@ void LogsMatchesModel::eventsResetted()
 //
 void LogsMatchesModel::initPredictiveSearch()
 {
-    int searchStatus = mDbConnector->predictiveSearchStatus();
+    int searchStatus = LogsCommonData::getInstance().predictiveSearchStatus();
     //searchStatus equal to 0 means that search should be permanently disabled
     if (searchStatus != 0) {
         mLogsCntFinder = new LogsCntFinder(LogsCommonData::getInstance().contactManager(),
@@ -453,8 +453,8 @@ void LogsMatchesModel::getLogsMatches(const QString& pattern,
 void LogsMatchesModel::doSearchQuery()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMatchesModel::doSearchQuery()" );
-    if (mCurrentSearchPattern != mPrevSearchPattern && 
-            mDbConnector->predictiveSearchStatus() == 1 ){
+    if (mCurrentSearchPattern != mPrevSearchPattern &&
+            LogsCommonData::getInstance().predictiveSearchStatus() == 1) {
         mPrevSearchPattern = mCurrentSearchPattern;
         if (mCurrentSearchPattern.length() > 0) {
             LOGS_QDEBUG( "logs [ENG]    do search" );

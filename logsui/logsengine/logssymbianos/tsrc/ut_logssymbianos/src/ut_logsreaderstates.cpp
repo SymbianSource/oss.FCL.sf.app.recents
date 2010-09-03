@@ -435,14 +435,19 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( !logsEvent->contactLocalId() );
     QVERIFY(!logsEvent->contactMatched());
     
+    
     // Some events, nothing yet in cache, match from phonebook found (international format)
+    // Match is not used for event which has already remoteparty name
     QtContactsStubsHelper::setContactNames("first", "last");
     logsEvent->setNumber( "+3581112222" );
+    logsEvent2->setNumber( "+3581112222" );
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 1 );
     QVERIFY( logsEvent->contactLocalId() == contactId );
     QVERIFY(logsEvent->contactMatched());
-    QVERIFY(logsEvent->remoteParty().length() > 0);
+    QCOMPARE(logsEvent->remoteParty(), QString("first last") );
+    QVERIFY(!logsEvent2->contactMatched());
+    QCOMPARE(logsEvent2->remoteParty(), QString("remote2") );
     
     // Some events, nothing yet in cache, match from phonebook found (local format)
     mContactCache.clear();
@@ -453,7 +458,7 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( mContactCache.count() == 1 );
     QVERIFY( logsEvent->contactLocalId() == contactId );
     QVERIFY(logsEvent->contactMatched());
-    QVERIFY(logsEvent->remoteParty().length() > 0);
+    QCOMPARE(logsEvent->remoteParty(), QString("first last") );
     
     // Some events, matching info found from cache
     logsEvent->setLogsEventData(NULL);
@@ -465,7 +470,7 @@ void UT_LogsReaderStates::testStateFillDetails()
     QVERIFY( logsEvent->contactLocalId() == contactId );
     
     QtContactsStubsHelper::setContactNames("updated", "last");
-    QVERIFY( logsEvent->remoteParty() == "first last" );
+    QCOMPARE(logsEvent->remoteParty(), QString("first last") );
     mContactCache.clear();
     logsEvent->setContactMatched( false );
     logsEvent->setRemoteParty("");
@@ -483,12 +488,30 @@ void UT_LogsReaderStates::testStateFillDetails()
     mContactCache.clear();
     logsEvent->setContactMatched( false );
     logsEvent->setRemoteParty("");
+    logsEvent->setNumber( "5555" );
     QVERIFY( mContactCache.count() == 0 );
     QVERIFY( logsEvent->remoteParty().length() == 0 );
     QVERIFY( !state.enterL() );
     QVERIFY( mContactCache.count() == 0 );
     QVERIFY( logsEvent->remoteParty().length() == 0 );
     QVERIFY(!logsEvent->contactMatched());
+    
+    // Check that optimization for avoiding multiple searches
+    // per one number works
+    QtContactsStubsHelper::reset();
+    mContactCache.clear();
+    LogsEvent* logsEvent3 = new LogsEvent;
+    logsEvent3->setNumber( "5555" );
+    logsEvent3->setIsInView(true);
+    mEvents.append( logsEvent3 );
+    QCOMPARE( logsEvent->number(), logsEvent3->number() );
+    QVERIFY( !state.enterL() );
+    QVERIFY( mContactCache.count() == 0 );
+    QVERIFY( logsEvent->remoteParty().length() == 0 );
+    QVERIFY( logsEvent3->remoteParty().length() == 0 );
+    QVERIFY(!logsEvent->contactMatched());
+    QVERIFY(!logsEvent3->contactMatched());
+    QCOMPARE( QtContactsStubsHelper::contactIdsMethodCallCount(), 1 );
     
 }
 

@@ -21,7 +21,6 @@
 #include <logwraplimits.h>
 #include "logsreaderstates.h"
 #include "logsstatebasecontext.h"
-#include "logsreaderstatecontext.h"
 #include "logsevent.h"
 #include "logseventdata.h"
 #include "logsengdefs.h"
@@ -425,31 +424,19 @@ bool LogsReaderStateFillDetails::enterL()
 void LogsReaderStateFillDetails::fillDetails()
 {
     mDuplicateLookup.invalidate();
-    
+    QSet<QString> numbersWithoutMatch;
     QHash<QString, ContactCacheEntry>& contactMappings = mContext.contactCache();
     QList<LogsEvent*> &events = mContext.events();
     foreach ( LogsEvent* event, events ){  
         if ( event->isInView() ){
             const QString& num = event->getNumberForCalling();
-            if ( contactMappings.contains(num) ) {
-                // Matching cached contact found, use that
-                LOGS_QDEBUG_2( "logs [ENG]    Use existing contact for num:", num )
-                ContactCacheEntry entry = contactMappings.value(num);
-                event->setContactMatched( true );
-                event->setRemoteParty( entry.mRemoteParty );
-                event->setContactLocalId( entry.mContactLocalId );
-            } else if ( event->remoteParty().length() == 0 ) {
-                // No remote party name, search for match from phonebook
-                QString contactNameStr = event->updateRemotePartyFromContacts(
-                        LogsCommonData::getInstance().contactManager());
-                if (contactNameStr.length() > 0){
-                    LOGS_QDEBUG_3( "LogsReaderStateFillDetails, (name, num):", 
-                                   contactNameStr, num );
-                    // Cache the new contact name
-                    event->setContactMatched( true );
-                    ContactCacheEntry contactEntry(contactNameStr, event->contactLocalId());
-                    contactMappings.insert( num, contactEntry );
-                }
+            if ( !event->remoteParty().isEmpty() ){
+                // NOP
+            } else if ( numbersWithoutMatch.contains(num) ) {
+                event->setRemoteParty( "", true ); // No contact match found
+            } else {
+                // No remote party name, search match from contact cache or phonebook 
+                searchMatchForNumber(contactMappings, numbersWithoutMatch, *event, num);
             }
             if ( mBaseContext.isRecentView() ){
                 LogsEvent* duplicateEvent = mDuplicateLookup.findDuplicate(*event);
@@ -463,6 +450,39 @@ void LogsReaderStateFillDetails::fillDetails()
     } 
     
     mDuplicateLookup.cleanup();
+}
+
+// ----------------------------------------------------------------------------
+// LogsReaderStateFillDetails::searchMatchForNumber
+// ----------------------------------------------------------------------------
+//
+void LogsReaderStateFillDetails::searchMatchForNumber(
+    QHash<QString, ContactCacheEntry>& contactMappings, 
+    QSet<QString>& numbersWithoutMatch, 
+    LogsEvent& event, 
+    const QString& num)
+{
+    if ( contactMappings.contains(num) ) {
+        // Matching cached contact found, use that
+        LOGS_QDEBUG_2( "logs [ENG]    Use existing contact for num:", num )
+        ContactCacheEntry entry = contactMappings.value(num);
+        event.setRemoteParty( entry.mRemoteParty, true );
+        event.setContactLocalId( entry.mContactLocalId );
+    } else {
+        QString contactNameStr;
+        if (event.updateRemotePartyFromContacts(
+                LogsCommonData::getInstance().contactManager(), contactNameStr)){
+            LOGS_QDEBUG_3( "LogsReaderStateFillDetails, (name, num):", 
+                           contactNameStr, num );
+            // Cache the new contact name
+            ContactCacheEntry contactEntry(contactNameStr, event.contactLocalId());
+            contactMappings.insert( num, contactEntry );
+        } else {
+            // Avoid searching match again for the same number at this round
+            event.setRemoteParty( "", true ); // No contact match found
+            numbersWithoutMatch.insert( num );
+        }
+    }
 }
  
 // ----------------------------------------------------------------------------

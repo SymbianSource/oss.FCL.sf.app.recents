@@ -32,125 +32,69 @@
 #include "ut_logscommondata.h"
 #include "ut_logsconfigurationparams.h"
 #include "ut_logsduplicatelookup.h"
-#include "testresultxmlparser.h"
+#include "testrunner.h"
 
 
 int main(int argc, char *argv[]) 
 {
-    bool promptOnExit(true);
-    for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-noprompt")
-            promptOnExit = false;
-    }
     printf("Running tests...\n");
-    
+            
     QApplication app(argc, argv);
-    TestResultXmlParser parser;
+    QStringList args = app.arguments();
+    QString combinedOutputFileName;
+    for ( int i = 0; i < args.count(); i++ ){
+        QString arg = args.at(i);
+        if ( arg == QString("-o") && i + 1 < args.count() ){
+            i++;
+            combinedOutputFileName = args.at(i);
+        }
+    }
+    TestRunner testRunner("LogsEngine", combinedOutputFileName);
     
     UT_LogsModel ut_logsModel;
-    QString resultFileName = "c:/ut_logs_logsModel.xml";
-    QStringList args_logsModel( "ut_logsModel");
-    args_logsModel << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsModel, args_logsModel);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsModel);
     
     UT_LogsDetailsModel ut_logsDetailsModel;
-    resultFileName = "c:/ut_logs_logsDetailsModel.xml";
-    QStringList args_logsDetailsModel( "ut_logsDetailsModel");
-    args_logsDetailsModel << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsDetailsModel, args_logsDetailsModel);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsDetailsModel);
     
     UT_LogsMatchesModel ut_logsMatchesModel;
-    resultFileName = "c:/ut_logs_logsMatchesModel.xml";
-    QStringList args_logsMatchesModel( "ut_logsMatchesModel");
-    args_logsMatchesModel << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsMatchesModel, args_logsMatchesModel);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsMatchesModel);
     
     UT_LogsThumbnailManager ut_logsThumbnailManager;
-    resultFileName = "c:/ut_logs_logsThumbnailManager.xml";
-    QStringList args_logsThumbnailManager( "ut_logsThumbnailManager");
-    args_logsThumbnailManager << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsThumbnailManager, args_logsThumbnailManager);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsThumbnailManager);
 
     UT_LogsFilter ut_logsFilter;
-    resultFileName = "c:/ut_logs_logsFilter.xml";
-    QStringList args_logsFilter( "ut_logsFilter");
-    args_logsFilter << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsFilter, args_logsFilter);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsFilter);
     
     UT_LogsCustomFilter ut_logsCustomFilter;
-    resultFileName = "c:/ut_logs_logsCustomFilter.xml";
-    QStringList args_logsCustomFilter( "ut_logsCustomFilter");
-    args_logsCustomFilter << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsCustomFilter, args_logsCustomFilter);   
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsCustomFilter);
 
     UT_LogsCall ut_logscall;
-    resultFileName = "c:/ut_logs_logsCall.xml";
-    QStringList args_logsCall( "ut_logsCall");
-    args_logsCall << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logscall, args_logsCall);    
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logscall);
     
     UT_LogsContact ut_logsContact;
-    resultFileName = "c:/ut_logs_logsContact.xml";
-    QStringList args_logsContact( "ut_logsContact");
-    args_logsContact << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsContact, args_logsContact);    
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsContact);
     
     UT_LogsMessage ut_logsMessage;
-    resultFileName = "c:/ut_logs_logsMessage.xml";
-    QStringList args_logsMessage( "ut_logsMessage");
-    args_logsMessage << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsMessage, args_logsMessage);    
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsMessage);
  
     UT_LogsEvent ut_logsEvent;
-    resultFileName = "c:/ut_logs_logsEvent.xml";
-    QStringList args_logsEvent( "ut_logsEvent");
-    args_logsEvent << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsEvent, args_logsEvent);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsEvent);
     
     UT_LogsEventData ut_logsEventdata;
-    resultFileName = "c:/ut_logs_logsEventData.xml";
-    QStringList args_logsEventData( "ut_logsEventData");
-    args_logsEventData << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsEventdata, args_logsEventData);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsEventdata);
     
     UT_LogsCommonData ut_logsCommonData;
-    resultFileName = "c:/ut_logs_logsCommonData.xml";
-    QStringList args_logsCommonData( "ut_logsCommonData");
-    args_logsCommonData << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsCommonData, args_logsCommonData);
-    parser.parseAndPrintResults(resultFileName,true);
+    testRunner.runTests(ut_logsCommonData);
     
     UT_LogsConfigurationParams ut_logsConfigurationParams;
-    resultFileName = "c:/ut_logs_logsConfigurationParams.xml";
-    QStringList args_logsConfigurationParams( "ut_logsConfigurationParams");
-    args_logsConfigurationParams << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsConfigurationParams, args_logsConfigurationParams);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsConfigurationParams);
     
     UT_LogsDuplicateLookup ut_logsLookup;
-    resultFileName = "c:/ut_logs_logsDuplicateLookup.xml";
-    QStringList args_logsDuplicateLookup( "ut_logsDuplicateLookup");
-    args_logsDuplicateLookup << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsLookup, args_logsDuplicateLookup);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsLookup);
     
-     
-
-    if (promptOnExit) {
-        printf("Press any key...\n");
-        getchar(); 
-    }
+    testRunner.printResults();
+    
     return 0;   
 }
 

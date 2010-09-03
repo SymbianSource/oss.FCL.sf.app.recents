@@ -97,7 +97,7 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lflogger -llogcli -llogwrap -lefsrv -lxqservice -lxqserviceutil \
             -lqtcontacts -llogscntfinder -lthumbnailmanagerqt \
-            -lcentralrepository
+            -lxqsettingsmanager
     
     defFiles = "$${LITERAL_HASH}ifdef WINS" \
         "DEFFILE bwins/logsengine.def" \

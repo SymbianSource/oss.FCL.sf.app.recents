@@ -46,6 +46,9 @@ private slots: //test methods
     void testGetContactManager();
     void testFreeCommonData();
     void testCurrentConfiguration();
+    void testClearMissedCallsCounter();
+    void testPredictiveSearchStatus();
+    void testSetPredictiveSearch();
     
 private:
 

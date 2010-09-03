@@ -25,8 +25,9 @@
 #include "logseventdata.h"
 #include "qtcontacts_stubs_helper.h"
 #include "logscntfinder.h"
-#include "logsdbconnector_stub_helper.h"
 #include "hbstubs_helper.h"
+#include "logscommondata.h"
+#include <xqsettingsmanager.h>
 
 #include <QtTest/QtTest>
 
@@ -61,7 +62,8 @@ void UT_LogsMatchesModel::init()
 {
     HbStubHelper::reset();
     mModel = new LogsModel();
-    LogsDbConnectorStubHelper::setPredictiveSearch(1);
+    XQSettingsManager::mFailed = false;
+    XQSettingsManager::mCurrentVal = 1;
     mMatchesModel = mModel->logsMatchesModel();
 }
 
@@ -91,7 +93,8 @@ void UT_LogsMatchesModel::testConstructor()
     // Predictive search is off
     delete mMatchesModel;
     mMatchesModel = 0;
-    LogsDbConnectorStubHelper::setPredictiveSearch(2);
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = 2;
     mMatchesModel = mModel->logsMatchesModel();
     QVERIFY( mMatchesModel );
     QVERIFY( mMatchesModel->mIconManager );
@@ -100,7 +103,8 @@ void UT_LogsMatchesModel::testConstructor()
     // Predictive search status fetching failure=> assume that search is on
     delete mMatchesModel;
     mMatchesModel = 0;
-    LogsDbConnectorStubHelper::setPredictiveSearch(-1);
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = -1;
     mMatchesModel = mModel->logsMatchesModel();
     QVERIFY( mMatchesModel );
     QVERIFY( mMatchesModel->mIconManager );
@@ -109,7 +113,8 @@ void UT_LogsMatchesModel::testConstructor()
     // Predictive search is permanently disabled 
     delete mMatchesModel;
     mMatchesModel = 0;
-    LogsDbConnectorStubHelper::setPredictiveSearch(0);
+    XQSettingsManager::mCurrentVal = 0;
+    LogsCommonData::getInstance().freeCommonData();
     mMatchesModel = mModel->logsMatchesModel();
     QVERIFY( mMatchesModel );
     QVERIFY( !mMatchesModel->mIconManager );
@@ -707,9 +712,9 @@ void UT_LogsMatchesModel::testGetFormattedContactInfo()
 //
 void UT_LogsMatchesModel::testPredictiveSearchStatus()
 {
-    LogsDbConnectorStubHelper::reset();
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = 0;
     QVERIFY( mMatchesModel->predictiveSearchStatus() == 0 );
-    QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "predictiveSearchStatus" );
 }
 
 // -----------------------------------------------------------------------------
@@ -721,10 +726,9 @@ void UT_LogsMatchesModel::testSetPredictiveSearch()
     QVERIFY( mMatchesModel->mLogsCntFinder );
     QVERIFY( mMatchesModel->mIconManager );
     // Predictive search is permanently off in cenrep, setting the value fails
-    LogsDbConnectorStubHelper::reset();
-    QVERIFY( mMatchesModel->setPredictiveSearch(false) != 0 );
-    QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "setPredictiveSearch" );
-    
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = 0;
+    QVERIFY( mMatchesModel->setPredictiveSearch(false) != 0 );    
     
     // Turning off is ok, search results are reset
     mMatchesModel->mLogsCntFinder->mCurrentPredictivePattern = "9";
@@ -733,7 +737,8 @@ void UT_LogsMatchesModel::testSetPredictiveSearch()
     mMatchesModel->mMatches.append(item);
     mMatchesModel->mPrevSearchPattern = "123";
     mMatchesModel->mCurrentSearchPattern = "567";
-    LogsDbConnectorStubHelper::setPredictiveSearch(1);
+    LogsCommonData::getInstance().freeCommonData();
+    XQSettingsManager::mCurrentVal = 1;
     QVERIFY( mMatchesModel->setPredictiveSearch(false) == 0 );
     QVERIFY( mMatchesModel->mMatches.count() == 0 );
     QVERIFY( mMatchesModel->mPrevSearchPattern.isEmpty() );
@@ -746,6 +751,5 @@ void UT_LogsMatchesModel::testSetPredictiveSearch()
     QVERIFY( mMatchesModel->mPrevSearchPattern.isEmpty() );
     mMatchesModel->doSearchQuery(); // simulate async completion
     QVERIFY( mMatchesModel->mPrevSearchPattern == "567" );
-    QVERIFY( mMatchesModel->mLogsCntFinder->mCurrentPredictivePattern == "567" );
-    
+    QVERIFY( mMatchesModel->mLogsCntFinder->mCurrentPredictivePattern == "567" );    
 }

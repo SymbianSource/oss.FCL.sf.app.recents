@@ -33,6 +33,7 @@ INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 
 # Input
 HEADERS += inc/logsmainwindow.h
+HEADERS += inc/logsapplication.h
 HEADERS += inc/logsviewmanager.h
 HEADERS += inc/logsbaseview.h
 HEADERS += inc/logsrecentcallsview.h
@@ -47,6 +48,7 @@ HEADERS += inc/logscomponentrepository.h
 
 SOURCES += src/main.cpp 
 SOURCES += src/logsmainwindow.cpp
+SOURCES += src/logsapplication.cpp
 SOURCES += src/logsviewmanager.cpp
 SOURCES += src/logscomponentrepository.cpp
 SOURCES += src/logsbaseview.cpp
@@ -63,7 +65,7 @@ symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0x101F4CD5
     TARGET.CAPABILITY = CAP_APPLICATION NetworkControl
-    LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad
+    LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad -lxqkeycapture -ltstaskmonitorclient
     
 }
 

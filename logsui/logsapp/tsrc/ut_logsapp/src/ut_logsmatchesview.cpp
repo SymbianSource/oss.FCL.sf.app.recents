@@ -25,6 +25,7 @@
 #include "logsmodel.h"
 #include "logscontact.h"
 #include "logsmessage.h"
+#include "logsmainwindow.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
@@ -39,7 +40,7 @@ Q_DECLARE_METATYPE(LogsMatchesModel*)
 
 void UT_LogsMatchesView::initTestCase()
 {
-    mMainWindow = new HbMainWindow();
+    mMainWindow = new LogsMainWindow();
     mViewManager = new LogsViewManagerStub(*mMainWindow);
 }
 

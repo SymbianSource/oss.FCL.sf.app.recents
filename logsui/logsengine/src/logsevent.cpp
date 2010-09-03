@@ -167,11 +167,14 @@ bool LogsEvent::setNumber( const QString& number )
 // LogsEvent::setRemoteParty
 // ----------------------------------------------------------------------------
 //
-void LogsEvent::setRemoteParty( const QString& remoteParty )
+void LogsEvent::setRemoteParty( const QString& remoteParty, bool contactMatch )
 {
-    if ( mEventState == EventNotUpdated && mRemoteParty != remoteParty ){
-        LOGS_QDEBUG( "logs [ENG] <-> LogsEvent::setRemoteParty, event updated")
-        mEventState = LogsEvent::EventUpdated;
+    if ( contactMatch ){
+        setContactMatched( !remoteParty.isEmpty() );
+        if ( mEventState == EventNotUpdated && 
+           ( remoteParty.isEmpty() || mRemoteParty != remoteParty ) ){
+            mEventState = EventUpdated;
+        }
     }
     mRemoteParty = remoteParty;
 }
@@ -630,8 +633,10 @@ unsigned int LogsEvent::contactLocalId() const
 //
 // ----------------------------------------------------------------------------
 //
-QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
+bool LogsEvent::updateRemotePartyFromContacts(
+    QContactManager& manager, QString& contactNameStr)
 {
+    bool updatedRemoteParty = false;
     QContactDetailFilter phoneFilter;  
     if ( mEventType == TypeVoIPCall && mLogsEventData && !mLogsEventData->remoteUrl().isEmpty() ) {
         phoneFilter.setDetailDefinitionName( QContactOnlineAccount::DefinitionName, 
@@ -645,12 +650,11 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
         phoneFilter.setMatchFlags(QContactFilter::MatchEndsWith);
     } else {
         // Searching not possible
-        return QString(); 
+        return updatedRemoteParty; 
     }
     
     LOGS_QDEBUG_2( "logs [ENG]    Try to find contact for num:", phoneFilter.value().toString() )
     
-    QString contactNameStr;
     QList<QContactLocalId> matchingContacts = manager.contactIds(phoneFilter);
     LOGS_QDEBUG_2( "logs [ENG]    Number of matches:", matchingContacts.size() )
     if (matchingContacts.size() == 1) {
@@ -661,15 +665,13 @@ QString LogsEvent::updateRemotePartyFromContacts(QContactManager& manager)
         // cannot use.
         QContactName contactName = match.detail(QContactName::DefinitionName);
         contactNameStr = parseContactName(contactName);   
-        if (contactNameStr.length() > 0){
-            LOGS_QDEBUG_3( "getRemotePartyFromContacts, (name, num):", 
-                           contactNameStr, mNumber );
-            // Fill event with new contact info
-            setRemoteParty( contactNameStr );
-            setContactLocalId( matchingContacts.at(0) );
-        }
+        LOGS_QDEBUG_3( "getRemotePartyFromContacts, (name, num):", contactNameStr, mNumber );
+        // Fill event with new contact info
+        setRemoteParty( contactNameStr, true );
+        setContactLocalId( matchingContacts.at(0) );
+        updatedRemoteParty = true;
     }
-    return contactNameStr;
+    return updatedRemoteParty;
 }
 
 // ----------------------------------------------------------------------------
@@ -694,12 +696,9 @@ QString LogsEvent::parseContactName(const QContactName& name)
 //
 void LogsEvent::prepareForContactMatching()
 {
-    // If event would be in "added" state when contact mathing is done, event state
-    // would not go to "updated" in case of associated contact was modified or
-    // new matching contact was found. This would prevent list update.
-    if ( mEventState == EventAdded ) {
-        LOGS_QDEBUG( "logs [ENG] <-> LogsEvent::prepareForContactMatching, prepared")
-        mEventState = EventNotUpdated;
+    if ( contactMatched() ){
+        setRemoteParty("");
+        setContactMatched(false);
     }
 }
 

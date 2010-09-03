@@ -88,12 +88,12 @@ private:
     
     void doSetText( const QString& text, LogsCntTextList& textlist ); 
     void doSetHighlights( const QString& pattern, LogsCntTextList& nameArray );
+    void doSetHighlights( const QString& patternItem, QMutableListIterator<LogsCntText>& names );
+    
     void resetHighlights( LogsCntTextList& nameArray );
     bool doSimpleMatch( const QString& pattern ) const;
-    bool doComplexMatch( QStringList patternArray ) const;
-    int startsWith( const LogsCntText& nameItem, const QString& pattern, 
-                    bool optimize = true ) const;
-    
+    bool doComplexMatch( const QStringList& patternArray ) const;
+    int startsWith( const LogsCntText& nameItem, const QString& pattern ) const; 
 
 private:
     

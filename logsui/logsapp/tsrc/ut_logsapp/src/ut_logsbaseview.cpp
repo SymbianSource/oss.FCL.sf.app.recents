@@ -26,10 +26,10 @@
 #include "hbstubs_helper.h"
 #include "logsmodel.h"
 #include "logsdetailsmodel.h"
+#include "logsmainwindow.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
-#include <hbmainwindow.h>
 #include <hbaction.h>
 #include <hbinstance.h>
 #include <hbmenu.h>
@@ -44,7 +44,7 @@
 
 void UT_LogsBaseView::initTestCase()
 {
-    mMainWindow = new HbMainWindow();
+    mMainWindow = new LogsMainWindow();
     mViewManager = new LogsViewManagerStub(*mMainWindow);
 }
 
@@ -103,18 +103,7 @@ void UT_LogsBaseView::testDeactivated()
 
 void UT_LogsBaseView::testResetView()
 {
-    // Opened dialpad is closed and text in it is cleared
-    mBaseView->mDialpad->mIsOpen = true;
-    mBaseView->mDialpad->mLineEdit->setText("testing");
-    mBaseView->resetView();
-    QVERIFY( !mBaseView->mDialpad->mIsOpen );
-    QVERIFY( mBaseView->mDialpad->mLineEdit->text() == "" );
-    
-    // Text is cleared even if dialpad would be closed
-    mBaseView->mDialpad->mLineEdit->setText("testingagain");
-    mBaseView->resetView();
-    QVERIFY( !mBaseView->mDialpad->mIsOpen );
-    QVERIFY( mBaseView->mDialpad->mLineEdit->text() == "" );
+    mBaseView->resetView(); // NOP
 }
 
 void UT_LogsBaseView::testShowFilterMenu()
@@ -658,16 +647,16 @@ void UT_LogsBaseView::testEnsureListPositioning()
     list.setModel(&model);
     
     // No content found, nop
-    mBaseView->ensureListPositioning(list);
+    mBaseView->ensureListPositioning(list, false);
     QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
     QVERIFY( !HbStubHelper::listScrollToCalled() );
     
     // Content found, no visible items, nop
     mRepository->recentCallsView();
     mBaseView->activated(false, QVariant());
-    mBaseView->ensureListPositioning(list);
+    mBaseView->ensureListPositioning(list, false);
     QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
-    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    QVERIFY( !HbStubHelper::listScrollBarPolicySet() );
     
     // Content found and visible items which can fit the screen, height of item zero, nop
     HbWidget* content = 
@@ -679,38 +668,45 @@ void UT_LogsBaseView::testEnsureListPositioning()
     HbStubHelper::listItems().append(item);
     HbListViewItem* item2 = new HbListViewItem;
     HbStubHelper::listItems().append(item2);
-    mBaseView->ensureListPositioning(list);
+    mBaseView->ensureListPositioning(list, false);
     QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
     QVERIFY( !HbStubHelper::listScrollToCalled() );
+    QVERIFY( !HbStubHelper::listScrollBarPolicySet() );
     
-    // Screen is already filled with items, nop
+    // Screen is already filled with items, scrolled to first fully visible item
     list.setModel(&model2);
     HbListViewItem* item3 = new HbListViewItem;
     HbStubHelper::listItems().append(item3);
     item->setGeometry(QRectF(0,0,100,100));
     item2->setGeometry(QRectF(0,0,100,100));
     item3->setGeometry(QRectF(0,0,100,100));
-    mBaseView->ensureListPositioning(list);
+    mBaseView->ensureListPositioning(list, false);
     QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
-    QVERIFY( !HbStubHelper::listScrollToCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() ); // Should be true but stub does not work due virtual method definition
+    // List size not decreased, therefore no scrollbar force
+    QVERIFY( !HbStubHelper::listScrollBarPolicySet() );
        
     // Content found and visible items which can fit the screen, all items ensured visible
+    HbStubHelper::resetListScrolling();
     list.setModel(&model);
     delete HbStubHelper::listItems().takeLast();
-    mBaseView->ensureListPositioning(list);
+    mBaseView->ensureListPositioning(list, true);
     QVERIFY( HbStubHelper::listEnsureVisibleCalled() );
     QVERIFY( !HbStubHelper::listScrollToCalled() );
+    // List size decreased but items fit the screen, therefore no scrollbar force
+    QVERIFY( !HbStubHelper::listScrollBarPolicySet() );
     
     // Content found and more visible items which can fit the screen and currently screen
     // is not full of items, ensure that area is filled by scrolling 
+    HbStubHelper::resetListScrolling();
     list.setModel(&model2);
     list.setCurrentIndex(model2.index(0,0));
     delete HbStubHelper::listItems().takeLast();
-    mBaseView->ensureListPositioning(list);
-    QVERIFY( HbStubHelper::listEnsureVisibleCalled() );
-    // TODO: stub does not work due it uses virtual table inside hbcore. Whole
-    // list should be stubbed.
-    //QVERIFY( HbStubHelper::listScrollToCalled() );
+    mBaseView->ensureListPositioning(list, true);
+    QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
+    QVERIFY( !HbStubHelper::listScrollToCalled() ); // Should be true but stub does not work due virtual method definition
+    // List size decreased and all items do not fit the screen, therefore scrollbar force
+    QVERIFY( HbStubHelper::listScrollBarPolicySet() );
 }
 
 void UT_LogsBaseView::testCancelServiceRequest()

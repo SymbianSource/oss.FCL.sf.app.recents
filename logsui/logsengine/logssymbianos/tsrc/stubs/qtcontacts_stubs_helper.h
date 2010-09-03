@@ -24,4 +24,5 @@ class QtContactsStubsHelper{
         static void reset();
         static void setContactId(int id);
         static void setContactNames(const QString& first, const QString& last);
+        static int contactIdsMethodCallCount();
 };

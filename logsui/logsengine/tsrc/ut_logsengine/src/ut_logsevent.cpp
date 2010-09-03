@@ -133,37 +133,62 @@ void UT_LogsEvent::testSetContactLocalId()
 void UT_LogsEvent::testUpdateRemotePartyFromContacts()
 {
     // No search term
+    unsigned int testContactId = 99;
+    unsigned int testNoContactId = 0;
+    QtContactsStubsHelper::setContactId( testContactId );
     QContactManager manager;
     LogsEvent event;
-    QVERIFY( event.updateRemotePartyFromContacts(manager).length() == 0 );
+    QString remoteParty;   
+    QVERIFY( !event.updateRemotePartyFromContacts(manager, remoteParty) );
+    QVERIFY( remoteParty.isEmpty() );
     QVERIFY( event.remoteParty().length() == 0 );
+    QCOMPARE( event.contactLocalId(), testNoContactId );
     
     // Number as search term, no match
     event.setNumber("12345");
-    QVERIFY( event.updateRemotePartyFromContacts(manager).length() == 0 );
+    QVERIFY( !event.updateRemotePartyFromContacts(manager, remoteParty) );
+    QVERIFY( remoteParty.isEmpty() );
     QVERIFY( event.remoteParty().length() == 0 );
+    QCOMPARE( event.contactLocalId(), testNoContactId );
     
     // Number as search term, match
     QtContactsStubsHelper::setContactNames("first", "last");
     event.setNumber("11112222");
-    QString newRemoteParty = event.updateRemotePartyFromContacts(manager);
-    QVERIFY( newRemoteParty.length() > 0 );
+    QString newRemoteParty;
+    QVERIFY( event.updateRemotePartyFromContacts(manager, newRemoteParty) );
+    QVERIFY( !newRemoteParty.isEmpty() );
     QVERIFY( newRemoteParty == event.remoteParty() );
+    QCOMPARE( event.contactLocalId(), testContactId );
+    
+    // Even if contact is unnamed, contact id is stored
+    LogsEvent eventNoContactName;
+    eventNoContactName.setNumber("11112222");
+    QtContactsStubsHelper::setContactNames("", "");
+    newRemoteParty.clear();
+    QVERIFY( eventNoContactName.updateRemotePartyFromContacts(manager, newRemoteParty) );
+    QVERIFY( newRemoteParty.isEmpty() );
+    QVERIFY( newRemoteParty == eventNoContactName.remoteParty() );
+    QCOMPARE( eventNoContactName.contactLocalId(), testContactId );
     
     // Voip address as search term, no match
+    QtContactsStubsHelper::setContactNames("first", "last");
     LogsEvent event2;
     LogsEventData* eventData = new LogsEventData;
     eventData->mRemoteUrl = "1.2.3.4";
     event2.setLogsEventData(eventData);
     event2.setEventType(LogsEvent::TypeVoIPCall);
-    QVERIFY( event2.updateRemotePartyFromContacts(manager).length() == 0 );
+    QVERIFY( !event2.updateRemotePartyFromContacts(manager, remoteParty) );
+    QVERIFY( remoteParty.isEmpty() );
     QVERIFY( event2.remoteParty().length() == 0 );
+    QCOMPARE( event2.contactLocalId(), testNoContactId );
     
     // Voip address as search term, match
     eventData->mRemoteUrl = "11112222";
-    newRemoteParty = event2.updateRemotePartyFromContacts(manager);
-    QVERIFY( newRemoteParty.length() > 0 );
+    newRemoteParty.clear();
+    QVERIFY( event2.updateRemotePartyFromContacts(manager, newRemoteParty) );
+    QVERIFY( !newRemoteParty.isEmpty() );
     QVERIFY( newRemoteParty == event.remoteParty() );
+    QCOMPARE( event2.contactLocalId(), testContactId );
 }
 
 void UT_LogsEvent::testParseContactName()

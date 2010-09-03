@@ -15,6 +15,7 @@
 *
 */
 #include "ut_logsmainwindow.h"
+#include "ut_logsapplication.h"
 #include "ut_logscomponentrepository.h"
 #include "ut_logsviewmanager.h"
 #include "ut_logsbaseview.h"
@@ -25,98 +26,67 @@
 #include "ut_logsservicehandler.h"
 #include "ut_logspageindicator.h"
 #include "ut_logspageindicatoritem.h"
-#include "testresultxmlparser.h"
+#include "testrunner.h"
 
 #include <QtTest/QtTest>
 
-
-#define UT_ARGS( args, file )\
-    QStringList args( "ut_logsapp");\
-    args << "-silent" << "-xml" << "-o" << file
-
-
 int main(int argc, char *argv[]) 
 {
-    bool promptOnExit(true);
-    for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-noprompt")
-            promptOnExit = false;
-    }
     printf("Running tests...\n");
             
     QApplication app(argc, argv);
-    TestResultXmlParser parser;
+    QStringList args = app.arguments();
+    QString combinedOutputFileName;
+    for ( int i = 0; i < args.count(); i++ ){
+        QString arg = args.at(i);
+        if ( arg == QString("-o") && i + 1 < args.count() ){
+            i++;
+            combinedOutputFileName = args.at(i);
+        }
+    }
+    
+    TestRunner testRunner("LogsApp", combinedOutputFileName);
     
     UT_LogsMainWindow ut_logsMainWindow;
-    QString resultFileNameForMainWindow = "c:/ut_logsMainWindow.xml";
-    UT_ARGS( args_logsMainWindow, resultFileNameForMainWindow );
-    QTest::qExec( &ut_logsMainWindow, args_logsMainWindow );
-    parser.parseAndPrintResults(resultFileNameForMainWindow);
+    testRunner.runTests(ut_logsMainWindow);
     
     UT_LogsComponentRepository ut_logsRepository;
-    QString resultFileNameForComponentRepository = "c:/ut_logsRepository.xml";
-    UT_ARGS( args_logsRepository, resultFileNameForComponentRepository );
-    QTest::qExec( &ut_logsRepository, args_logsRepository );
-    parser.parseAndPrintResults(resultFileNameForComponentRepository);
+    testRunner.runTests(ut_logsRepository);
     
     UT_LogsViewManager ut_logsViewManager;
-    QString resultFileNameForViewManager = "c:/ut_logsViewManager.xml";
-    UT_ARGS( args_logsViewManager, resultFileNameForViewManager );
-    QTest::qExec( &ut_logsViewManager, args_logsViewManager );
-    parser.parseAndPrintResults(resultFileNameForViewManager);
-
+    testRunner.runTests(ut_logsViewManager);
+    
     UT_LogsBaseView ut_logsBaseView;
-    QString resultFileNameForBaseView = "c:/ut_logsBaseView.xml";
-    UT_ARGS( args_logsBaseView, resultFileNameForBaseView );
-    QTest::qExec( &ut_logsBaseView, args_logsBaseView );
-    parser.parseAndPrintResults(resultFileNameForBaseView);
+    testRunner.runTests(ut_logsBaseView);
     
     UT_LogsRecentCallsView ut_logsRecentCallsView;
-    QString resultFileNameForRecentCallsView = "c:/ut_logsRecentCallsView.xml";
-    UT_ARGS( args_logsRecentCallsView, resultFileNameForRecentCallsView );
-    QTest::qExec( &ut_logsRecentCallsView, args_logsRecentCallsView );
-    parser.parseAndPrintResults(resultFileNameForRecentCallsView);
+    testRunner.runTests(ut_logsRecentCallsView);
     
     UT_LogsDetailsView ut_logsDetailsView;
-    QString resultFileNameForDetailsView = "c:/ut_logsDetailsView.xml";
-    UT_ARGS( args_logsDetailsView, resultFileNameForDetailsView );
-    QTest::qExec( &ut_logsDetailsView, args_logsDetailsView );
-    parser.parseAndPrintResults(resultFileNameForDetailsView);
+    testRunner.runTests(ut_logsDetailsView);
     
     UT_LogsMatchesView ut_logsMatchesView;
-    QString resultFileNameForMatchesView = "c:/ut_logsMatchesView.xml";
-    UT_ARGS( args_logsMatchesView, resultFileNameForMatchesView );
-    QTest::qExec( &ut_logsMatchesView, args_logsMatchesView );
-    parser.parseAndPrintResults(resultFileNameForMatchesView);
-   
+    testRunner.runTests(ut_logsMatchesView);
+    
     UT_LogsEffectHandler ut_logsEffectHandler;
-    QString resultFileNameForEffectHandler = "c:/ut_logsEffectHandler.xml";
-    UT_ARGS( args_logsEffectHandler, resultFileNameForEffectHandler );
-    QTest::qExec( &ut_logsEffectHandler, args_logsEffectHandler );
-    parser.parseAndPrintResults(resultFileNameForEffectHandler);
-
+    testRunner.runTests(ut_logsEffectHandler);
+    
     UT_LogsServiceHandler ut_logsServiceHandler;
-    QString resultFileNameForServiceHandler = "c:/ut_logsServiceHandler.xml";
-    UT_ARGS( args_logsServiceHandler, resultFileNameForServiceHandler );
-    QTest::qExec( &ut_logsServiceHandler, args_logsServiceHandler );
-    parser.parseAndPrintResults(resultFileNameForServiceHandler);
+    testRunner.runTests(ut_logsServiceHandler);
     
     UT_LogsPageIndicator ut_logsPageIndicator;
-    QString resultFileNameForPageIndicator = "c:/ut_logsPageIndicator.xml";
-    UT_ARGS( args_logsPageIndicator, resultFileNameForPageIndicator );
-    QTest::qExec( &ut_logsPageIndicator, args_logsPageIndicator );
-    parser.parseAndPrintResults(resultFileNameForPageIndicator);
-
+    testRunner.runTests(ut_logsPageIndicator);
+    
     UT_LogsPageIndicatorItem ut_logsPageIndicatorItem;
-    QString resultFileNameForPageIndicatorItem = "c:/ut_logsPageIndicatorItem.xml";
-    UT_ARGS( args_logsPageIndicatorItem, resultFileNameForPageIndicatorItem );
-    QTest::qExec( &ut_logsPageIndicatorItem, args_logsPageIndicatorItem );
-    parser.parseAndPrintResults(resultFileNameForPageIndicatorItem);
-
-    if (promptOnExit) {
-        printf("Press any key...\n");
-        //getchar(); 
-    }
+    testRunner.runTests(ut_logsPageIndicatorItem);
+    
+    //qApp is deleted after this testcase is run
+    //keep this testcase last
+    UT_LogsApplication ut_logsApplication;
+    testRunner.runTests(ut_logsApplication);
+    
+    testRunner.printResults();
+    
     return 0;   
 }
 

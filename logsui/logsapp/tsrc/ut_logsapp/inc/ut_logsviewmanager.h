@@ -61,6 +61,7 @@ private slots: //test methods
     void testSaveActivity();
     void testLoadActivity();
     void testAppGainedForeground();
+    void testActivityRequested();
     
 private:
  

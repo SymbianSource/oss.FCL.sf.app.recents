@@ -21,9 +21,6 @@
 #include "logsmodel.h"
 #include "logsdefs.h"
 #include "logslogger.h"
-#include "logscall.h"
-#include "logsmessage.h"
-#include "logscontact.h"
 #include "logseffecthandler.h"
 #include "logsmatchesmodel.h"
 #include "logspageindicator.h"
@@ -46,7 +43,6 @@
 #include <hbactivitymanager.h>
 #include <hbstyleloader.h>
 #include <QTimer>
-#include <QApplication>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
 
@@ -128,8 +124,10 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
     // or if view has to be changed
     if (  !mFilter || ( !args.isNull() && (mCurrentView != view) ) ) {
         updateView( view );
+    } else {
+        activateEmptyListIndicator(mFilter);
+        handleMissedCallsCounter();
     }
-    activateEmptyListIndicator(mFilter);
     
     mPageIndicator->setActiveItemIndex(mConversionMap.value(mCurrentView));
 
@@ -137,8 +135,6 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
         mEmptyListLabelX = mEmptyListLabel->pos().x();
     }
 
-    qApp->installEventFilter(this);
-    
     LogsBaseView::activationCompleted();
  
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::activated()" );  
@@ -156,7 +152,6 @@ void LogsRecentCallsView::deactivated()
     LogsBaseView::deactivated();
     
     deactivateEmptyListIndicator(mFilter);
-    qApp->removeEventFilter(this);
 }
 
 // -----------------------------------------------------------------------------
@@ -383,7 +378,8 @@ void LogsRecentCallsView::updateView(XQService::LogsViewIndex view)
     LogsFilter::FilterType filter = getFilter( view );
     updateFilter(filter);
     updateViewName();
-    updateContextMenuItems(mCurrentView);    
+    updateContextMenuItems(mCurrentView);
+    handleMissedCallsCounter();
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateView()" );
 }
 
@@ -487,7 +483,7 @@ void LogsRecentCallsView::updateFilter(LogsFilter::FilterType type)
         scrollToTopItem(mListView);
         
         activateEmptyListIndicator(mFilter);
-         
+        
         LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateFilter() " );
     }  else {
         LOGS_QWARNING( "logs [UI] LogsRecentCallsView::updateFilter(), !no list widget!" );
@@ -548,35 +544,6 @@ LogsFilter::FilterType LogsRecentCallsView::getFilter(XQService::LogsViewIndex v
     return filter;
 }
 
-
-// -----------------------------------------------------------------------------
-// LogsRecentCallsView::eventFilter
-// -----------------------------------------------------------------------------
-//
-bool LogsRecentCallsView::eventFilter(QObject *obj, QEvent *event)
-{
-    //This is a hack to fix ou1cimx1#481152(horizontal swiping initiates call)
-    //Since w26 HbAbstractViewItemPrivate is setting threshold for Tap gesture
-    //to be the bounding rect (i.e. if swiping is happening inside one list item
-    //it will also be considered as a tap => item activated => call)
-    //We are trying to prevent usage of the list item rect threshold by
-    //setting "horizontallyRestricted" property.
-    //See HbAbstractViewItemPrivate::tapTriggered() and 
-    //HbTapGestureLogic::handleMouseMove() for more info
-    if (event->type() == QEvent::Gesture) {
-        QGestureEvent* gesture = static_cast<QGestureEvent*> (event);
-        QTapGesture* tap = qobject_cast<QTapGesture*>(gesture->gesture(Qt::TapGesture));
-        //only change property if swiping on our list, since for the menu it is
-        //fine to generate tap gesture event during swiping on one item
-        bool tapOnListView = (mListView && mListView->currentViewItem() == obj);
-        if (tap && tapOnListView && tap->state() == Qt::GestureStarted) {
-            tap->setProperty("horizontallyRestricted", true);
-            LOGS_QDEBUG( "logs [UI] TapGesture on list, setting horizontallyRestricted" );
-        }
-    }
-    return LogsBaseView::eventFilter(obj,event);
-}
-
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::gestureEvent
 // -----------------------------------------------------------------------------
@@ -587,15 +554,26 @@ void LogsRecentCallsView::gestureEvent(QGestureEvent *event)
     if (gesture) {
         LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::gestureEvent()" );
         HbSwipeGesture* swipe = static_cast<HbSwipeGesture *>(gesture);
-        if (swipe && swipe->state() == Qt::GestureFinished) {
-            LOGS_QDEBUG_2( "logs [UI] sceneSwipeAngle: ", swipe->sceneSwipeAngle() );
-            LOGS_QDEBUG_2( "logs [UI] swipeAngle: ", swipe->swipeAngle() );
-            
+        if (swipe) {
             QSwipeGesture::SwipeDirection direction = swipe->sceneHorizontalDirection(); 
-            if ( decideListMoveDirection(direction) )
-                event->accept(Qt::SwipeGesture);
+            if (swipe->state() == Qt::GestureStarted) {
+                //fix for ou1cimx1#481152, if policy not set then every swipe
+                //within list item boundaries will also activate list item
+                if (direction == QSwipeGesture::Left 
+                   || direction == QSwipeGesture::Right) {
+                    swipe->setGestureCancelPolicy(QGesture::CancelAllInContext);
+                    LOGS_QDEBUG( "logs [UI] swipe->state() == Qt::GestureStarted" );
+                }
+            } else  if (swipe->state() == Qt::GestureFinished) {
+                LOGS_QDEBUG_2( "logs [UI] sceneSwipeAngle: ", swipe->sceneSwipeAngle() );
+                LOGS_QDEBUG_2( "logs [UI] swipeAngle: ", swipe->swipeAngle() );
+                
+                if ( decideListMoveDirection(direction) ) {
+                    event->accept(Qt::SwipeGesture);
+                }
             }
         }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -918,3 +896,16 @@ bool LogsRecentCallsView::moveToLeft(bool toLeft) const
     }
     return toLeft;
 }
+
+// -----------------------------------------------------------------------------
+// LogsRecentCallsView::handleMissedCallsCounter
+// -----------------------------------------------------------------------------
+//
+void LogsRecentCallsView::handleMissedCallsCounter()
+{
+    if (mModel && mCurrentView == XQService::LogsViewMissed) {
+        LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::clearMissedCallsCounter()" );
+        mModel->clearMissedCallsCounter();
+    }
+}
+

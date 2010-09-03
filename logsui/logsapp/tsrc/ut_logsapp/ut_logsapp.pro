@@ -22,7 +22,8 @@ QT += testlib xml
 CONFIG += hb
 RESOURCES += ../../logsapp.qrc
 
-INCLUDEPATH = stubs $$INCLUDEPATH
+DEPENDPATH += .
+PREPEND_INCLUDEPATH = stubs
 INCLUDEPATH += .
 INCLUDEPATH += ../../
 INCLUDEPATH += ../../inc
@@ -37,6 +38,10 @@ INCLUDEPATH += ../../../tsrc/qtestutils/inc
 DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
+
+HEADERS += stubs/xqkeycapture.h
+HEADERS += stubs/tstasksettings.h
+HEADERS += ./stubs/hbapplication.h
 HEADERS += inc/ut_logsmainwindow.h
 HEADERS += inc/ut_logscomponentrepository.h
 HEADERS += inc/ut_logsviewmanager.h
@@ -48,7 +53,9 @@ HEADERS += inc/ut_logseffecthandler.h
 HEADERS += inc/ut_logspageindicator.h
 HEADERS += inc/ut_logspageindicatoritem.h
 HEADERS += inc/ut_logsservicehandler.h
+HEADERS += inc/ut_logsapplication.h
 HEADERS += ../../inc/logsmainwindow.h
+HEADERS += ../../inc/logsapplication.h
 HEADERS += ../../inc/logsviewmanager.h
 HEADERS += ../../inc/logscomponentrepository.h
 HEADERS += ../../inc/logsrecentcallsview.h
@@ -91,6 +98,7 @@ SOURCES += src/ut_logseffecthandler.cpp
 SOURCES += src/ut_logsservicehandler.cpp
 SOURCES += src/ut_logspageindicator.cpp
 SOURCES += src/ut_logspageindicatoritem.cpp
+SOURCES += src/ut_logsapplication.cpp
 SOURCES += ../../src/logsbaseview.cpp
 SOURCES += ../../src/logsrecentcallsview.cpp
 SOURCES += ../../src/logsdetailsview.cpp
@@ -100,7 +108,8 @@ SOURCES += ../../src/logsservicehandlerold.cpp
 SOURCES += ../../src/logseffecthandler.cpp
 SOURCES += ../../src/logspageindicator.cpp
 SOURCES += ../../src/logspageindicatoritem.cpp
-SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
+SOURCES += ../../src/logsapplication.cpp
+SOURCES += ../../../tsrc/qtestutils/src/testrunner.cpp
 SOURCES += ./stubs/hbstubs.cpp
 SOURCES += ./stubs/qthighway_stub.cpp
 SOURCES += ./stubs/dialpad_stub.cpp
@@ -111,6 +120,9 @@ symbian: {
     TARGET.UID3 = 0xEb768cbc
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
-    LIBS += -lxqservice  -lxqserviceutil
+    LIBS += -lxqservice  -lxqserviceutil -lxqkeycapture 
 }
 
+DOCML += ../../resources/recentCallsView.docml
+DOCML += ../../resources/matchesView.docml
+DOCML += ../../resources/detailsView.docml

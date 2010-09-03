@@ -23,13 +23,11 @@ CONFIG  += qtestlib
 CONFIG += hb
 
 DEPENDPATH += .
+PREPEND_INCLUDEPATH = ../../logssymbianos/tsrc/stubs/ ../stubs
 INCLUDEPATH += .
 INCLUDEPATH += ../symbianos_stub
 INCLUDEPATH += ../hbstubs
-INCLUDEPATH += ../stubs
-INCLUDEPATH += /epoc32/include
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
-INCLUDEPATH += /epoc32/include/ecom
 INCLUDEPATH += ../../inc
 INCLUDEPATH += ../../logssymbianos/inc
 INCLUDEPATH += ../../../inc
@@ -38,6 +36,9 @@ INCLUDEPATH += ../../../tsrc/qtestutils/inc
 DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
+HEADERS += ../stubs/xqservicerequest.h
+HEADERS += ../stubs/xqaiwrequest.h
+
 HEADERS += inc/ut_logsmodel.h
 HEADERS += inc/ut_logsdetailsmodel.h
 HEADERS += inc/ut_logsmatchesmodel.h
@@ -54,14 +55,14 @@ HEADERS += inc/ut_logsconfigurationparams.h
 HEADERS += inc/ut_logsduplicatelookup.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsabstractmodel.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsmodel.h
-HEADERS += ../../inc/logsdetailsmodel.h
-HEADERS += ../../inc/logsmatchesmodel.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsfilter.h
 HEADERS += ../../../../recents_plat/logs_engine_api/inc/logscustomfilter.h
+HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsevent.h
+HEADERS += ../../inc/logsdetailsmodel.h
+HEADERS += ../../inc/logsmatchesmodel.h
 HEADERS += ../../inc/logscall.h
 HEADERS += ../../inc/logscontact.h
 HEADERS += ../../inc/logsmessage.h
-HEADERS += ../../../../recents_plat/logs_engine_api/inc/logsevent.h
 HEADERS += ../../inc/logseventdata.h
 HEADERS += ../../inc/logsthumbnailmanager.h
 HEADERS += ../../inc/logscommondata.h
@@ -73,6 +74,7 @@ HEADERS += ../../logssymbianos/inc/logsdbconnector.h
 HEADERS += ../../logssymbianos/inc/logsremove.h
 
 HEADERS += ../stubs/logscntfinder.h
+
 
 SOURCES += src/main.cpp
 SOURCES += src/ut_logsmodel.cpp 
@@ -108,11 +110,12 @@ SOURCES += ../hbstubs/hbstubs.cpp
 SOURCES += ../symbianos_stub/logsdbconnector_stub.cpp
 SOURCES += ../symbianos_stub/logseventparser_stub.cpp
 SOURCES += ../symbianos_stub/logseventdataparser_stub.cpp
-SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
+SOURCES += ../../../tsrc/qtestutils/src/testrunner.cpp
 SOURCES += ../stubs/qthighway_stub.cpp
 SOURCES += ../stubs/logscntfinder_stub.cpp
 SOURCES += ../../logssymbianos/tsrc/stubs/logclient_stubs.cpp
 SOURCES += ../../logssymbianos/tsrc/stubs/qtcontacts_stubs.cpp
+SOURCES += ../../logssymbianos/tsrc/stubs/xqsettingsmanager_stub.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE

@@ -20,27 +20,31 @@
 #include <QKeyEvent>
 #include <QApplication>
 #include <xqserviceutil.h>
+#include <xqkeycapture.h>
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::LogsMainWindow
+//
 // -----------------------------------------------------------------------------
 //
 LogsMainWindow::LogsMainWindow() 
     : HbMainWindow(), mForeground(false), mLocaleChanged(false)
 {
     qApp->installEventFilter(this);
+    mKeyCapture = new XQKeyCapture;
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::~LogsMainWindow
+//
 // -----------------------------------------------------------------------------
 //
 LogsMainWindow::~LogsMainWindow()
 {
+    stopKeyCapture();
+    delete mKeyCapture;
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::sendAppToBackground
+//
 // -----------------------------------------------------------------------------
 //
 void LogsMainWindow::sendAppToBackground()
@@ -51,7 +55,7 @@ void LogsMainWindow::sendAppToBackground()
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::bringAppToForeground
+//
 // -----------------------------------------------------------------------------
 //
 void LogsMainWindow::bringAppToForeground()
@@ -63,7 +67,7 @@ void LogsMainWindow::bringAppToForeground()
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::isForeground
+//
 // -----------------------------------------------------------------------------
 //
 bool LogsMainWindow::isForeground() const
@@ -72,15 +76,15 @@ bool LogsMainWindow::isForeground() const
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::keyPressEvent
+//
 // -----------------------------------------------------------------------------
 //
 void LogsMainWindow::keyPressEvent( QKeyEvent *event )
 {
     LOGS_QDEBUG_2( "LogsMainWindow::keyPressEvent, key", event->key() );
-    if ( event->key() == Qt::Key_Call || event->key() == Qt::Key_Yes ) {
-        // Handling at window level seems to be only way to avoid other
-        // applications to handle call key as well.
+    if ( event->key() == Qt::Key_Call 
+         || event->key() == Qt::Key_Yes
+         || event->key() == Qt::Key_Enter ) {
         emit callKeyPressed();
         event->accept();
         return;
@@ -89,13 +93,14 @@ void LogsMainWindow::keyPressEvent( QKeyEvent *event )
 }
 
 // -----------------------------------------------------------------------------
-// LogsMainWindow::eventFilter
+//
 // -----------------------------------------------------------------------------
 //
 bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::ApplicationActivate) {
         LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationActivate" );
+        startKeyCapture();
         mForeground = true;
         if (mLocaleChanged) {
             LOGS_QDEBUG( "logs [UI] -> locale changed when we were on BG" );
@@ -103,8 +108,9 @@ bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
             mLocaleChanged = false;
         }
         emit appGainedForeground();
-    } else if (event->type() == QEvent::ApplicationDeactivate) {
+    } else if (event->type() == QEvent::ApplicationDeactivate ) {
         LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationDeactivate" );
+        stopKeyCapture();
         mForeground = false;
     } else if (event->type() == QEvent::LocaleChange) {
         if (mForeground) {
@@ -115,4 +121,24 @@ bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
     }
     
     return HbMainWindow::eventFilter(obj,event);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMainWindow::startKeyCapture()
+{
+    mKeyCapture->captureKey(Qt::Key_Yes);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMainWindow::stopKeyCapture()
+{
+    if ( mKeyCapture ){
+        mKeyCapture->cancelCaptureKey(Qt::Key_Yes);
+    }
 }

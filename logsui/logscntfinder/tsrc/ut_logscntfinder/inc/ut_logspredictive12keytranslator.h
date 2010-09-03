@@ -49,6 +49,9 @@ private slots: //test methods
     void testPatternTokens();
     void testHasPatternSeparators();
     void testTranslateChar();
+    void testSplitPattern();
+    void testTrimPattern();
+    
 
 private:
  

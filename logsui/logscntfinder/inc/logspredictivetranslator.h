@@ -46,6 +46,7 @@ public: //abstracts
     
     virtual QStringList nameTokens( const QString& name ) const = 0;
     virtual QStringList patternTokens( const QString& pattern ) const = 0;
+    virtual QString& trimPattern( QString& pattern, bool tailOnly = false ) const = 0;
     virtual int hasPatternSeparators( const QString& pattern ) const = 0;
     virtual const QChar translateChar( const QChar character, bool& ok ) const = 0;
     virtual int mib() const = 0;

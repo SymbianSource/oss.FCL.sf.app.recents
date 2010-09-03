@@ -24,6 +24,7 @@
 #include <logclientchangeobserver.h>
 #include <logviewchangeobserver.h>
 #include "logsduplicatelookup.h"
+#include "logsreaderstatecontext.h"
 
 // FORWARD DECLARATION
 class LogsReaderStateContext;
@@ -204,6 +205,10 @@ class LogsReaderStateFillDetails : public LogsReaderStateBase {
         virtual bool enterL();
     private:
         void mergeDuplicates( LogsEvent& usedEvent, LogsEvent& discardedEvent ) const;
+        void searchMatchForNumber( QHash<QString, ContactCacheEntry>& contactMappings, 
+                                   QSet<QString>& numbersWithoutMatch, 
+                                   LogsEvent& event, 
+                                   const QString& num);
         
     private:
         LogsDuplicateLookup mDuplicateLookup;

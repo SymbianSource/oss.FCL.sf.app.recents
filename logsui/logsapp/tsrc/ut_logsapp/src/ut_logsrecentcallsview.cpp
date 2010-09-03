@@ -29,11 +29,11 @@
 #include "logsmessage.h"
 #include "logscontact.h"
 #include "logsmatchesmodel.h"
+#include "logsmainwindow.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
 #include <hbswipegesture.h>
-#include <hbmainwindow.h>
 #include <hblistview.h>
 #include <hblabel.h>
 #include <hbaction.h>
@@ -59,7 +59,7 @@ foreach ( action, v->mShowFilterMenu->actions() ){ \
 
 void UT_LogsRecentCallsView::initTestCase()
 {
-    mMainWindow = new HbMainWindow();
+    mMainWindow = new LogsMainWindow();
     mViewManager = new LogsViewManagerStub(*mMainWindow);
 }
 
@@ -132,20 +132,33 @@ void UT_LogsRecentCallsView::testActivated()
     QVERIFY( view->mInitialized );
     QVERIFY( view->mFilter );
     QVERIFY( view->mEmptyListLabel );
+    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
     VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
     
     // Change views
     view->activated(false, QVariant(XQService::LogsViewReceived));
     QVERIFY( view->mFilter );
     QVERIFY( view->mFilter->filterType() == LogsFilter::Received );  
+    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
     VERIFY_CHECKED_ACTION( view, logsShowFilterReceivedMenuActionId )
     
     view->activated(false, QVariant(XQService::LogsViewMissed));
-    QVERIFY( view->mFilter->filterType() == LogsFilter::Missed );  
+    QVERIFY( view->mFilter->filterType() == LogsFilter::Missed );
+    QVERIFY( view->mModel->mMissedCallsCounterCleared );
     VERIFY_CHECKED_ACTION( view, logsShowFilterMissedMenuActionId )
+
+    // Change to missed view again, no need to update view, only 
+    // missed call counter updated
+    view->mModel->mMissedCallsCounterCleared = false;
+    view->updateFilter(LogsFilter::Received);    
+    view->activated(false, QVariant(XQService::LogsViewMissed));
+    QVERIFY( view->mFilter->filterType() == LogsFilter::Received );  
+    QVERIFY( view->mModel->mMissedCallsCounterCleared );
     
+    view->mModel->mMissedCallsCounterCleared = false;
     view->activated(false, QVariant(XQService::LogsViewCalled));
     QVERIFY( view->mFilter->filterType() == LogsFilter::Called );  
+    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
     VERIFY_CHECKED_ACTION( view, logsShowFilterDialledMenuActionId )
     
     view->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
@@ -153,6 +166,7 @@ void UT_LogsRecentCallsView::testActivated()
     view->mActivating = true;
     view->activated(false, QVariant(XQService::LogsViewAll));
     QVERIFY( view->mFilter->filterType() == LogsFilter::All );  
+    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
     VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
     QVERIFY( !view->mDialpad->editor().text().isEmpty() );
     QVERIFY( view->mListView->layoutName() == logsListLandscapeLayout );
@@ -440,8 +454,28 @@ void UT_LogsRecentCallsView::testGestureEvent()
     QCOMPARE(view->mCurrentView, XQService::LogsViewCalled);
     QCOMPARE(view->mAppearingView, XQService::LogsViewCalled);
     
-    //swipe right
+    //vertical swipe started, gesture cancel policy not modified
+    HbStubHelper::setGestureState(Qt::GestureStarted);
+    event2.setAccepted(Qt::SwipeGesture, false);
+    swipe->setSceneSwipeAngle(70);
+    QVERIFY(swipe->gestureCancelPolicy() == QGesture::CancelNone);
+    view->gestureEvent(&event2);
+    QCOMPARE(view->mCurrentView, XQService::LogsViewCalled);
+    QCOMPARE(view->mAppearingView, XQService::LogsViewCalled);
+    QVERIFY(swipe->gestureCancelPolicy() == QGesture::CancelNone);
+    
+    //horizontal swipe started, gesture cancel policy modified to prevent tap
     const int swipeAngleRight = 10;
+    HbStubHelper::setGestureState(Qt::GestureStarted);
+    event2.setAccepted(Qt::SwipeGesture, false);
+    swipe->setSceneSwipeAngle(swipeAngleRight);
+    QVERIFY(swipe->gestureCancelPolicy() == QGesture::CancelNone);
+    view->gestureEvent(&event2);
+    QCOMPARE(view->mCurrentView, XQService::LogsViewCalled);
+    QCOMPARE(view->mAppearingView, XQService::LogsViewCalled);
+    QVERIFY(swipe->gestureCancelPolicy() == QGesture::CancelAllInContext);
+    
+    //swipe right
     HbStubHelper::setGestureState(Qt::GestureFinished);
     event2.setAccepted(Qt::SwipeGesture, false);
     swipe->setSceneSwipeAngle(swipeAngleRight);
@@ -979,38 +1013,3 @@ void UT_LogsRecentCallsView::testLoadActivity()
     QVERIFY( args2.toInt() == XQService::LogsViewMissed);
 }
 
-
-void UT_LogsRecentCallsView::testEventFilter()
-{
-    // Non-gesture event 
-    HbLabel object;
-    QEvent dummyEvent(QEvent::Show);
-    QVERIFY( !mRecentCallsView->eventFilter(&object, &dummyEvent) );
-    
-    // Swipe gesture event
-    QList<QGesture*> list;
-    QGestureEvent event(list);
-    QSwipeGesture* swipe = new QSwipeGesture();
-    list.append(swipe);
-    QVERIFY( !mRecentCallsView->eventFilter(&object, &event) );
-    QVERIFY( !swipe->property("horizontallyRestricted").isValid() );
-    
-    // Tap gesture on some other object (not mListView)
-    QTapGesture* tap = new QTapGesture();
-    list.append(tap);
-    QGestureEvent event2(list);
-    HbStubHelper::setGestureState(Qt::GestureStarted);
-    QVERIFY( !mRecentCallsView->eventFilter(&object, &event2) );
-    QVERIFY( !tap->property("horizontallyRestricted").isValid() );
-        
-    //Tap gesture on list item => property is set
-    mRecentCallsView->mListView = new HbListView();
-    mRepository->model()->mTextData.append("testdata");
-    HbAbstractViewItem* viewItem = mRecentCallsView->mListView->currentViewItem();
-    QVERIFY( !mRecentCallsView->eventFilter(viewItem, &event2) );
-    QVERIFY( tap->property("horizontallyRestricted").isValid() );    
-    
-    qDeleteAll(list);
-    delete mRecentCallsView->mListView;
-    mRecentCallsView->mListView = 0;
-}

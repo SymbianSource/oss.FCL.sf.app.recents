@@ -104,10 +104,16 @@ void UT_LogsReader::testStop()
     mReader->stop();
     QVERIFY( mReader->start() == 0 );
     QVERIFY( mReader->IsActive() );
+    ContactCacheEntry contactEntry("name", 1);
+    mReader->mContactCache.insert("12345", contactEntry);
     mReader->stop();
     QVERIFY( !mReader->IsActive() );
     QVERIFY( !mReader->mLogViewEvent );
     QVERIFY( !mReader->mDuplicatesView );
+    QCOMPARE( mReader->mReadStates.count(), 0 );
+    QCOMPARE( mReader->mModifyingStates.count(), 0 );
+    QCOMPARE( mReader->mDuplicateReadingStates.count(), 0 );
+    QCOMPARE( mReader->mContactCache.count(), 0 );
 }
 
 void UT_LogsReader::testMarkEventSeen()
@@ -254,6 +260,7 @@ void UT_LogsReader::testViewChange()
 
 void UT_LogsReader::testUpdateDetails()
 {
+    // Full clearing is done always
     QVERIFY( !mReader->IsActive() );
     LogsEvent* ev = new LogsEvent;
     ev->setContactMatched(true);
@@ -262,13 +269,14 @@ void UT_LogsReader::testUpdateDetails()
     mReader->mContactCache.insert("12345", contactEntry);
     mReader->updateDetails(false);
     QVERIFY( mReader->IsActive() );
-    QVERIFY( mReader->mContactCache.count() == 1 );
-    QVERIFY( ev->contactMatched() );
+    QVERIFY( mReader->mContactCache.count() == 0 );
     
+    mReader->mContactCache.insert("12345", contactEntry);
+    ContactCacheEntry contactEntry2("name2", 1);
+    mReader->mContactCache.insert("123456666", contactEntry2);
     mReader->updateDetails(true);
     QVERIFY( mReader->IsActive() );
     QVERIFY( mReader->mContactCache.count() == 0 );    
-    QVERIFY( !ev->contactMatched() );
 }
 
 void UT_LogsReader::testLock()

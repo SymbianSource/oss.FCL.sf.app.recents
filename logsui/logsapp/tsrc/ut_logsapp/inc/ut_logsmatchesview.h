@@ -23,7 +23,7 @@
 
 class LogsMatchesView;
 class LogsComponentRepository;
-class HbMainWindow;
+class LogsMainWindow;
 
 
 class UT_LogsMatchesView : public QObject
@@ -72,7 +72,7 @@ private:
  
     LogsMatchesView* mMatchesView;
     LogsComponentRepository* mRepository;
-    HbMainWindow* mMainWindow;
+    LogsMainWindow* mMainWindow;
     LogsViewManagerStub* mViewManager;
 };
 

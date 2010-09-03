@@ -239,8 +239,9 @@ public:
         
         /**
          * Set remote party name for the event.
+         * @param contactMatch, use true if remoteparty is set by contact matching
          */
-        void setRemoteParty( const QString& remoteParty );
+        void setRemoteParty( const QString& remoteParty, bool contactMatch = false );
         
         /**
         * Set indication of result of searching matching 
@@ -274,9 +275,11 @@ public:
          * Search matching contact from contacts and update
          * event with possible match.
          * @param manager
-         * @return name of matched contact, zero length string if no match found.
+         * @param contactNameStr, on return updated contact name
+         * @return true if found matching contact, otherwise false
          */
-        QString updateRemotePartyFromContacts(QContactManager& manager);
+        bool updateRemotePartyFromContacts(
+            QContactManager& manager, QString& contactNameStr);
         
         /**
          * Prepares the event for contact matching.

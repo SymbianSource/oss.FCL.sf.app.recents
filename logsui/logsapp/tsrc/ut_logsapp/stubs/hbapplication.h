@@ -19,6 +19,8 @@
  
 #include <qobject.h>
 #include <qglobal.h> 
+#include <qapplication.h>
+#include <hbnamespace.h>
 
 class HbActivityManager;
 

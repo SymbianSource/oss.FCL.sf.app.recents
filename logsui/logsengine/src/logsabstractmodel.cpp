@@ -28,6 +28,7 @@
 #include <hbextendedlocale.h>
 #include <hbstringutil.h>
 #include "logsconfigurationparams.h"
+#include "logscommondata.h"
 
 Q_DECLARE_METATYPE(LogsEvent *)
 Q_DECLARE_METATYPE(LogsCall *)
@@ -79,7 +80,7 @@ int LogsAbstractModel::predictiveSearchStatus()
     if ( !mDbConnector ){
         return -1;
     }
-    return mDbConnector->predictiveSearchStatus();
+    return LogsCommonData::getInstance().predictiveSearchStatus();
 }
 
 // -----------------------------------------------------------------------------
@@ -210,11 +211,9 @@ QVariant LogsAbstractModel::createContact(const LogsModelItemContainer& item) co
 //
 // -----------------------------------------------------------------------------
 //
-int LogsAbstractModel::doSetPredictiveSearch(bool enabled){
-    if ( !mDbConnector ){
-        return -1;
-    }
-    return mDbConnector->setPredictiveSearch(enabled);
+int LogsAbstractModel::doSetPredictiveSearch(bool enabled)
+{
+    return LogsCommonData::getInstance().setPredictiveSearch(enabled);
 }
 
 // -----------------------------------------------------------------------------

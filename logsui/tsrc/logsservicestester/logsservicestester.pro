@@ -19,7 +19,7 @@ TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
 INCLUDEPATH += .
-INCLUDEPATH += ..\..\logsapp\inc
+INCLUDEPATH += ../../logsapp/inc
 INCLUDEPATH += $$APP_LAYER_SYSTEMINCLUDE
 CONFIG += hb
 

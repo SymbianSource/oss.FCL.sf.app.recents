@@ -41,6 +41,7 @@ public: //from LogsPredictiveTranslator
     QStringList patternTokens( const QString& pattern ) const;
     int hasPatternSeparators( const QString& pattern ) const;
     const QChar translateChar( const QChar character ) const;
+    QString& trimPattern( QString& pattern, bool tailOnly ) const;
 
 protected:
     
@@ -48,7 +49,7 @@ protected:
 
 private:
     
-    void padWithZeros( QString& token, const QString& source, int padIndex ) const;
+    void splitPattern( const QString& pattern, QString& car, QString& cdr ) const;
     
 
 private:

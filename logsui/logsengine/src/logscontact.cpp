@@ -27,6 +27,8 @@
 //SYSTEM
 #include <QVariant>
 #include <qcontactmanager.h>
+#include <qcontactonlineaccount.h>
+#include <qcontactphonenumber.h>
 #include <xqappmgr.h>
 #include <cntservicescontact.h>
 
@@ -90,7 +92,13 @@ LogsContact::RequestType LogsContact::allowedRequestType()
     LogsContact::RequestType type = TypeLogsContactSave;
     
     if ( isContactInPhonebook() ) {
-        type = TypeLogsContactOpen;
+        if (isContactGroup()) {
+            type = TypeLogsContactOpenGroup;
+            LOGS_QDEBUG( "logs [ENG] -> TypeLogsContactOpenGroup" )
+        } else {
+            type = TypeLogsContactOpen;
+            LOGS_QDEBUG( "logs [ENG] -> TypeLogsContactOpenGroup" )
+        }
     }
     
     LOGS_QDEBUG_2( "logs [ENG] <- LogsContact::allowedRequestType(): ", type )
@@ -114,11 +122,14 @@ bool LogsContact::open()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsContact::open()")
     bool ret = false;
-    if ( allowedRequestType() == TypeLogsContactOpen ) {
-        mCurrentRequest = TypeLogsContactOpen;
-
+    LogsContact::RequestType type = allowedRequestType();
+    if ( type == TypeLogsContactOpen || type == TypeLogsContactOpenGroup) {
+        mCurrentRequest = type;
         QString interface("com.nokia.symbian.IContactsView");
         QString operation("openContactCard(int)");
+        if (type == TypeLogsContactOpenGroup) {
+            operation = "openGroup(int)";
+        }
         QList<QVariant> arguments;
         arguments.append( QVariant(mContactId) );
         ret = requestPhonebookService( interface, operation, arguments );
@@ -167,6 +178,19 @@ void LogsContact::cancelServiceRequest()
     mAiwRequest = 0;
     LOGS_QDEBUG( "logs [ENG] <- LogsContact::cancelServiceRequest()" )
 }
+
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+bool LogsContact::isContactGroup()
+{
+    bool isGroup = (mContact.type() == QContactType::TypeGroup);    
+    LOGS_QDEBUG_2( "logs [ENG] <-> LogsContact::isContactGroup(): ", isGroup )
+    return isGroup;
+}
+
 
 // ----------------------------------------------------------------------------
 //
@@ -261,7 +285,8 @@ void LogsContact::handleRequestCompleted(const QVariant& result)
     //cleaned up, since remote party info might have been changed.
     //However, if remote party info is taken from symbian DB, it won't be 
     //updated
-    bool clearCached = ( mCurrentRequest == TypeLogsContactOpen );
+    bool clearCached = ( mCurrentRequest == TypeLogsContactOpen
+                         || mCurrentRequest == TypeLogsContactOpenGroup ); 
     if ( modified ) {
         mContact = contact();
         mDbConnector.updateDetails(clearCached);
@@ -293,8 +318,7 @@ QContact LogsContact::contact()
 //
 bool LogsContact::isContactInPhonebook()
 {
-    QContactLocalId localId = mContactId;    
-    return ( localId && localId == mContact.localId() );
+    return ( mContactId && mContactId == mContact.localId() );
 }
 
 // End of file

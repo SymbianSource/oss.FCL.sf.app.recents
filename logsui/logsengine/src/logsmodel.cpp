@@ -129,7 +129,7 @@ bool LogsModel::markEventsSeen(LogsModel::ClearType cleartype)
 int LogsModel::clearMissedCallsCounter()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::clearMissedCallsCounter()" )
-    int err = mDbConnector->clearMissedCallsCounter();
+    int err = LogsCommonData::getInstance().clearMissedCallsCounter();
     LOGS_QDEBUG_2( "logs [ENG] <- LogsModel::clearMissedCallsCounter(), err", err )
     return err;
 }

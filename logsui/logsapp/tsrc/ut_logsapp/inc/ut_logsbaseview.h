@@ -23,7 +23,7 @@
 
 class LogsBaseView;
 class LogsComponentRepository;
-class HbMainWindow;
+class LogsMainWindow;
 
 
 class UT_LogsBaseView : public QObject
@@ -97,7 +97,7 @@ private:
  
     LogsBaseView* mBaseView;
     LogsComponentRepository* mRepository;
-    HbMainWindow* mMainWindow;
+    LogsMainWindow* mMainWindow;
     LogsViewManagerStub* mViewManager;
 };
 

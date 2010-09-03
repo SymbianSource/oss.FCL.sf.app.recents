@@ -17,6 +17,7 @@
 #include <QObject>
 #include <QLocale>
 #include <QHash>
+#include <QRegExp>
 #include <hbinputkeymapfactory.h>
 #include <hbinputkeymap.h>
 #include <hbinputsettingproxy.h>
@@ -25,7 +26,7 @@
 #include "logslogger.h"
 
 const QChar ZeroSepar('0');
-
+const int NotAssigned = -1;
 
 // -----------------------------------------------------------------------------
 // LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator()
@@ -56,35 +57,92 @@ LogsPredictive12KeyTranslator::~LogsPredictive12KeyTranslator()
 }
 
 // -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator()
+// LogsPredictive12KeyTranslator::patternTokens()
 // -----------------------------------------------------------------------------
 //
 QStringList LogsPredictive12KeyTranslator::patternTokens( const QString& pattern ) const
 {
+        
     LOGS_QDEBUG( "logs [FINDER] -> LogsPredictive12KeyTranslator::\
 patternTokens()" )
     LOGS_QDEBUG_2( "logs [FINDER] pattern ", pattern );
-
-    QStringList target = pattern.split( ZeroSepar, QString::SkipEmptyParts );
-    if ( target.length() > 1 ) {
-        LOGS_QDEBUG( "logs [FINDER] has separator(s) " )
-        QString& first = target[0];
-        QString& last = target[target.length()-1];
-        padWithZeros( first, pattern, 0 );
-        padWithZeros( last, pattern, last.length() );
-    } else if ( target.length() == 1 && //0280 -> 028
-                pattern[pattern.length()-1] == ZeroSepar ) {
-        LOGS_QDEBUG( "logs [FINDER] no separators, trailing zero(s) " )
-        QString& first = target[0];
-        padWithZeros( first, pattern, 0 );
-    } else if ( target.length() == 0 ) {
-        LOGS_QDEBUG( "logs [FINDER] only separators " )
-        target.append( ZeroSepar );
+    QString car;
+    QString cdr;
+    
+    QStringList target;
+    splitPattern( pattern, car, cdr );
+    if ( car.length() ) {
+        target.append( car );
+        if ( cdr.length() ) {
+            target.append( cdr );
+        }
     }
     LOGS_QDEBUG( "logs [FINDER] <- LogsPredictive12KeyTranslator::\
 patternTokens()" )
     return target;
 }
+
+// -----------------------------------------------------------------------------
+// LogsPredictive12KeyTranslator::splitPattern()
+// -----------------------------------------------------------------------------
+//
+void LogsPredictive12KeyTranslator::splitPattern( const QString& pattern, 
+                                                  QString& car, QString& cdr ) const
+{
+    car = "";
+    cdr = "";
+    
+    QChar current;
+    QChar previous;
+    int splitStart = NotAssigned;
+    int splitEnd = NotAssigned;
+    int index = 0;
+    while( splitEnd == NotAssigned && index < pattern.length() ) {
+        current = pattern[index];
+        splitStart = splitStart == NotAssigned &&
+                    ( previous != ZeroSepar && previous != QChar() ) && 
+                    current == ZeroSepar ? 
+                        index : splitStart;
+        splitEnd = splitStart != NotAssigned && 
+                   previous == ZeroSepar && 
+                   current != ZeroSepar ?
+                      index : splitEnd;
+        previous = current;
+        index++;
+    }
+    
+    if ( splitStart != NotAssigned && splitEnd != NotAssigned ) {
+        car = pattern.left( splitStart );
+        cdr = pattern.right( pattern.length() - splitEnd );  
+    } else {
+        car = pattern; 
+    }
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictive12KeyTranslator::trimPattern()
+// -----------------------------------------------------------------------------
+//
+QString& LogsPredictive12KeyTranslator::trimPattern( QString& pattern, 
+                                                     bool tailOnly ) const
+{
+    QRegExp lead("^0*");//remove leading zeros
+    QRegExp trail("0*$");//remove trailing zeros
+    
+    if ( pattern.length() ) {
+        if ( !tailOnly ) {
+            pattern.remove( lead );
+        }
+        
+        pattern.remove( trail );
+        
+        if( !pattern.length() ) {
+            pattern += ZeroSepar;
+        }
+    }
+    return pattern;
+}
+
 
 // -----------------------------------------------------------------------------
 // LogsPredictive12KeyTranslator::hasPatternSeparators()
@@ -111,25 +169,4 @@ const QChar LogsPredictive12KeyTranslator::translateChar(
     return mappedKey ? mappedKey->keycode : QChar();
 }
 
-
-
-// -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::padWithLeadingZeros()
-// -----------------------------------------------------------------------------
-//
-void LogsPredictive12KeyTranslator::padWithZeros( QString& token, 
-                                     const QString& source, int padIndex ) const
-{
-    const QChar* content = source.data();
-    int index = !padIndex ? 0 : source.length()-1;
-            
-    while( index >= 0 && index < source.length() ) {
-        if ( content[ index ] == ZeroSepar ) {
-            token.insert( padIndex, ZeroSepar );
-            index = !padIndex ? index+1 : index-1;
-        } else {
-            index = -1;
-        }
-    }
-}
 

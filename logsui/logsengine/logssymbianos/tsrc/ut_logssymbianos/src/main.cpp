@@ -23,76 +23,51 @@
 #include "ut_logsreaderstates.h"
 #include "ut_logseventparser.h"
 #include "ut_logseventdataparser.h"
-#include "testresultxmlparser.h"
+#include "testrunner.h"
 #include "ut_logsremove.h"
 #include "ut_logsremovestates.h"
 
 
 int main(int argc, char *argv[]) 
 {
-    bool promptOnExit(true);
-    for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-noprompt")
-            promptOnExit = false;
-    }
     printf("Running tests...\n");
-    
+            
     QApplication app(argc, argv);
-    TestResultXmlParser parser;
+    QStringList args = app.arguments();
+    QString combinedOutputFileName;
+    for ( int i = 0; i < args.count(); i++ ){
+        QString arg = args.at(i);
+        if ( arg == QString("-o") && i + 1 < args.count() ){
+            i++;
+            combinedOutputFileName = args.at(i);
+        }
+    }
+    
+    TestRunner testRunner("LogsSymbianOS", combinedOutputFileName);
     
     UT_LogsDbConnector ut_logsDbConnector;
-    QString resultFileName = "c:/ut_logs_logsDbConnector.xml";
-    QStringList args_logsDbConnector( "ut_logsDbConnector");
-    args_logsDbConnector << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsDbConnector, args_logsDbConnector);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsDbConnector);
    
 	UT_LogsRemove ut_logsRemove;
-    resultFileName = "c:/ut_logs_logsRemove.xml";
-    QStringList args_logsRemove( "ut_logsRemove");
-    args_logsRemove << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsRemove, args_logsRemove);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsRemove);
     
     UT_LogsRemoveStates ut_logsRemoveStates;
-    resultFileName = "c:/ut_logs_logsRemoveStates.xml";
-    QStringList args_logsRemoveStates( "ut_logsRemoveStates");
-    args_logsRemoveStates << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsRemoveStates, args_logsRemoveStates);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsRemoveStates);
 	
     UT_LogsReader ut_logsReader;
-    resultFileName = "c:/ut_logs_logsReader.xml";
-    QStringList args_logsReader( "ut_logsReader");
-    args_logsReader << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&ut_logsReader, args_logsReader);
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsReader);
     
     UT_LogsReaderStates ut_logsReaderStates;
-    resultFileName = "c:/ut_logs_logsReaderStates.xml";
-    QStringList args_logsReaderStates( "ut_logsReaderStates");
-    args_logsReaderStates << "-xml" << "-o" << resultFileName;
-    QT_TRAP_THROWING( QTest::qExec(&ut_logsReaderStates, args_logsReaderStates); )
-    parser.parseAndPrintResults(resultFileName,true); 
+    testRunner.runTests(ut_logsReaderStates);
     
     UT_LogsEventParser ut_logsEvent;
-    resultFileName = "c:/ut_logs_logsEventParser.xml";
-    QStringList args_logsEvent( "ut_logsEvent");
-    args_logsEvent << "-xml" << "-o" << resultFileName;
-    QT_TRAP_THROWING( QTest::qExec(&ut_logsEvent, args_logsEvent); )
-    parser.parseAndPrintResults(resultFileName,true);
+    testRunner.runTests(ut_logsEvent);
     
     UT_LogsEventDataParser ut_logsEventData;
-    resultFileName = "c:/ut_logs_logsEventDataParser.xml";
-    QStringList args_logsEventData( "ut_logsEventData");
-    args_logsEventData << "-xml" << "-o" << resultFileName;
-    QT_TRAP_THROWING( QTest::qExec(&ut_logsEventData, args_logsEventData); )
-    parser.parseAndPrintResults(resultFileName,true);
+    testRunner.runTests(ut_logsEventData);
     
-    if (promptOnExit) {
-        printf("Press any key...\n");
-        getchar(); 
-    }
+    testRunner.printResults();
+    
     return 0;   
 }
 

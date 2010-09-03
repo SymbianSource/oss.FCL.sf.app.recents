@@ -172,8 +172,9 @@ void LogsDetailsModel::contactActionCompleted(bool modified)
 {
     if ( modified ){
         mEvent->prepareForContactMatching();
+        QString remoteParty;
         if ( mEvent->updateRemotePartyFromContacts(
-                LogsCommonData::getInstance().contactManager() ).length() > 0 ) {
+                LogsCommonData::getInstance().contactManager(), remoteParty ) ) {
             updateModel();
         }
     }

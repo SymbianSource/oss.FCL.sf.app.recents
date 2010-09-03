@@ -174,6 +174,7 @@ class LogsReader : public LogsWorker,
         void prepareReadingL();
         void setGlobalObserver();
         void clearGlobalObserver();
+        void cleanContactCache();
         
     private: // data
         

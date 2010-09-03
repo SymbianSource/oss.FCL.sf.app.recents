@@ -61,7 +61,7 @@ SOURCES += ../../src/logspredictivetranslator.cpp
 SOURCES += ../../src/logspredictive12keytranslator.cpp
 SOURCES += ../../src/logspredictivelatin12keytranslator.cpp
 SOURCES += ../../src/logspredictivethai12keytranslator.cpp
-SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
+SOURCES += ../../../tsrc/qtestutils/src/testrunner.cpp
 SOURCES += ../stubs/qtcontacts_stubs.cpp
 
 symbian: {

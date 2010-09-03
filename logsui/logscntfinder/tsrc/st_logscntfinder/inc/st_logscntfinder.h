@@ -66,6 +66,7 @@ private slots: //test methods
     void testPredictiveSearchQueryFullyCachedNoResults();
     void testPredictiveSearchQueryPartialCachedZeroCase();
     void testPredictiveSearchQueryFullyCachedZerosStartCase();
+    void testPredictiveSearchQueryFullyCachedZerosStartCase_2();
     void testPredictiveSearchQueryFullyCachedZerosEndCase();
     void testPredictiveSearchQueryLogs();
     void testPredictiveSearchQueryLogsZeroCase();

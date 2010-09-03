@@ -21,7 +21,11 @@
 #include <QObject>
 #include <hbmainwindow.h>
 
+class XQKeyCapture;
 
+/**
+ * 
+ */
 class LogsMainWindow : public HbMainWindow
     {
     Q_OBJECT
@@ -46,9 +50,13 @@ signals:
     void callKeyPressed();
     void localeChanged();
     void appGainedForeground();
-    
+
+private:
+    void startKeyCapture();
+    void stopKeyCapture();
 private:
     
+    XQKeyCapture* mKeyCapture;
     bool mForeground;
     bool mLocaleChanged;
     

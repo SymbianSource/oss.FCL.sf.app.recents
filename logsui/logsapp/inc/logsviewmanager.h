@@ -77,16 +77,24 @@ private slots:
     void saveActivity();
     void closeEmbeddedApplication();
     void appGainedForeground();
+    void activityRequested(const QString &activityId);
     
 private:
     
     bool doActivateView(LogsAppViewId viewId, bool showDialpad, 
-                        QVariant args, const QString& dialpadText = QString());
+                        QVariant args, const QString& dialpadText = QString(), 
+                        bool reset = false);
     bool loadActivity();
     LogsAppViewId checkMatchesViewTransition(
         LogsAppViewId viewId, const QString& dialpadText);
     void handleFirstActivation();
     LogsBaseView* createView(LogsAppViewId viewId);
+    void doFakeExit();
+    bool doLoadActivity(const QString& activityId);
+    void clearActivities();
+    void activateViewViaService(
+        LogsAppViewId viewId, bool showDialpad, 
+        const QString& dialpadText, const QVariant& args = QVariant());
     
 private: //data 
     

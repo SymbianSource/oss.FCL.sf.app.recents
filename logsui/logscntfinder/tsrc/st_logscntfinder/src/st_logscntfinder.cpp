@@ -387,6 +387,7 @@ void ST_LogsCntFinder::testPredictiveSearchQueryZeroStart()
     //#Paula 2003, Augustin Ci <= 2003 was found with pattern 002
     //Paula 002010, Ezerty Adam
     
+    
 }
 
 void ST_LogsCntFinder::testPredictiveSearchQueryZeroStartZeroEnd()
@@ -404,8 +405,22 @@ void ST_LogsCntFinder::testPredictiveSearchQueryZeroStartZeroEnd()
     
     m_finder->predictiveSearchQuery( QString("") );
     
-    m_finder->predictiveSearchQuery( QString("002010") );
+    m_finder->predictiveSearchQuery( QString("20020") );
     QCOMPARE( m_finder->resultsCount(), 1 );
+    //#Paula 2003, Augustin Ci
+    
+    m_finder->predictiveSearchQuery( QString("") );
+    
+    m_finder->predictiveSearchQuery( QString("200200") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    //#Paula 2003, Augustin Ci
+    
+    m_finder->predictiveSearchQuery( QString("") );
+    
+    m_finder->predictiveSearchQuery( QString("2002000") );
+    QCOMPARE( m_finder->resultsCount(), 1 );
+    //#Paula 2003, Augustin Ci
+    
 }
 
 void ST_LogsCntFinder::testPredictiveSearchQueryZeroMiddle()
@@ -622,6 +637,10 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedZerosStartCase()
     QCOMPARE( m_finder->resultsCount(), 3 );
     CHECK_RESULTS( 3, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
+    //Dlice 00202, Qwerty
+    //#Paula 2003, Augustin Ci
+    //Paula 002010, Ezerty Adam
+    
     m_finder->predictiveSearchQuery( QString("0020") );//db
     QCOMPARE( m_finder->resultsCount(), 7 );
     CHECK_RESULTS( 7, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
@@ -635,6 +654,52 @@ void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedZerosStartCase()
     CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
        
     m_finder->predictiveSearchQuery( QString("0") );//db
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+}
+
+void ST_LogsCntFinder::testPredictiveSearchQueryFullyCachedZerosStartCase_2()
+{
+    createContactsForQueryZero();
+    
+    m_finder->predictiveSearchQuery( QString("0") ); //db
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("00") );//db
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("002") );//db
+    QCOMPARE( m_finder->resultsCount(), 7 );//002 + 2 matches
+    CHECK_RESULTS( 7, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("0023") );//cache
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights
+    
+    //Paula 002010, Ezerty Adam
+    //Ced, Y0g
+    
+    
+    m_finder->predictiveSearchQuery( QString("00230") );//cache
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("0023") );//db
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("002") );//db
+    QCOMPARE( m_finder->resultsCount(), 7 );//002 + 2 matches
+    CHECK_RESULTS( 7, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("00") );//db
+    QCOMPARE( m_finder->resultsCount(), 2 );
+    CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
+    
+    m_finder->predictiveSearchQuery( QString("0") ); //db
     QCOMPARE( m_finder->resultsCount(), 2 );
     CHECK_RESULTS( 2, IGNORE_TEST, IGNORE_TEST, IGNORE_TEST_I ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     

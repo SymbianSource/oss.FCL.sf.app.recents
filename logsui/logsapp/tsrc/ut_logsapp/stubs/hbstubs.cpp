@@ -34,6 +34,8 @@
 #include <hbmessagebox.h>
 #include <hbnotificationdialog.h>
 #include <hbstringutil.h>
+#include "xqkeycapture.h"
+#include "tstasksettings.h"
 
 int actionCount = 0;
 Qt::Orientation windowOrientation = Qt::Vertical;
@@ -61,6 +63,18 @@ bool testEnsureVisibleCalled = false;
 bool testScrollToCalled = false;
 Qt::LayoutDirection testLayoutDirection = Qt::LeftToRight;
 bool testConversionEnabled = false;
+bool testScrollBarPolicySet = false;
+HbScrollArea::ScrollBarPolicy testScrollBarPolicy = HbScrollArea::ScrollBarAsNeeded;
+QWindowSurface* testWindowSurface = 0;
+QString testNotifDialogText;
+bool testIsTsTaskVisibilitySet = false;
+bool testTsTaskVisibility = false;
+
+class QWindowSurface{
+public:
+    QWindowSurface(){}
+    ~QWindowSurface(){}
+};
 
 void HbStubHelper::reset()
 {
@@ -80,6 +94,11 @@ void HbStubHelper::reset()
     testEnsureVisibleCalled = false;
     testPopupShowPlacement = HbPopup::TopLeftCorner;
     testConversionEnabled = false;
+    testScrollBarPolicySet = false;
+    delete testWindowSurface;
+    testWindowSurface = 0;
+    testIsTsTaskVisibilitySet = false;
+    testTsTaskVisibility = false;
 }
 
 int HbStubHelper::widgetActionsCount()
@@ -175,7 +194,39 @@ void HbStubHelper::stringUtilDigitConversion(bool enabled)
     testConversionEnabled = enabled;
 }
 
-QString testNotifDialogText;
+bool HbStubHelper::listScrollBarPolicySet()
+{
+    return testScrollBarPolicySet;
+}
+
+void HbStubHelper::resetListScrolling()
+{
+    testEnsureVisibleCalled = false;
+    testScrollBarPolicySet = false;
+    testScrollToCalled = false;
+}
+
+void HbStubHelper::createWindowSurface()
+{
+    if ( !testWindowSurface ){
+        testWindowSurface = new QWindowSurface;
+    }
+}
+
+bool HbStubHelper::isTsTaskVisibilitySet()
+{
+    return testIsTsTaskVisibilitySet;
+}
+
+bool HbStubHelper::tsTaskVisibility()
+{
+    return testTsTaskVisibility;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void HbNotificationDialog::launchDialog(const QString &title, QGraphicsScene *scene)
 {
     Q_UNUSED(scene);
@@ -197,6 +248,10 @@ void QCoreApplication::quit()
     testQuitCalled = true; 
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 QApplication::QApplication(QApplication::QS60MainApplicationFactory factory, int &argc, char **argv, int version) 
 : QCoreApplication(argc, argv)
 {
@@ -218,12 +273,20 @@ Qt::LayoutDirection QApplication::layoutDirection()
     return testLayoutDirection;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 bool QGraphicsWidget::close()
 {
     testIsWidgetOpen = false;
     return true;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void QWidget::setVisible(bool visible)
 {
     Q_UNUSED(visible);
@@ -234,6 +297,15 @@ void QWidget::raise()
     testIsWidgetRaised = true;
 }
 
+QWindowSurface* QWidget::windowSurface() const
+{
+    return testWindowSurface;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 QPixmap QPixmap::grabWidget(QWidget *widget, const QRect &rect)
 {
     Q_UNUSED(widget);
@@ -338,6 +410,10 @@ void HbPopup::setPreferredPos(const QPointF& position, HbPopup::Placement placem
     testPopupShowPlacement = placement;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void HbDialog::open(QObject *receiver, const char *member)
 {
    Q_UNUSED(receiver)
@@ -350,6 +426,10 @@ void HbDialog::open()
    testDialogShown = true;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void HbMessageBox::question(const QString &questionText,
                             QObject *receiver ,
                             const char *member,
@@ -529,6 +609,21 @@ void HbScrollArea::ensureVisible(const QPointF &position, qreal xMargin, qreal y
 //
 // -----------------------------------------------------------------------------
 //
+void HbScrollArea::setVerticalScrollBarPolicy(ScrollBarPolicy policy)
+{
+    testScrollBarPolicySet = true;
+    testScrollBarPolicy = policy;
+}
+
+HbScrollArea::ScrollBarPolicy HbScrollArea::verticalScrollBarPolicy() const
+{
+    return testScrollBarPolicy;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 QString HbStringUtil::convertDigitsTo( const QString str, const DigitType digitType )
 {
     Q_UNUSED(digitType);
@@ -538,14 +633,60 @@ QString HbStringUtil::convertDigitsTo( const QString str, const DigitType digitT
     return str;
 }
 
-bool QObject::eventFilter(QObject *obj, QEvent *event)
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+XQKeyCapture::XQKeyCapture()
 {
-    Q_UNUSED(obj)
-    Q_UNUSED(event)
-    return false;
+    
 }
 
-void QObject::installEventFilter(QObject *obj)
+XQKeyCapture::~XQKeyCapture()
 {
-    Q_UNUSED(obj)
+    
 }
+
+bool XQKeyCapture::captureKey(Qt::Key aKey,
+    Qt::KeyboardModifiers aModifiersMask,
+    Qt::KeyboardModifiers aModifier)
+{
+    Q_UNUSED(aModifiersMask);
+    Q_UNUSED(aModifier);
+    mKeys.append(aKey);
+    return true;
+}
+    
+bool XQKeyCapture::cancelCaptureKey(Qt::Key aKey,
+    Qt::KeyboardModifiers aModifiersMask,
+    Qt::KeyboardModifiers aModifier)
+{
+    Q_UNUSED(aModifiersMask);
+    Q_UNUSED(aModifier);
+    int index = mKeys.indexOf(aKey);
+    if ( index >= 0 ){
+        mKeys.takeAt(index);
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+TsTaskSettings::TsTaskSettings()
+{
+    
+}
+TsTaskSettings::~TsTaskSettings()
+{
+    
+}
+
+bool TsTaskSettings::setVisibility(bool visible)
+{
+    testTsTaskVisibility = visible;
+    testIsTsTaskVisibilitySet = true;
+    return true;
+}
+

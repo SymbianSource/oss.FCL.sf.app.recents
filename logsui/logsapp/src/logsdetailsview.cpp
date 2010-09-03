@@ -413,7 +413,7 @@ void LogsDetailsView::dialpadEditorTextChanged()
 }
 
 // -----------------------------------------------------------------------------
-// LogsDetailsView::updateWidgetsSizeAndLayout
+//
 // -----------------------------------------------------------------------------
 //
 void LogsDetailsView::updateWidgetsSizeAndLayout()
@@ -427,26 +427,46 @@ void LogsDetailsView::updateWidgetsSizeAndLayout()
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::updateWidgetsSizeAndLayout()" );
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 LogsDetailsViewItem::LogsDetailsViewItem()
 : HbListViewItem(0)    
 {
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 LogsDetailsViewItem::~LogsDetailsViewItem( )
 {
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsDetailsViewItem::pressStateChanged(bool value, bool animate)
 {
     Q_UNUSED(value);
     Q_UNUSED(animate);
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 HbAbstractViewItem *LogsDetailsViewItem::createItem()
 {
     return new LogsDetailsViewItem(*this);
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
 void LogsDetailsViewItem::updateChildItems()
 {  
     HbListViewItem::updateChildItems();

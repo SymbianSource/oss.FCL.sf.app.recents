@@ -28,9 +28,9 @@
 #include "hbstubs_helper.h"
 #include "logscontact.h"
 #include "qthighway_stub_helper.h"
+#include "logsapplication.h"
 
 //SYSTEM
-#include <HbMainWindow.h>
 #include <QtTest/QtTest>
 #include <HbView.h>
 #include <hbapplication.h>
@@ -64,6 +64,10 @@ void UT_LogsViewManager::cleanup()
     mServiceOld = 0;
     delete mMainWindow;
     mMainWindow = 0;
+    LogsApplication* app = static_cast<LogsApplication*>( qApp );
+    app->mFeatureFakeExitEnabled = false;
+    app->mFeaturePreloadedEnabled = false;
+    
 }
 
 void UT_LogsViewManager::testConstructorDestructor()
@@ -74,6 +78,7 @@ void UT_LogsViewManager::testConstructorDestructor()
     QVERIFY( mLogsViewManager->mMainWindow.currentView() != 0 );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( mLogsViewManager->mViewStack.count() == 1 );
+    QVERIFY( !mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
     
     delete mLogsViewManager;
     mLogsViewManager = 0;
@@ -87,7 +92,25 @@ void UT_LogsViewManager::testConstructorDestructor()
     QVERIFY( mLogsViewManager->mComponentsRepository );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( mLogsViewManager->mViewStack.count() == 1 );
+    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
     HbStubHelper::reset();
+    
+    // Constructor when service request started the app
+    delete mMainWindow;
+    mMainWindow = 0;
+    mMainWindow = new LogsMainWindow();
+    HbStubHelper::setActivityReason(Hb::ActivationReasonNormal);
+    QtHighwayStubHelper::setIsService(true);
+    LogsServiceHandler* handler2 = new LogsServiceHandler();
+    mLogsViewManager->mComponentsRepository->model()->mRefreshCalled = false;
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *handler2, *mServiceOld);
+    QVERIFY( mLogsViewManager->mComponentsRepository );
+    QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
+    QVERIFY( mLogsViewManager->mViewStack.count() == 0 ); // Waiting for signal
+    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
+    HbStubHelper::reset();
+    QtHighwayStubHelper::reset();
+    delete handler2;
 }
 
 
@@ -171,13 +194,15 @@ void UT_LogsViewManager::testchangeRecentView()
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
     QVERIFY( HbStubHelper::isWidgetRaised() );
     
-    // Empty string clears dialpad input
+    // Empty string clears dialpad input, check also that dialpad gets closed
     QtHighwayStubHelper::reset();
+    mLogsViewManager->mComponentsRepository->mDialpad->mIsOpen = true;
     mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, "");
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text().isEmpty() );
     QVERIFY( HbStubHelper::isWidgetRaised() );
+    QVERIFY( !mLogsViewManager->mComponentsRepository->mDialpad->mIsOpen );
     
     //Open recent view, view stack not empty, embedded service canceled    
     QtHighwayStubHelper::reset();
@@ -219,6 +244,23 @@ void UT_LogsViewManager::testExitApplication()
     mLogsViewManager->mComponentsRepository->recentCallsView()->mMarkingMissedAsSeen = false;
     mLogsViewManager->proceedExit();
     QVERIFY( HbStubHelper::quitCalled() );
+    QVERIFY( !mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
+    
+    // Fake exit enabled, data is compressed, app hidden and activity saved
+    LogsApplication* app = static_cast<LogsApplication*>( qApp );
+    app->mFeatureFakeExitEnabled = true;
+    HbStubHelper::reset();
+    mLogsViewManager->mComponentsRepository->model()->mCompressCalled = false;
+    QtHighwayStubHelper::reset();
+    QCOMPARE( app->activityManager()->activities().count(), 0 );
+    mLogsViewManager->exitApplication();
+    QVERIFY( !HbStubHelper::quitCalled() );
+    QVERIFY( QtHighwayStubHelper::utilToBackground() );
+    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
+    QVERIFY( HbStubHelper::isTsTaskVisibilitySet() );
+    QVERIFY( !HbStubHelper::tsTaskVisibility() );
+    QCOMPARE( app->activityManager()->activities().count(), 1 );
+    
 }
 
 void UT_LogsViewManager::testStartingWithService()
@@ -250,9 +292,7 @@ void UT_LogsViewManager::testCompleteViewActivation()
     mLogsViewManager->activateView(LogsRecentViewId, true, QVariant());
     QVERIFY(!mLogsViewManager->mFirstActivation);
     QVERIFY(mLogsViewManager->mViewActivationShowDialpad);
-    QVERIFY(!mLogsViewManager->mComponentsRepository->model()->mMissedCallsCounterCleared);
     mLogsViewManager->completeViewActivation(); // Simulate paint completion (viewReady signal)
-    QVERIFY(mLogsViewManager->mComponentsRepository->model()->mMissedCallsCounterCleared);
 }
 
 void UT_LogsViewManager::testSaveActivity()
@@ -332,7 +372,52 @@ void UT_LogsViewManager::testAppGainedForeground()
     QVERIFY( HbStubHelper::quitCalled() );
     
     HbStubHelper::reset();
+    mLogsViewManager->mComponentsRepository->model()->mRefreshCalled = false;
     mLogsViewManager->appGainedForeground();
     emit mLogsViewManager->mViewStack.at(0)->exitAllowed();
     QVERIFY( !HbStubHelper::quitCalled() );
+    QVERIFY( !mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
+    
+    // Gaining foreground causes data refresh if fake exit or preloading feature is enabled
+    HbStubHelper::reset();
+    LogsApplication* app = static_cast<LogsApplication*>( qApp );
+    app->mFeatureFakeExitEnabled = true;
+    mLogsViewManager->appGainedForeground();
+    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
+    QVERIFY( HbStubHelper::isTsTaskVisibilitySet() );
+    QVERIFY( HbStubHelper::tsTaskVisibility() );
+    
+    HbStubHelper::reset();
+    mLogsViewManager->mComponentsRepository->model()->mRefreshCalled = false;
+    app->mFeatureFakeExitEnabled = false;
+    app->mFeaturePreloadedEnabled = true;
+    mLogsViewManager->appGainedForeground();
+    QVERIFY( mLogsViewManager->mComponentsRepository->model()->mRefreshCalled );
+    QVERIFY( HbStubHelper::isTsTaskVisibilitySet() );
+    QVERIFY( HbStubHelper::tsTaskVisibility() );
+}
+
+void UT_LogsViewManager::testActivityRequested()
+{
+    HbApplication* hbApp = static_cast<HbApplication*>(qApp);
+    HbActivityManager* manager = hbApp->activityManager();
+    
+    HbStubHelper::reset();
+    HbStubHelper::setActivityId("unknownActivity");
+    mLogsViewManager->activityRequested("unknownActivity");
+    QVERIFY( !HbStubHelper::isWidgetRaised() );
+    
+    HbStubHelper::setActivityId(logsActivityIdViewRecent);
+    mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen = false;
+    mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->setText("");
+    QVariantHash params;
+    params.insert(logsActivityParamShowDialpad, false);
+    params.insert(logsActivityParamDialpadText, QString(""));
+    params.insert(logsActivityParamInternalViewId, LogsRecentViewId);
+    manager->addActivity(QString(), QVariant(), params);
+    mLogsViewManager->activityRequested(logsActivityIdViewRecent);
+    QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
+    QVERIFY( !mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen );
+    QCOMPARE( mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->text(), QString("") );
+    QVERIFY( HbStubHelper::isWidgetRaised() );
 }

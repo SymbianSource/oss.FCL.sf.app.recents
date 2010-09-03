@@ -24,5 +24,4 @@ class LogsDbConnectorStubHelper
     public:
         static void reset();
         static QString lastCalledFunction();
-        static void setPredictiveSearch(int);
 };

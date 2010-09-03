@@ -272,37 +272,56 @@ void LogsCntEntry::doSetHighlights( const QString& pattern,
 {
     
     LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
-    QMutableListIterator<LogsCntText> names( nameArray ); 
-    bool hasSeparators = translator->hasPatternSeparators( pattern );
+    QMutableListIterator<LogsCntText> names( nameArray );
+    QString modifiedPattern = pattern;
+    modifiedPattern = translator->trimPattern( modifiedPattern, true );
+    
+    bool hasSeparators = translator->hasPatternSeparators( modifiedPattern );
     
     //simple
     while( names.hasNext() ) {
         LogsCntText& nameItem = names.next();
         //must use non-optimized version with whole pattern
-        nameItem.mHighlights = startsWith( nameItem, pattern, false );
+        nameItem.mHighlights = startsWith( nameItem, modifiedPattern );
     }
-    
-    //complex
-    QListIterator<QString> patternArray( translator->patternTokens( pattern ) );
-    while( hasSeparators && patternArray.hasNext() ) {
-        QString patternItem = patternArray.next();
-        names.toFront();
-        while( names.hasNext() ) {
-            LogsCntText& nameItem = names.next();
-            int matchSize = startsWith( nameItem, patternItem, !hasSeparators );
-            nameItem.mHighlights = matchSize > nameItem.mHighlights ?
-                                   matchSize : nameItem.mHighlights; 
+
+    if ( hasSeparators ) {
+        //complex
+        QListIterator<QString> patternArray( translator->patternTokens( modifiedPattern ) );
+        while( patternArray.hasNext() ) {
+            QString patternItem = patternArray.next();
+            doSetHighlights( patternItem, names );
+            translator->trimPattern( patternItem );
+            doSetHighlights( patternItem, names );
         }
     }
+    
 }
 
+// -----------------------------------------------------------------------------
+// LogsCntEntry::doSetHighlights()
+// -----------------------------------------------------------------------------
+//
+void LogsCntEntry::doSetHighlights( const QString& patternItem, 
+                                    QMutableListIterator<LogsCntText>& names )
+                                            
+{
+    names.toFront();
+    while( names.hasNext() ) {
+        LogsCntText& nameItem = names.next();
+        int matchSize = startsWith( nameItem, patternItem );
+        nameItem.mHighlights = matchSize > nameItem.mHighlights ?
+                               matchSize : nameItem.mHighlights; 
+    }
+
+}
 
 // -----------------------------------------------------------------------------
 // LogsCntEntry::startsWith()
 // -----------------------------------------------------------------------------
 //
 int LogsCntEntry::startsWith( const LogsCntText& nameItem, 
-                              const QString& pattern, bool optimize ) const
+                              const QString& pattern ) const
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntEntry::startsWith()" )
     //assumed that text has found based on pattern, thus only checking with
@@ -313,12 +332,7 @@ int LogsCntEntry::startsWith( const LogsCntText& nameItem,
     if ( text.isEmpty() || matchCount > text.length() ) {
         matchCount = 0;
     } else {
-        if ( !optimize ) {
-            matchCount = text.startsWith( pattern ) ? matchCount : 0; 
-        } else {
-            matchCount = *text.data() == *pattern.data() ? 
-                         matchCount : 0;
-        }
+        matchCount = text.startsWith( pattern ) ? matchCount : 0; 
     }
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntEntry::startsWith()" )
     return matchCount;
@@ -346,13 +360,24 @@ bool LogsCntEntry::match( const QString& pattern ) const
     if ( pattern.length() > 0 ) {
         LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
         
+        QString modifiedPattern = pattern;
+        modifiedPattern = translator->trimPattern( modifiedPattern, true );
+        
         //direct match with phone number is enough
         match = ( type() == EntryTypeHistory && 
                   mPhoneNumber.mTranslatedText.startsWith( pattern ) ) ||
-                doSimpleMatch( pattern );
+                doSimpleMatch( modifiedPattern );
         
-        match = !match && translator->hasPatternSeparators( pattern ) ? 
-                doComplexMatch( translator->patternTokens( pattern) ) : match;
+        if (!match && translator->hasPatternSeparators( modifiedPattern ) ) {
+            QStringList patternArray = translator->patternTokens( modifiedPattern );
+            match = doComplexMatch( patternArray );
+            if (!match ) {
+                for(int i=0;i<patternArray.length();i++ ) {
+                    translator->trimPattern( patternArray[i] );
+                }
+                match = doComplexMatch( patternArray );
+            }
+        }
     }
     
     return match;
@@ -380,7 +405,7 @@ bool LogsCntEntry::doSimpleMatch( const QString& pattern ) const
 // LogsCntEntry::doComplexMatch()
 // -----------------------------------------------------------------------------
 //
-bool LogsCntEntry::doComplexMatch( QStringList patternArray ) const
+bool LogsCntEntry::doComplexMatch( const QStringList& patternArray ) const
 {
     const bool zero = false;
 
