@@ -37,9 +37,13 @@ private slots:
     
 private:
     
-
+    void saveSettings(
+        HbRadioButtonList& list, 
+        const QStringList& listSelections, unsigned int key );
+    
 private:
     HbRadioButtonList* mList;
+    HbRadioButtonList* mFakeExitList;
     CRepository* mRepository;
 };
 

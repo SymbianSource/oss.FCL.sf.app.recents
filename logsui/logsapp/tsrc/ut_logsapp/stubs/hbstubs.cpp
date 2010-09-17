@@ -353,8 +353,8 @@ bool HbActivityManager::waitActivity()
 //
 // -----------------------------------------------------------------------------
 //
-HbApplication::HbApplication(int &argc, char *argv[]) :
-    QApplication(0, argc, argv, 0) 
+HbApplication::HbApplication(int &argc, char *argv[], Hb::ApplicationFlags flags) :
+    QApplication(0, argc, argv, 0), mTestFlags(flags)
 {
 }
 

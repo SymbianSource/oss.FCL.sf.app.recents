@@ -51,4 +51,5 @@ symbian: {
         -lxqservice \
         -lQtContacts \
         -llogscntfinder
+    MMP_RULES += SMPSAFE
 }

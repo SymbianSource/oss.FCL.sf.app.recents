@@ -25,6 +25,7 @@ class LogsViewManager;
 class LogsMainWindow;
 class LogsServiceHandler;
 class LogsServiceHandlerOld;
+class LogsAppSettings;
 
 class UT_LogsViewManager : public QObject
 {
@@ -62,6 +63,7 @@ private slots: //test methods
     void testLoadActivity();
     void testAppGainedForeground();
     void testActivityRequested();
+    void testBgStartupForegroundGained();
     
 private:
  
@@ -70,6 +72,8 @@ private:
     
     LogsServiceHandler* mService;
     LogsServiceHandlerOld* mServiceOld;
+    
+    LogsAppSettings* mSettings;
 };
 
 #endif //UT_LOGSVIEWMANAGER_H

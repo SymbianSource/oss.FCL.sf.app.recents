@@ -26,6 +26,7 @@
 #include "ut_logsservicehandler.h"
 #include "ut_logspageindicator.h"
 #include "ut_logspageindicatoritem.h"
+#include "ut_logsappsettings.h"
 #include "testrunner.h"
 
 #include <QtTest/QtTest>
@@ -80,6 +81,9 @@ int main(int argc, char *argv[])
     UT_LogsPageIndicatorItem ut_logsPageIndicatorItem;
     testRunner.runTests(ut_logsPageIndicatorItem);
     
+    UT_LogsAppSettings ut_logsAppSettings;
+    testRunner.runTests(ut_logsAppSettings);
+        
     //qApp is deleted after this testcase is run
     //keep this testcase last
     UT_LogsApplication ut_logsApplication;

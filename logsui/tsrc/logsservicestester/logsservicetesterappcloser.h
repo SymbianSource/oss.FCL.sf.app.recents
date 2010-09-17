@@ -49,13 +49,15 @@ public:
     enum AppCloserErrors {
         ErrorAppNotRunning = 1,
         ErrorClosingOngoing,
-        ErrorClosingTimeout
+        ErrorClosingTimeout,
+        ErrorAppRunning
     };
     
 public slots:
 
     void closeApp(TApaTask& aTask);
     void closeDialerApp();
+    void startDialerAtBg();
 
 signals:
         
@@ -70,6 +72,8 @@ private:
     
     // from MCloseOberver
     virtual void AppClosed(TInt aError);
+    
+    bool isDialerRunning(bool close = false);
     
 private:
     QTimer mTimer;

@@ -26,6 +26,7 @@
 #include "testrunner.h"
 #include "ut_logsremove.h"
 #include "ut_logsremovestates.h"
+#include "ut_logsforegroundwatcher.h"
 
 
 int main(int argc, char *argv[]) 
@@ -65,6 +66,9 @@ int main(int argc, char *argv[])
     
     UT_LogsEventDataParser ut_logsEventData;
     testRunner.runTests(ut_logsEventData);
+    
+    UT_LogsForegroundWatcher ut_logsForegroundWatcher;
+    testRunner.runTests(ut_logsForegroundWatcher);
     
     testRunner.printResults();
     

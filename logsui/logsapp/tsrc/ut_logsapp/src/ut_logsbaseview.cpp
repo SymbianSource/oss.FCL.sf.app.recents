@@ -488,7 +488,7 @@ void UT_LogsBaseView::testHandleExit()
 {
     mViewManager->reset();
     mBaseView->handleExit();
-    QVERIFY( mViewManager->mExitCalled );
+    QVERIFY( !mViewManager->mExitCalled );
 }
 
 void UT_LogsBaseView::testIsExitAllowed()

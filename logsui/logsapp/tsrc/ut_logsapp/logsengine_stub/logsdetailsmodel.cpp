@@ -127,6 +127,9 @@ QVariant LogsDetailsModel::data(const QModelIndex &index, int role) const
         LogsMessage* logsMessage = new LogsMessage();
         QVariant var = qVariantFromValue(logsMessage);
         return var;
+    } else if (role == RoleDuplicatesSeparator) {
+        bool separator  = index.row() == mSeparatorIndex;
+        return QVariant(separator);
     }
          
     return QVariant();
@@ -148,4 +151,18 @@ QVariant LogsDetailsModel::headerData(int section, Qt::Orientation orientation,
     }
     
     return QVariant();
+}
+
+// -----------------------------------------------------------------------------
+// From QAbstractItemModel
+// -----------------------------------------------------------------------------
+//
+bool LogsDetailsModel::setData(const QModelIndex &index, const QVariant &value, 
+                               int role)
+{
+    Q_UNUSED(role);
+    Q_UNUSED(index);
+    if (value.isValid() && value.toBool() != mSeparatorCollapsed) {
+        mSeparatorCollapsed = !mSeparatorCollapsed;
+    }
 }

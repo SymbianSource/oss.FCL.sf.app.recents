@@ -50,6 +50,12 @@ signals:
     void callKeyPressed();
     void localeChanged();
     void appGainedForeground();
+    void appLostForeground();
+    
+private slots:
+
+    void obscuredCalled();
+    void revealedCalled();
 
 private:
     void startKeyCapture();

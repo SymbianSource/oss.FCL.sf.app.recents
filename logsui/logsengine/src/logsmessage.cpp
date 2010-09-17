@@ -20,6 +20,7 @@
 #include "logslogger.h"
 #include "logseventdata.h"
 #include <xqservicerequest.h>
+#include <xqaiwdecl.h>
 
 //SYSTEM
 
@@ -90,8 +91,9 @@ bool LogsMessage::sendMessage()
     
     delete mService;
     mService = 0;
-    mService = new XQServiceRequest("com.nokia.services.hbserviceprovider.conversationview", 
-                                    "send(QString,qint32,QString)", false);
+    QString serviceName("messaging.");     
+    serviceName.append(XQI_MESSAGE_SEND);
+    mService = new XQServiceRequest(serviceName, XQOP_MESSAGE_SEND_WITH_ID, false);
     bool sending = doSendMessageToNumber(*mService, mNumber, mDisplayName, mContactId);
     connect(mService, SIGNAL(requestCompleted(QVariant)), this, SLOT(requestCompleted(QVariant)));
     connect(mService, SIGNAL(requestError(int)), this, SLOT(requestError(int)));
@@ -106,9 +108,9 @@ bool LogsMessage::sendMessageToNumber(
         const QString& number, const QString& displayName, unsigned int contactId)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMessage::sendMessageToNumber()" )
-    
-    XQServiceRequest req("com.nokia.services.hbserviceprovider.conversationview", 
-                         "send(QString,qint32,QString)", false);
+    QString serviceName("messaging.");     
+    serviceName.append(XQI_MESSAGE_SEND);
+    XQServiceRequest req(serviceName, XQOP_MESSAGE_SEND_WITH_ID, false);
     return doSendMessageToNumber(req, number, displayName, contactId);
 }
 

@@ -20,19 +20,17 @@
 ; SIS header: name, uid, version
 #{"logscenrepeditor"},(0xE8316BDD),1,0,0
 
-; Localised Vendor name
-%{"Vendor"}
+; List of localised vendor names
+%{"Vendor-EN"}
 
-; Unique Vendor name
-:"Vendor"
-
-; Manual PKG pre-rules from PRO files
-; Default HW/platform dependencies
-[0x101F7961],0,0,0,{"S60ProductID"}
-[0x102032BE],0,0,0,{"S60ProductID"}
-[0x102752AE],0,0,0,{"S60ProductID"}
-[0x1028315F],0,0,0,{"S60ProductID"}
- 
+; The non-localised, globally unique vendor name (mandatory)
+:"Nokia OY"
+;Supports Series 60 v 3.x
+;This line indicates that this installation is for the Series 60 platform v3.x
+;This line must appear _exactly_ as shown below in the sis file
+;If this line is missing or incorrect, the sis file will not be able
+;to be installed on Series 60 v3.x platforms
+(0x101F7961), 0, 0, 0, {"Series60ProductID"}
 
 ; Executable and default resource files
 "\epoc32\release\armv5\urel\logscenrepeditor.exe"    - "!:\sys\bin\logscenrepeditor.exe"

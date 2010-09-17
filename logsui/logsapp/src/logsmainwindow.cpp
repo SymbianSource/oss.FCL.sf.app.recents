@@ -31,6 +31,8 @@ LogsMainWindow::LogsMainWindow()
 {
     qApp->installEventFilter(this);
     mKeyCapture = new XQKeyCapture;
+    connect( this, SIGNAL(obscured()), this, SLOT(obscuredCalled()) );
+    connect( this, SIGNAL(revealed()), this, SLOT(revealedCalled()) );
 }
 
 // -----------------------------------------------------------------------------
@@ -101,17 +103,9 @@ bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::ApplicationActivate) {
         LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationActivate" );
         startKeyCapture();
-        mForeground = true;
-        if (mLocaleChanged) {
-            LOGS_QDEBUG( "logs [UI] -> locale changed when we were on BG" );
-            emit localeChanged();
-            mLocaleChanged = false;
-        }
-        emit appGainedForeground();
     } else if (event->type() == QEvent::ApplicationDeactivate ) {
         LOGS_QDEBUG( "logs [UI] -> eventFilter(), QEvent::ApplicationDeactivate" );
         stopKeyCapture();
-        mForeground = false;
     } else if (event->type() == QEvent::LocaleChange) {
         if (mForeground) {
             emit localeChanged();
@@ -121,6 +115,33 @@ bool LogsMainWindow::eventFilter(QObject *obj, QEvent *event)
     }
     
     return HbMainWindow::eventFilter(obj,event);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMainWindow::obscuredCalled()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsMainWindow::obscuredCalled" );
+    mForeground = false;
+    emit appLostForeground();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsMainWindow::revealedCalled()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsMainWindow::revealedCalled" );
+    mForeground = true;
+    if (mLocaleChanged) {
+        LOGS_QDEBUG( "logs [UI] -> locale changed when we were on BG" );
+        emit localeChanged();
+        mLocaleChanged = false;
+    }
+    emit appGainedForeground();
 }
 
 // -----------------------------------------------------------------------------

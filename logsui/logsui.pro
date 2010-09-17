@@ -36,9 +36,10 @@ symbian: {
     :BLD_INF_RULES.prj_exports += "../recents_plat/logs_engine_api/inc/logsfilter.h APP_LAYER_PLATFORM_EXPORT_PATH(logsfilter.h)"
     :BLD_INF_RULES.prj_exports += "../recents_plat/logs_engine_api/inc/logscustomfilter.h APP_LAYER_PLATFORM_EXPORT_PATH(logscustomfilter.h)"
     :BLD_INF_RULES.prj_exports += "../recents_plat/logs_engine_api/inc/logsevent.h APP_LAYER_PLATFORM_EXPORT_PATH(logsevent.h)"
-	exists(confml/logsuda.confml) :BLD_INF_RULES.prj_exports += "confml/logsuda.confml CONFML_EXPORT_PATH(logsuda.confml,uda_content)"
-	exists(implml/logsuda.implml) :BLD_INF_RULES.prj_exports += "implml/logsuda.implml CRML_EXPORT_PATH(logsuda.implml,uda_content)"
-	exists(content/LOGDBU.zip) :BLD_INF_RULES.prj_exports += "content/LOGDBU.zip CRML_EXPORT_PATH(../content/zip/,uda_content)"
+    :BLD_INF_RULES.prj_exports += "logsapp/resources/logs.docml /epoc32/data/z/resource/hb/splashml/logs.docml"
+    :BLD_INF_RULES.prj_exports += "logsapp/resources/logs.splashml /epoc32/data/z/resource/hb/splashml/logs.splashml"
+    :BLD_INF_RULES.prj_exports += "logsapp/resources/logs.docml /epoc32/release/winscw/udeb/z/resource/hb/splashml/logs.docml"
+    :BLD_INF_RULES.prj_exports += "logsapp/resources/logs.splashml /epoc32/release/winscw/udeb/z/resource/hb/splashml/logs.splashml"
 
 }
 

@@ -31,12 +31,12 @@ class HbIcon;
  *
  */
 class LogsDetailsModel : public LogsAbstractModel
-{
-    
-
-
+{    
 public:
-    
+    enum LogsDetailsRole {
+        RoleDuplicatesSeparator = RoleBaseLast + 1 //used to check whether item is separator
+    };
+   
     explicit LogsDetailsModel();
     
 public: // The exported API
@@ -52,6 +52,10 @@ public: // From QAbstractItemModel
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation,
                                 int role = Qt::DisplayRole) const;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, 
+                                int role = Qt::EditRole);
+    
+   
 private:
     
 private: //testing purpose data 
@@ -61,6 +65,9 @@ private: //testing purpose data
     QMap<int, HbIcon*> mDetailIcons;
     QMap<int, QStringList> mDetailTexts;
     static QString mLastCallName; //last called exported function name
+ 
+    int mSeparatorIndex;
+    bool mSeparatorCollapsed;
     
     friend class UT_LogsDetailsView;
     friend class UT_LogsBaseView;

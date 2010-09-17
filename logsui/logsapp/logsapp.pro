@@ -45,6 +45,8 @@ HEADERS += inc/logseffecthandler.h
 HEADERS += inc/logspageindicator.h
 HEADERS += inc/logspageindicatoritem.h
 HEADERS += inc/logscomponentrepository.h
+HEADERS += inc/logsappsettings.h
+HEADERS += ../logsengine/logssymbianos/inc/logsforegroundwatcher.h
 
 SOURCES += src/main.cpp 
 SOURCES += src/logsmainwindow.cpp
@@ -60,13 +62,17 @@ SOURCES += src/logsservicehandlerold.cpp
 SOURCES += src/logseffecthandler.cpp
 SOURCES += src/logspageindicator.cpp
 SOURCES += src/logspageindicatoritem.cpp
+SOURCES += src/logsappsettings.cpp
+SOURCES += ../logsengine/logssymbianos/src/logsforegroundwatcher.cpp
  
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0x101F4CD5
     TARGET.CAPABILITY = CAP_APPLICATION NetworkControl
-    LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad -lxqkeycapture -ltstaskmonitorclient
-    
+    LIBS += -lxqservice  -lxqserviceutil -llogsengine -ldialpad -lxqkeycapture -ltstaskmonitorclient \
+            -lxqsettingsmanager -lapparc -lcone
+    SKINICON = qtg_large_dialer
+    MMP_RULES += SMPSAFE
 }
 
 SERVICE.FILE = service_conf.xml

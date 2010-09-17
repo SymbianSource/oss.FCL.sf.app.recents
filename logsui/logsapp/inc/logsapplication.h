@@ -21,21 +21,22 @@
 #include <QObject>
 #include <hbapplication.h>
 
+class LogsAppSettings;
+
 class LogsApplication : public HbApplication
 {
     Q_OBJECT
 
 public:
-    LogsApplication(int &argc, char *argv[]);
+    LogsApplication(int &argc, char *argv[], LogsAppSettings& settings);
     ~LogsApplication();
-    
-    bool logsFeaturePreloadingEnabled();
-    bool logsFeatureFakeExitEnabled();
 
-public slots: // from HbApplication
+public slots:
 
     void testLogsAppEngineReady();
     void testLogsHandleAppViewReady();
+    void testLogsResetAppReady();
+    
 signals:
     /*!
     * Testing framework support.
@@ -46,10 +47,6 @@ signals:
 private: //data for appplicationReady signal
     bool mViewReady;
     bool mReadCompleted;
-    
-    // Temporary "feature" flags, to be replaced by real flags once those are known
-    bool mFeaturePreloadedEnabled;
-    bool mFeatureFakeExitEnabled;
     
     friend class UT_LogsApplication;
     friend class UT_LogsViewManager;

@@ -36,7 +36,9 @@ Q_DECLARE_METATYPE(LogsContact*)
 //
 LogsDetailsModel::LogsDetailsModel( LogsDbConnector& dbConnector, LogsEvent& event ) 
     : LogsAbstractModel(),
-      mEvent( 0 )
+      mEvent( 0 ),
+      mSeparatorIndex(-1),
+      mSeparatorCollapsed(true)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDetailsModel::LogsDetailsModel()" )
     
@@ -90,7 +92,11 @@ void LogsDetailsModel::clearEvent()
 //
 int LogsDetailsModel::rowCount(const QModelIndex & /* parent */) const
 {
-    return mDetailTexts.count();
+    if (mSeparatorIndex >= 0 && mSeparatorCollapsed) {
+        return mSeparatorIndex + 1;
+    } else {
+        return mDetailTexts.count();
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -102,7 +108,6 @@ QVariant LogsDetailsModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.row() >= mDetailTexts.count() || index.row() < 0 ) {
         return QVariant();
     }
-
     if (role == Qt::DisplayRole){
         QStringList text;
         getDisplayData(index.row(), text);
@@ -112,6 +117,10 @@ QVariant LogsDetailsModel::data(const QModelIndex &index, int role) const
         getDecorationData(index.row(), icons);
         return QVariant(icons);
     } 
+    else if (role == RoleDuplicatesSeparator) {
+        bool separator  = index.row() == mSeparatorIndex;
+        return QVariant(separator);
+    }
     LogsModelItemContainer item(mEvent);
     return doGetData(role, item);
 }
@@ -131,6 +140,38 @@ QVariant LogsDetailsModel::headerData(int section, Qt::Orientation orientation,
     }
   
     return QVariant();
+}
+
+// -----------------------------------------------------------------------------
+// From QAbstractItemModel
+// -----------------------------------------------------------------------------
+//
+bool LogsDetailsModel::setData(const QModelIndex &index, const QVariant &value, 
+                               int role)
+{
+    Q_UNUSED(role);
+    LOGS_QDEBUG( "logs [ENG] -> LogsDetailsModel::setData()" )
+    bool dataSet( false );
+    if (index.row() == mSeparatorIndex 
+        && value.isValid()
+        && value.toBool() != mSeparatorCollapsed
+        && mSeparatorIndex < mDetailTexts.count()-1) {
+      
+        LOGS_QDEBUG( "logs [ENG]    separator state changed!" )
+        mSeparatorCollapsed = !mSeparatorCollapsed;
+        if (mSeparatorCollapsed) {
+            LOGS_QDEBUG( "logs [ENG]    collapsing separator" )
+            beginRemoveRows(QModelIndex(), mSeparatorIndex+1, mDetailTexts.count()-1);
+            endRemoveRows();
+        } else {
+            LOGS_QDEBUG( "logs [ENG]    expanding separator" )
+            beginInsertRows(QModelIndex(), mSeparatorIndex+1, mDetailTexts.count()-1);
+            endInsertRows();
+        }  
+        dataSet = true;              
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsDetailsModel::setData()" )
+    return dataSet;
 }
 
 // -----------------------------------------------------------------------------
@@ -400,7 +441,13 @@ void LogsDetailsModel::initTexts()
         callDurationRow << durationString(t);
         mDetailTexts.append(callDurationRow);
     }
-    
+    if (mDuplicates.count() > 0) {
+        QStringList separatorRow;
+        separatorRow << hbTrId("txt_dialer_pri_previous_calls").arg(mDuplicates.count());
+        mSeparatorIndex = mDetailTexts.count();
+        mDetailTexts.append(separatorRow);
+    }
+        
     foreach ( LogsEvent* event, mDuplicates ){
         addDateAndTimeTextRow(*event);
     }
@@ -431,6 +478,11 @@ void LogsDetailsModel::initIcons()
         mDetailIcons.append(durationIcon);
     }
     
+    if (mDuplicates.count() > 0) { //put some dummy icon
+        HbIcon* separatorIcon = new HbIcon();
+        mDetailIcons.append(separatorIcon);
+    }
+
     foreach ( LogsEvent* event, mDuplicates ){
         // Having multiple date and time icon instances has no performance
         // penalty due resource sharing inside HbIcon impl

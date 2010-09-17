@@ -34,3 +34,6 @@ symbian: {
     TARGET.CAPABILITY = CAP_APPLICATION
     LIBS += -lcentralrepository   
 }
+
+
+symbian:MMP_RULES += SMPSAFE

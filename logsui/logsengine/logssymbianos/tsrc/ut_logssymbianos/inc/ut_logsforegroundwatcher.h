@@ -1,4 +1,3 @@
-
 /*
 * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
@@ -15,18 +14,17 @@
 * Description:
 *
 */
-#ifndef UT_LOGSMAINWINDOW_H
-#define UT_LOGSMAINWINDOW_H
-
+#ifndef UT_LOGSFOREGROUNDWATCHER_H
+#define UT_LOGSFOREGROUNDWATCHER_H
 
 #include <QObject>
 
-class LogsMainWindow;
+class LogsForegroundWatcher;
 
-class UT_LogsMainWindow : public QObject
+class UT_LogsForegroundWatcher : public QObject        
 {
-    Q_OBJECT
-     
+     Q_OBJECT
+			
 private slots:
 
 /*
@@ -43,20 +41,19 @@ private slots:
     void cleanupTestCase();
     void init();
     void cleanup();
-
-
-private slots: //test methods
-     
-    void testKeyPressEvent();
-    void testSendAppToBackground();
-    void testBringAppToForeground();
-    void testEventFilter();
-    void testObscuredCalled();
-    void testRevealedCalled();
     
+private slots: //test methods
+    void testConstructor();
+    void testHandleLosingForeground();
+    void testHandleGainingForeground();
+    void testEnsureBackgroundStartup();
+
+        
 private:
- 
-    LogsMainWindow* mMainWindow;
+
+    LogsForegroundWatcher* mWatcher;
+    
 };
 
-#endif //UT_LOGSMAINWINDOW_H
+
+#endif //UT_LOGSFOREGROUNDWATCHER_H

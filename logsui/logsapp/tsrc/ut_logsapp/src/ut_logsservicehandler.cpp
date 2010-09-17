@@ -26,6 +26,7 @@
 #include "logscomponentrepository.h"
 #include "logsmatchesview.h"
 #include "logsdefs.h"
+#include "logsappsettings.h"
 #include <xqaiwdecl.h>
 
 //SYSTEM
@@ -47,8 +48,10 @@ void UT_LogsServiceHandler::init()
     mMainWindow =  new LogsMainWindow();
     mService = new LogsServiceHandler();
     mServiceOld = new LogsServiceHandlerOld();
-    
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld);
+    char* argv = 0;
+    int argc = 0;
+    mSettings = new LogsAppSettings(argc, &argv);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld, *mSettings);
     
 }
 
@@ -62,6 +65,8 @@ void UT_LogsServiceHandler::cleanup()
     mMainWindow = 0;
     delete mLogsViewManager;
     mLogsViewManager = 0;
+    delete mSettings;
+    mSettings = 0;
     
     QtHighwayStubHelper::reset();
 }

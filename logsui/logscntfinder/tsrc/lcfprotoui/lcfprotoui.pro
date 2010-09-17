@@ -43,6 +43,6 @@ symbian: {
     TARGET.UID3 = 0x101F4CD6
     TARGET.CAPABILITY = CAP_APPLICATION
     LIBS += -llogscntfinder
-    
+    MMP_RULES += SMPSAFE
 }
 

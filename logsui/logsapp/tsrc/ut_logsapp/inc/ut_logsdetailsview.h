@@ -69,6 +69,9 @@ private slots: //test methods
     void testSaveActivity();
     void testLoadActivity();
     
+    //DetailsViewItem tests
+    void testUpdateChildItems();
+    
 private:
  
     LogsDetailsView* mDetailsView;

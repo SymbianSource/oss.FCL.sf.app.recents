@@ -18,16 +18,23 @@
 #include <QObject>
 #include <QString>
 #include "logsapplication.h"
-
+#include "logsappsettings.h"
+#include "logsdefs.h"
+#include "logslogger.h"
 
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
 //
-LogsApplication::LogsApplication(int &argc, char *argv[])
-    : HbApplication(argc, argv),mViewReady(false),mReadCompleted(false), 
-      mFeaturePreloadedEnabled(false), mFeatureFakeExitEnabled(false)
+LogsApplication::LogsApplication(int &argc, char *argv[], LogsAppSettings& settings)
+    : HbApplication(argc, argv, 
+        settings.logsFeaturePreloadingEnabled() ? Hb::NoSplash : Hb::DefaultApplicationFlags ),
+      mViewReady(false),
+      mReadCompleted(false)
 {
+#ifdef LOGS_DEBUG_ENABLED
+    LOGS_QDEBUG_2( "logs [UI] -> LogsApplication::LogsApplication args", arguments() )
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -36,24 +43,6 @@ LogsApplication::LogsApplication(int &argc, char *argv[])
 //
 LogsApplication::~LogsApplication()
 {
-}
-
-// -----------------------------------------------------------------------------
-// 
-// -----------------------------------------------------------------------------
-//
-bool LogsApplication::logsFeaturePreloadingEnabled()
-{
-    return mFeaturePreloadedEnabled;
-}
-
-// -----------------------------------------------------------------------------
-// 
-// -----------------------------------------------------------------------------
-//
-bool LogsApplication::logsFeatureFakeExitEnabled()
-{
-    return mFeatureFakeExitEnabled;
 }
 
 // -----------------------------------------------------------------------------
@@ -76,6 +65,17 @@ void LogsApplication::testLogsHandleAppViewReady(){
         emit applicationReady();
     }
     mViewReady = true;
+}
+
+// -----------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------
+//
+void LogsApplication::testLogsResetAppReady()
+{
+    // Wait only for read completion when handling application readiness after
+    // hidden exit as viewready signal is not received when view is not changed
+    mReadCompleted = false;
 }
 
 // end of file

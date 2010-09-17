@@ -77,6 +77,10 @@ LogsServiceTesterWidget::LogsServiceTesterWidget(QGraphicsItem *parent ) :
     killDialer->setPreferredHeight(60);
     connect(killDialer, SIGNAL(clicked()), mAppCloser, SLOT(closeDialerApp()));
     
+    HbPushButton* startAtBg = new HbPushButton("Start Dialer at background");
+    startAtBg->setPreferredHeight(60);
+    connect(startAtBg, SIGNAL(clicked()), mAppCloser, SLOT(startDialerAtBg()));
+    
     QGraphicsLinearLayout* layout = new QGraphicsLinearLayout(Qt::Vertical);
     layout->addItem(comboLabel);
     layout->addItem(mComboBox);
@@ -86,6 +90,7 @@ LogsServiceTesterWidget::LogsServiceTesterWidget(QGraphicsItem *parent ) :
     layout->addItem(newService);
     layout->addItem(oldService);
     layout->addItem(killDialer);
+    layout->addItem(startAtBg);
     setLayout(layout);
 }
 
@@ -179,8 +184,10 @@ void LogsServiceTesterWidget::dialerCloseError(int error)
         errorMsg = QString("Dialer closing is already ongoing");
     } else  if (error == LogsServiceTesterAppCloser::ErrorClosingTimeout) {
         errorMsg = QString("Dialer closing timeout");
+    } else  if (error == LogsServiceTesterAppCloser::ErrorAppRunning) {
+        errorMsg = QString("Dialer already running");
     } else {
-        errorMsg = QString("Dialer closing error: %1").arg(error);
+        errorMsg = QString("Dialer starting/closing error: %1").arg(error);
     } 
     HbMessageBox::warning(errorMsg);
 }

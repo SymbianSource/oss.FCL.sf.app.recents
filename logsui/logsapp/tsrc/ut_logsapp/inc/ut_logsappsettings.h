@@ -15,15 +15,15 @@
 * Description:
 *
 */
-#ifndef UT_LOGSMAINWINDOW_H
-#define UT_LOGSMAINWINDOW_H
+#ifndef UT_LOGSAPPSETTINGS_H
+#define UT_LOGSAPPSETTINGS_H
 
 
 #include <QObject>
 
-class LogsMainWindow;
+class LogsAppSettings;
 
-class UT_LogsMainWindow : public QObject
+class UT_LogsAppSettings : public QObject
 {
     Q_OBJECT
      
@@ -47,16 +47,12 @@ private slots:
 
 private slots: //test methods
      
-    void testKeyPressEvent();
-    void testSendAppToBackground();
-    void testBringAppToForeground();
-    void testEventFilter();
-    void testObscuredCalled();
-    void testRevealedCalled();
+    void testLogsFeaturePreloadingEnabled();
+    void testLogsFeatureFakeExitEnabled();
     
 private:
  
-    LogsMainWindow* mMainWindow;
+    LogsAppSettings* mSettings;
 };
 
-#endif //UT_LOGSMAINWINDOW_H
+#endif //UT_LOGSAPPSETTINGS_H

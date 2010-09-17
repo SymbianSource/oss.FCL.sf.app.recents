@@ -22,6 +22,7 @@
 #include <QObject>
 
 class LogsApplication;
+class LogsAppSettings;
 
 class UT_LogsApplication : public QObject
 {
@@ -47,12 +48,15 @@ private slots:
 
 private slots: //test methods
      
+    void testConstructor();
     void testtestLogsAppEngineReady();
     void testtestLogsHandleAppViewReady();
+    void testtestLogsResetAppReady();
     
 private:
  
     LogsApplication* mLogsApplication;
+    LogsAppSettings* mSettings;
 };
 
 #endif //UT_LOGSAPPLICATION_H

@@ -27,7 +27,7 @@ class HbActivityManager;
 class HbApplication : public QApplication
 {
 public:
-    HbApplication(int &/*argc*/, char */*argv*/[]);
+    HbApplication(int &/*argc*/, char */*argv*/[], Hb::ApplicationFlags flags = Hb::DefaultApplicationFlags);
     ~HbApplication();
     
     HbActivityManager *activityManager();
@@ -37,6 +37,9 @@ public:
     QVariant activateData();    
     
     static void quit();
+
+public:
+    Hb::ApplicationFlags mTestFlags;
 };
 
 #endif//HBAPPLICATION_H

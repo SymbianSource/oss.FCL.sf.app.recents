@@ -25,6 +25,7 @@ class LogsServiceHandlerOld;
 
 class LogsViewManager;
 class LogsMainWindow;
+class LogsAppSettings;
 
 
 class UT_LogsServiceHandler : public QObject
@@ -65,6 +66,7 @@ private:
     LogsServiceHandlerOld* mServiceOld;
     LogsMainWindow* mMainWindow;
     LogsViewManager* mLogsViewManager;
+    LogsAppSettings* mSettings;
 };
 
 #endif //UT_LOGSSERVICEHANDLER_H

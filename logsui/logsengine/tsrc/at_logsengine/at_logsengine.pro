@@ -35,7 +35,7 @@ HEADERS += inc/at_logsengine.h
 
 SOURCES += src/main.cpp
 SOURCES += src/at_logsengine.cpp
-SOURCES += ../../../tsrc/qtestutils/src/testresultxmlparser.cpp
+SOURCES += ../../../tsrc/qtestutils/src/testrunner.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE
@@ -43,6 +43,7 @@ symbian: {
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -llogsengine
+    MMP_RULES += SMPSAFE
 }
 
 BLD_INF_RULES.prj_mmpfiles = "../../../tsrc/logdbmodifier/addeventtest/group/logclienttest.mmp"\

@@ -92,34 +92,27 @@ void UT_LogsMainWindow::testBringAppToForeground()
 void UT_LogsMainWindow::testEventFilter()
 {    
     QSignalSpy spy( mMainWindow, SIGNAL(localeChanged()) );
-    QSignalSpy foregroundSpy( mMainWindow, SIGNAL(appGainedForeground()) );
     QVERIFY( !mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
 
     //Event we are not interested in
     QEvent event(QEvent::Show);
     QVERIFY( !mMainWindow->eventFilter(this, &event) );
-    QVERIFY( !mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
-    QCOMPARE( foregroundSpy.count(), 0 );
     QVERIFY( !mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
    
     //Coming foreground, locale not changed
     QEvent eventFg(QEvent::ApplicationActivate);
     QVERIFY( !mMainWindow->eventFilter(this, &eventFg) );
-    QVERIFY( mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
-    QCOMPARE( foregroundSpy.count(), 1 );
     QVERIFY( mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
-    foregroundSpy.clear();
     
     //LocaleChange event on FG
+    mMainWindow->mForeground = true;
     QEvent eventLocale(QEvent::LocaleChange);
     QVERIFY( !mMainWindow->eventFilter(this, &eventLocale) );
-    QVERIFY( mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
     QVERIFY( spy.count() == 1 );
     QVERIFY( mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
-    QCOMPARE( foregroundSpy.count(), 0 );
     spy.clear();
     
     //Going background partially, surface check is not reliable at the moment so 
@@ -127,30 +120,51 @@ void UT_LogsMainWindow::testEventFilter()
     HbStubHelper::createWindowSurface();
     QEvent eventBg(QEvent::ApplicationDeactivate);
     QVERIFY( !mMainWindow->eventFilter(this, &eventBg) );
-    QVERIFY( !mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
     QVERIFY( !mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
-    QCOMPARE( foregroundSpy.count(), 0 );
     
     //Going background fully
     HbStubHelper::reset();
     QVERIFY( !mMainWindow->eventFilter(this, &eventBg) );
-    QVERIFY( !mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
     QVERIFY( !mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
-    QCOMPARE( foregroundSpy.count(), 0 );
         
     //LocaleChange event on BG
+    mMainWindow->mForeground = false;
     QVERIFY( !mMainWindow->eventFilter(this, &eventLocale) );
-    QVERIFY( !mMainWindow->isForeground() );
     QVERIFY( mMainWindow->mLocaleChanged );
     QVERIFY( !mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
     QVERIFY( spy.count() == 0 );
+}
 
-    //Coming foreground after locale cange event
-    QVERIFY( !mMainWindow->eventFilter(this, &eventFg) );
+void UT_LogsMainWindow::testObscuredCalled()
+{
+    QSignalSpy bgSpy( mMainWindow, SIGNAL(appLostForeground()) );
+    mMainWindow->mForeground = true;
+    mMainWindow->obscuredCalled();
+    QVERIFY( !mMainWindow->isForeground() );
+    QVERIFY( bgSpy.count() == 1 );
+}
+
+void UT_LogsMainWindow::testRevealedCalled()
+{
+    QSignalSpy localeSpy( mMainWindow, SIGNAL(localeChanged()) );
+    QSignalSpy fgSpy( mMainWindow, SIGNAL(appGainedForeground()) );
+    
+    mMainWindow->mForeground = false;
+    mMainWindow->revealedCalled();
     QVERIFY( mMainWindow->isForeground() );
     QVERIFY( !mMainWindow->mLocaleChanged );
-    QVERIFY( mMainWindow->mKeyCapture->mKeys.contains(Qt::Key_Yes) );
-    QVERIFY( spy.count() == 1 );
+    QVERIFY( localeSpy.count() == 0 );
+    QVERIFY( fgSpy.count() == 1 );
+    
+    //Coming foreground after locale change event
+    localeSpy.clear();
+    fgSpy.clear();
+    mMainWindow->mLocaleChanged = true;
+    mMainWindow->revealedCalled();
+    QVERIFY( mMainWindow->isForeground() );
+    QVERIFY( !mMainWindow->mLocaleChanged );
+    QVERIFY( localeSpy.count() == 1 );
+    QVERIFY( fgSpy.count() == 1 );
 }

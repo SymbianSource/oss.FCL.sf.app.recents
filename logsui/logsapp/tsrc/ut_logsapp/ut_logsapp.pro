@@ -39,8 +39,10 @@ DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
 
-HEADERS += stubs/xqkeycapture.h
-HEADERS += stubs/tstasksettings.h
+HEADERS += ./stubs/xqkeycapture.h
+HEADERS += ./stubs/xqsettingskey.h
+HEADERS += ./stubs/xqsettingsmanager.h
+HEADERS += ./stubs/tstasksettings.h
 HEADERS += ./stubs/hbapplication.h
 HEADERS += inc/ut_logsmainwindow.h
 HEADERS += inc/ut_logscomponentrepository.h
@@ -54,8 +56,10 @@ HEADERS += inc/ut_logspageindicator.h
 HEADERS += inc/ut_logspageindicatoritem.h
 HEADERS += inc/ut_logsservicehandler.h
 HEADERS += inc/ut_logsapplication.h
+HEADERS += inc/ut_logsappsettings.h
 HEADERS += ../../inc/logsmainwindow.h
 HEADERS += ../../inc/logsapplication.h
+HEADERS += ../../inc/logsappsettings.h
 HEADERS += ../../inc/logsviewmanager.h
 HEADERS += ../../inc/logscomponentrepository.h
 HEADERS += ../../inc/logsrecentcallsview.h
@@ -67,8 +71,8 @@ HEADERS += ../../inc/logsservicehandlerold.h
 HEADERS += ../../inc/logseffecthandler.h
 HEADERS += ../../inc/logspageindicator.h
 HEADERS += ../../inc/logspageindicatoritem.h
-#HEADERS += ../../../logsengine/inc/logscommondata.h
 HEADERS += ../../../logsengine/inc/logsconfigurationparams.h
+HEADERS += ../../../logsengine/logssymbianos/inc/logsforegroundwatcher.h
 HEADERS += logsengine_stub/logscontact.h
 HEADERS += ./stubs/dialpad.h
 HEADERS += ./stubs/dialpadkeyhandler.h
@@ -99,6 +103,7 @@ SOURCES += src/ut_logsservicehandler.cpp
 SOURCES += src/ut_logspageindicator.cpp
 SOURCES += src/ut_logspageindicatoritem.cpp
 SOURCES += src/ut_logsapplication.cpp
+SOURCES += src/ut_logsappsettings.cpp
 SOURCES += ../../src/logsbaseview.cpp
 SOURCES += ../../src/logsrecentcallsview.cpp
 SOURCES += ../../src/logsdetailsview.cpp
@@ -109,18 +114,22 @@ SOURCES += ../../src/logseffecthandler.cpp
 SOURCES += ../../src/logspageindicator.cpp
 SOURCES += ../../src/logspageindicatoritem.cpp
 SOURCES += ../../src/logsapplication.cpp
+SOURCES += ../../src/logsappsettings.cpp
+SOURCES += ../../../logsengine/logssymbianos/src/logsforegroundwatcher.cpp
 SOURCES += ../../../tsrc/qtestutils/src/testrunner.cpp
 SOURCES += ./stubs/hbstubs.cpp
 SOURCES += ./stubs/qthighway_stub.cpp
 SOURCES += ./stubs/dialpad_stub.cpp
 SOURCES += ./stubs/dialpadkeyhandler_stub.cpp
+SOURCES += ./stubs/xqsettingsmanager_stub.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE
     TARGET.UID3 = 0xEb768cbc
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
-    LIBS += -lxqservice  -lxqserviceutil -lxqkeycapture 
+    LIBS += -lxqservice  -lxqserviceutil -lxqkeycapture -lapparc -lcone
+    MMP_RULES += SMPSAFE
 }
 
 DOCML += ../../resources/recentCallsView.docml

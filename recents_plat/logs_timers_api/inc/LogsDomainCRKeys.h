@@ -138,6 +138,13 @@ const TUint32 KLogsDialledCallsTimerVoIP = 0x0000000C;
 */
 const TUint32 KLogsPredictiveSearch = 0x0000000D;
 
+/**
+* KLogsFakeExitEnabled
+* Controls the fake exiting feature
+* 0 - Fake exit is disabled
+* 1 - Fake exit is enabled
+*/
+const TUint32 KLogsFakeExitEnabled = 0x0000000E;
 
 /**************************************************************************/
 

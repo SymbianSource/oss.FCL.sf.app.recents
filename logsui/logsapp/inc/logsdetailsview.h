@@ -26,6 +26,8 @@ class HbAction;
 class LogsComponentRepository;
 class HbAction;
 class LogsAbstractViewManager;
+class QGraphicsLinearLayout;
+
 
 /**
  * 
@@ -86,7 +88,7 @@ private:
 class LogsDetailsViewItem : public HbListViewItem
 {
     Q_OBJECT
-    friend class UT_LogsDetailsViewItem;
+    friend class UT_LogsDetailsView;
     
 public:
     
@@ -102,6 +104,14 @@ protected: // From HbAbstractViewItem
     * overriding the pressStateChanged method to do nothing.
     */
     virtual void pressStateChanged(bool value, bool animate);
+
+    
+private slots:
+
+    void groupBoxClicked(bool collapsed);
+    
+private:
+    QGraphicsLinearLayout* mLayout;
 };
 
 

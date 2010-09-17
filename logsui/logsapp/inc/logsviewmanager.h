@@ -31,6 +31,8 @@ class LogsServiceHandlerOld;
 class LogsMainWindow;
 class HbView;
 class LogsBaseView;
+class LogsAppSettings;
+class LogsForegroundWatcher;
 
 /**
  * 
@@ -50,7 +52,7 @@ public:
      * @param service
      */
     LogsViewManager( LogsMainWindow& mainWindow, LogsServiceHandler& service,
-            LogsServiceHandlerOld& serviceOld );
+            LogsServiceHandlerOld& serviceOld, LogsAppSettings& settings );
     ~LogsViewManager();
 
 public slots:
@@ -77,7 +79,9 @@ private slots:
     void saveActivity();
     void closeEmbeddedApplication();
     void appGainedForeground();
+    void appLostForeground();
     void activityRequested(const QString &activityId);
+    void bgStartupForegroundGained();
     
 private:
     
@@ -90,22 +94,28 @@ private:
     void handleFirstActivation();
     LogsBaseView* createView(LogsAppViewId viewId);
     void doFakeExit();
+    void endFakeExit();
     bool doLoadActivity(const QString& activityId);
     void clearActivities();
     void activateViewViaService(
         LogsAppViewId viewId, bool showDialpad, 
         const QString& dialpadText, const QVariant& args = QVariant());
+    void setTaskSwitcherVisibility(bool visible);
+    void doExitApplication(bool viewExitHandling = true);
+    void activateDefaultView();
     
 private: //data 
     
     LogsMainWindow& mMainWindow;
     LogsServiceHandler& mService;
     LogsServiceHandlerOld& mServiceOld;
+    LogsAppSettings& mSettings;
     LogsComponentRepository* mComponentsRepository;
     QList<LogsBaseView*> mViewStack;
     bool mFirstActivation;
     QVariant mViewActivationArgs;
     bool mViewActivationShowDialpad;
+    LogsForegroundWatcher* mBackgroundStartupWatcher;
     
 };
 

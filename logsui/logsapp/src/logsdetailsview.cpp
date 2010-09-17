@@ -35,6 +35,8 @@
 #include <hblineedit.h>
 #include <hbnotificationdialog.h>
 #include <hbabstractviewitem.h>
+#include <QGraphicsLinearLayout>
+
 Q_DECLARE_METATYPE(LogsDetailsModel*)
 
 
@@ -321,7 +323,6 @@ void LogsDetailsView::initListWidget()
     Q_ASSERT_X(mListView != 0, "logs [UI] ", "couldn't find list widget !!");
 
     mListView->setItemRecycling(true);
-
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsView::initListWidget() " );
 }
 
@@ -432,7 +433,7 @@ void LogsDetailsView::updateWidgetsSizeAndLayout()
 // -----------------------------------------------------------------------------
 //
 LogsDetailsViewItem::LogsDetailsViewItem()
-: HbListViewItem(0)    
+    : HbListViewItem(0), mLayout(0)    
 {
 }
 
@@ -470,7 +471,42 @@ HbAbstractViewItem *LogsDetailsViewItem::createItem()
 void LogsDetailsViewItem::updateChildItems()
 {  
     HbListViewItem::updateChildItems();
+
+    QVariant customData = modelIndex().data(LogsDetailsModel::RoleDuplicatesSeparator);
+    if (customData.isValid() && customData.toBool()) {
+        LOGS_QDEBUG( "logs [UI] -> LogsDetailsViewItem::updateChildItems(), groupbox" ); 
+        HbGroupBox* groupBox = new HbGroupBox(this);
+        groupBox->setHeading(modelIndex().data(Qt::DisplayRole).toString());
+        //groupBox->setCollapsable(true);
+
+        HbWidget* content = new HbWidget();
+        content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        content->setMaximumHeight(0);
+        groupBox->setContentWidget(content);
+        groupBox->setCollapsed(true);
+          
+        connect(groupBox, SIGNAL(toggled(bool)), this, SLOT(groupBoxClicked(bool)));
+
+        if (!mLayout) {
+            mLayout = new QGraphicsLinearLayout(Qt::Horizontal, 0);
+            mLayout->setContentsMargins(0,0,0,0);        
+        }
+
+        mLayout->addItem(layout());
+        mLayout->addItem(groupBox);
+        mLayout->setItemSpacing(0,0);
+        setLayout(mLayout);             
+    }
 }
 
-
-
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsDetailsViewItem::groupBoxClicked(bool collapsed)
+{
+    LOGS_QDEBUG_2( "logs [UI] -> LogsDetailsViewItem::groupBoxClicked(): ", collapsed );    
+    QAbstractItemModel* model = const_cast <QAbstractItemModel*>(modelIndex().model());
+    model->setData(modelIndex(), QVariant(collapsed));
+    LOGS_QDEBUG( "logs [UI] <- LogsDetailsViewItem::groupBoxClicked()" );
+}

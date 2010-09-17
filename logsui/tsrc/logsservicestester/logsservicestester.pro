@@ -36,5 +36,6 @@ symbian: {
     TARGET.UID3 = 0xEC209DCF
     TARGET.CAPABILITY = CAP_APPLICATION PowerMgmt
     LIBS += -llogsservices  -lxqservice -lapgrfx -lws32
+    MMP_RULES += SMPSAFE
 }
 

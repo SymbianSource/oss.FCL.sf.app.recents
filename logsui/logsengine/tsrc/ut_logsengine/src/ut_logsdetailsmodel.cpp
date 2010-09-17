@@ -81,10 +81,22 @@ void UT_LogsDetailsModel::cleanup()
 void UT_LogsDetailsModel::testConstructor()
 {
     QVERIFY( mModel );
+    QVERIFY( mModel->mSeparatorCollapsed );
+    QVERIFY( mModel->mSeparatorIndex == -1 );
 }
 
 void UT_LogsDetailsModel::testRowCount()
 {
+    // No expandable item for duplicate events
+    QVERIFY( mModel->mSeparatorIndex == -1 );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
+    
+    // Expandable item is collapsed
+    mModel->mSeparatorIndex = 1;
+    QVERIFY( mModel->rowCount(QModelIndex()) == 2 );
+    
+    // Expandable item is expanded
+    mModel->mSeparatorCollapsed = false;
     QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
 }
 
@@ -202,9 +214,16 @@ void UT_LogsDetailsModel::testData()
     // Contact not supported
     mModel->mEvent->setNumber("");
     mModel->mEvent->setLogsEventData( 0 );
-    contactData = mModel->data(mModel->index(0), LogsModel::RoleContact);
+    contactData = mModel->data(mModel->index(0), LogsDetailsModel::RoleContact);
     contact = qVariantValue<LogsContact *>( contactData );
     QVERIFY( !contact );
+    
+    // Expandable separator item
+    mModel->mSeparatorIndex = 1;
+    QVariant groupbox = mModel->data(mModel->index(0), LogsDetailsModel::RoleDuplicatesSeparator);
+    QVERIFY( groupbox.isValid() && !groupbox.toBool() );
+    groupbox = mModel->data(mModel->index(1), LogsDetailsModel::RoleDuplicatesSeparator);
+    QVERIFY( groupbox.isValid() && groupbox.toBool() );
 }
 
 void UT_LogsDetailsModel::testHeaderData()
@@ -373,12 +392,13 @@ void UT_LogsDetailsModel::testInitUnseenMissed()
     model->mDbConnector->mDuplicatedEvents.append(dup1);
     LogsEvent* dup2 = new LogsEvent;
     model->mDbConnector->mDuplicatedEvents.append(dup2);
+    mModel->mSeparatorCollapsed = false;
     model->duplicatesRead();
-    QVERIFY(model->mDetailIcons.count() == 6);
-    QVERIFY(model->mDetailTexts.count() == 6);
+    QVERIFY(model->mDetailIcons.count() == 7);
+    QVERIFY(model->mDetailTexts.count() == 7);
     // When having multiple date and time items, first item has different heading than others
     QVERIFY( model->mDetailTexts.at(1).at(0) != dateAndTimeRowHeading );
-    QVERIFY( model->mDetailTexts.at(5).at(0) == dateAndTimeRowHeading );
+    QVERIFY( model->mDetailTexts.at(6).at(0) == dateAndTimeRowHeading );
     delete model;
     model = 0;
     
@@ -500,4 +520,37 @@ void UT_LogsDetailsModel::testUpdateConfiguration()
     mModel->mEvent->setRemoteParty("");
     QVERIFY( mModel->updateConfiguration(params) == 0 );
     QCOMPARE( mModel->mDetailTexts.count(), 4 );
+}
+
+void UT_LogsDetailsModel::testSetData()
+{
+    const int separatorIdx = 2;
+    mModel->mSeparatorCollapsed = false;
+    mModel->mSeparatorIndex = separatorIdx;
+    
+    // Collapsing duplicates ok
+    QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
+    mModel->setData( mModel->index(separatorIdx), QVariant(true) );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
+    QVERIFY( mModel->mSeparatorCollapsed );
+    
+    // Expanding fails, wrong separator index 
+    mModel->setData( mModel->index(separatorIdx+2), QVariant(false) );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
+    QVERIFY( mModel->mSeparatorCollapsed );
+
+    // Expanding fails, invalid data 
+    mModel->setData( mModel->index(separatorIdx), QVariant() );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
+    QVERIFY( mModel->mSeparatorCollapsed );
+
+    // Collapsing fails, already collapsed
+    mModel->setData( mModel->index(separatorIdx), QVariant(true) );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
+    QVERIFY( mModel->mSeparatorCollapsed );
+        
+    // Expanding ok
+    mModel->setData( mModel->index(separatorIdx), QVariant(false) );
+    QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
+    QVERIFY( !mModel->mSeparatorCollapsed );
 }

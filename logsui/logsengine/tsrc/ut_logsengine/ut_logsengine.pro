@@ -38,6 +38,8 @@ DEFINES += QT_NO_DEBUG_OUTPUT
 # Input
 HEADERS += ../stubs/xqservicerequest.h
 HEADERS += ../stubs/xqaiwrequest.h
+HEADERS += ../../logssymbianos/tsrc/stubs/xqsettingskey.h
+HEADERS += ../../logssymbianos/tsrc/stubs/xqsettingsmanager.h
 
 HEADERS += inc/ut_logsmodel.h
 HEADERS += inc/ut_logsdetailsmodel.h
@@ -123,4 +125,5 @@ symbian: {
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS +=  -lqtcontacts -lthumbnailmanagerqt -lxqservice -lxqserviceutil
+    MMP_RULES += SMPSAFE
 }

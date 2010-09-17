@@ -16,6 +16,7 @@
 */
 
 #include <QDebug>
+#include <QProcess>
 #include "logsservicetesterappcloser.h"
 
 // -----------------------------------------------------------------------------
@@ -85,27 +86,60 @@ void LogsServiceTesterAppCloser::closeApp(TApaTask& aTask)
 void LogsServiceTesterAppCloser::closeDialerApp()
 {
     qDebug() << "[LOGS_TESTER] -> LogsServiceTesterAppCloser::closeDialerApp()";
-    const TUid KUidDialer    = { 0x101F4CD5 };
+
+    if ( isDialerRunning(true) ){
+        qDebug() << "[LOGS_TESTER] dialer is running, killing";
+    } else {
+        qDebug() << "[LOGS_TESTER] dialer is not running";
+        emit closeError(ErrorAppNotRunning);
+    }
+
+    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterAppCloser::closeDialerApp()";    
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsServiceTesterAppCloser::startDialerAtBg()
+{
+    qDebug() << "[LOGS_TESTER] -> LogsServiceTesterAppCloser::startDialerAtBg()";    
+    if ( isDialerRunning() ){
+        emit closeError(ErrorAppRunning);
+    } else {
+        QStringList arguments;
+        arguments << "-logsbootup";
+    
+        QProcess myProcess;
+        if ( !myProcess.startDetached("logs", arguments) ){
+            qDebug() << "[LOGS_TESTER]  Failed to start"; 
+            emit closeError(-1);
+        }
+    }
+    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterAppCloser::startDialerAtBg()";    
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool LogsServiceTesterAppCloser::isDialerRunning(bool close)
+{
+    const TUid KUidDialer = { 0x101F4CD5 };
+    bool running( false );
     RWsSession ws;
     TInt err = ws.Connect();
     if (err == KErrNone) {
         TApaTaskList tl( ws);
-        TApaTask dialerTask = (TApaTask)tl.FindApp( KUidDialer );        
-        if (dialerTask.Exists()) {
-            qDebug() << "[LOGS_TESTER] dialer is running, killing";
+        TApaTask dialerTask = (TApaTask)tl.FindApp( KUidDialer );   
+        running = dialerTask.Exists();
+        if ( close ){
             closeApp(dialerTask);
-        } else {
-            qDebug() << "[LOGS_TESTER] dialer is not running";
-            emit closeError(ErrorAppNotRunning);
         }
-        ws.Close();
-    } else {
-        emit closeError(err);
-    }
-    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterAppCloser::closeDialerApp()";    
+    }    
+    ws.Close();
+    return running;
 }
-
-
 
 // -----------------------------------------------------------------------------
 //

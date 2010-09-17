@@ -161,7 +161,6 @@ void LogsRecentCallsView::deactivated()
 void LogsRecentCallsView::handleExit()
 {
     markMissedCallsSeen();
-    LogsBaseView::handleExit();
 }
 
 // -----------------------------------------------------------------------------
@@ -405,7 +404,7 @@ void LogsRecentCallsView::changeFilter(HbAction* action)
 void  LogsRecentCallsView::handleBackSoftkey()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::handleBackSoftkey()" );
-    handleExit();
+    mViewManager.exitApplication();
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::handleBackSoftkey()" );
 }
 

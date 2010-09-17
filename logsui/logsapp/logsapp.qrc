@@ -12,5 +12,6 @@
     <qresource prefix="/logslayouts" >
         <file alias="hblistviewitem.css">resources/hblistviewitem.css</file>
         <file alias="hblistviewitem.widgetml">resources/hblistviewitem.widgetml</file>
+        <file alias="hbgroupboxcontentwidget.css">resources/hbgroupboxcontentwidget.css</file>
     </qresource>
 </RCC>

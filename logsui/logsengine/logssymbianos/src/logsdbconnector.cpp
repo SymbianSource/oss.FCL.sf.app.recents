@@ -356,6 +356,8 @@ int LogsDbConnector::compressData()
     
     releaseDbConnections();
     
+    mFirstReadCompleted = false; // For testing
+    
     LOGS_QDEBUG( "logs [ENG] <- LogsDbConnector::compressData()" )
     return 0;
 }

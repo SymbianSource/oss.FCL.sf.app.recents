@@ -37,6 +37,10 @@ class LogsDetailsModel : public LogsAbstractModel
 
 public:
     
+    enum LogsDetailsRole {
+        RoleDuplicatesSeparator = RoleBaseLast + 1 //used to check whether item is separator
+    };
+    
     explicit LogsDetailsModel( LogsDbConnector& dbConnector, LogsEvent& event );
     
 public: // The exported API
@@ -53,6 +57,8 @@ public: // From QAbstractItemModel
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation,
                                 int role = Qt::DisplayRole) const;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, 
+                         int role = Qt::EditRole);
 
 protected: // From LogsAbstractModel
     
@@ -85,6 +91,9 @@ private: //data
     QList<HbIcon*> mDetailIcons;
     QList<QStringList> mDetailTexts;
     QList<LogsEvent*> mDuplicates;
+    
+    int mSeparatorIndex;
+    bool mSeparatorCollapsed;
     
 private:
         

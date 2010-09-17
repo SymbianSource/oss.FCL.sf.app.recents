@@ -66,4 +66,5 @@ symbian: {
         "DEFFILE eabi/logscntfinder.def" \
         "$${LITERAL_HASH}endif"
     MMP_RULES += defFiles
+    MMP_RULES += SMPSAFE
 }

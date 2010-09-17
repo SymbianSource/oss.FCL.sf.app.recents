@@ -70,5 +70,5 @@ symbian: {
     TARGET.CAPABILITY = ALL -TCB
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lflogger -lqtcontacts
-    
+    MMP_RULES += SMPSAFE
 }

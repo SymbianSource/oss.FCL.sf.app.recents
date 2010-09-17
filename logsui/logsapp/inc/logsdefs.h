@@ -104,5 +104,8 @@ const char logsActivityParamShowDialpad[] = "show_dialpad"; // val type bool
 const char logsActivityParamDialpadText[] = "dialpad_text"; // val type string
 const char logsActivityParamInternalViewId[] = "view_id"; // val type int
 
+// Command line args
+const char logsBootupStartCmdLineArg[] = "-logsbootup";
+
 
 #endif // LOGSDEFS_H

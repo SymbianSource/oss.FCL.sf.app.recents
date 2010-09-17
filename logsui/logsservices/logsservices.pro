@@ -48,4 +48,5 @@ symbian: {
         "DEFFILE eabi/logsservices.def" \
         "$${LITERAL_HASH}endif"
     MMP_RULES += defFiles
+    MMP_RULES += SMPSAFE
 }

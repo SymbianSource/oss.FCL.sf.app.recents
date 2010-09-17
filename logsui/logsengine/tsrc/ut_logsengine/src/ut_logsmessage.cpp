@@ -79,7 +79,7 @@ void UT_LogsMessage::testSendMessage()
 {
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsMessage->sendMessage() );
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.hbserviceprovider.conversationview" );
+    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
     QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
     
 }
@@ -88,15 +88,15 @@ void UT_LogsMessage::testSendMessageToNumber()
 {
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsMessage->sendMessageToNumber( "1234567" ) );
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.hbserviceprovider.conversationview" );
+    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
     QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsMessage->sendMessageToNumber( "1234567", "name" ) );
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.hbserviceprovider.conversationview" );
+    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
     QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsMessage->sendMessageToNumber( "4234567", "namef", 3 ) );
-    QVERIFY( QtHighwayStubHelper::service() == "com.nokia.services.hbserviceprovider.conversationview" );
+    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
     QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
 }
 

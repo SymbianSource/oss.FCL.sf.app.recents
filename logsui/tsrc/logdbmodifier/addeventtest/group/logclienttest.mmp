@@ -56,3 +56,6 @@ LIBRARY         inetprotutil.lib
 VENDORID 0x101FB657
 
 CAPABILITY    ALL -TCB
+
+
+SMPSAFE

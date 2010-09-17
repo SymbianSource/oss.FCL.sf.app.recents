@@ -344,9 +344,7 @@ HbListView* LogsBaseView::listView() const
 //
 void LogsBaseView::handleExit()
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleExit()" );   
-    mViewManager.exitApplication();
-    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::handleExit()" );
+    LOGS_QDEBUG( "logs [UI] <-> LogsBaseView::handleExit()" );   
 }
 
 // -----------------------------------------------------------------------------

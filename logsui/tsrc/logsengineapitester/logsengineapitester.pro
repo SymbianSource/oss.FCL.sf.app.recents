@@ -36,3 +36,6 @@ libFiles.sources = logsengineapitester.exe
 libFiles.path = "!:\sys\bin"
 DEPLOYMENT += libFiles
 
+
+
+symbian:MMP_RULES += SMPSAFE

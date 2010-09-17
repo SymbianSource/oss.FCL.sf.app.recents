@@ -44,4 +44,5 @@ symbian: {
     TARGET.CAPABILITY = ALL -TCB
     LIBS += -lecom -lflogger -lws32 -lbafl -llogsservices
     TARGET.EPOCALLOWDLLDATA = 1
+    MMP_RULES += SMPSAFE
 }

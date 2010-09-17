@@ -26,7 +26,8 @@
 #include "logsservicehandler.h"
 #include "logsservicehandlerold.h"
 #include "logsmainwindow.h"
-#include "logsapplication.h"
+#include "logsappsettings.h"
+#include "logsforegroundwatcher.h"
 
 //SYSTEM
 #include <hbmainwindow.h>
@@ -44,10 +45,12 @@
 //
 LogsViewManager::LogsViewManager( 
         LogsMainWindow& mainWindow, LogsServiceHandler& service,
-        LogsServiceHandlerOld& serviceOld ) : 
+        LogsServiceHandlerOld& serviceOld,
+        LogsAppSettings& settings) : 
     QObject( 0 ), mMainWindow( mainWindow ), 
-    mService( service ), mServiceOld( serviceOld ),
-    mFirstActivation(true), mViewActivationShowDialpad(false)
+    mService( service ), mServiceOld( serviceOld ), mSettings( settings ),
+    mFirstActivation(true), mViewActivationShowDialpad(false), 
+    mBackgroundStartupWatcher(0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::LogsViewManager()" );
 
@@ -56,6 +59,7 @@ LogsViewManager::LogsViewManager(
     connect( &mainWindow, SIGNAL(orientationChanged(Qt::Orientation)),
             this, SLOT(handleOrientationChanged()) );
     connect( &mainWindow, SIGNAL(appGainedForeground()), this, SLOT(appGainedForeground()) );
+    connect( &mainWindow, SIGNAL(appLostForeground()), this, SLOT(appLostForeground()) );
 
     mComponentsRepository = new LogsComponentRepository(*this);
     
@@ -88,6 +92,7 @@ LogsViewManager::~LogsViewManager()
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::~LogsViewManager()" );
      
     delete mComponentsRepository;
+    delete mBackgroundStartupWatcher;
     
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::~LogsViewManager()" );
 }
@@ -131,7 +136,7 @@ void LogsViewManager::proceedExit()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::proceedExit()" );
     
-    if ( static_cast<LogsApplication*>( qApp )->logsFeatureFakeExitEnabled() ){
+    if ( mSettings.logsFeatureFakeExitEnabled() ){
         doFakeExit();
     } else {
         qApp->quit();
@@ -177,27 +182,11 @@ void LogsViewManager::exitApplication()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::exitApplication()" );
     
-    LOGS_QDEBUG( "logs [UI] Exit delayed" );
-    
-    // Fake exit by sending app to background
+    // Send app immetiately to background as there might be some async stuff
+    // that needs to complete before the process can be terminated.
     mMainWindow.sendAppToBackground();
 
-    bool exitAllowed( true );
-    foreach ( LogsBaseView* view, mViewStack ){
-        if ( !view->isExitAllowed() ){
-            exitAllowed = false;
-            connect( view, SIGNAL(exitAllowed()),
-                     this, SLOT(proceedExit()), 
-                     Qt::UniqueConnection );
-        }
-    }
-    if ( exitAllowed ){
-        LOGS_QDEBUG( "logs [UI] Handle exit immediataly" );
-        proceedExit();
-    } else {
-        // Just wait for signal from view(s) that exiting can proceed
-        LOGS_QDEBUG( "logs [UI] Delayed exit handling" );
-    }
+    doExitApplication();
     
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::exitApplication()" );
 }
@@ -392,26 +381,33 @@ LogsAppViewId LogsViewManager::checkMatchesViewTransition(
 void LogsViewManager::handleFirstActivation()
 {      
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::handleFirstActivation()" );
-    LogsApplication* app = static_cast<LogsApplication*>(qApp);
-    Hb::ActivationReason reason = app->activateReason();
-    bool isStartedByService( 
-        mService.isStartedUsingService() || mServiceOld.isStartedUsingService() );
-    if ( !app->logsFeaturePreloadingEnabled() || 
-         reason == Hb::ActivationReasonActivity || 
-         isStartedByService ){
+
+    if ( mSettings.logsFeaturePreloadingEnabled() ) {
+        delete mBackgroundStartupWatcher;
+        mBackgroundStartupWatcher = 0;
+        mBackgroundStartupWatcher = new LogsForegroundWatcher();
+        connect( mBackgroundStartupWatcher, SIGNAL(gainingForeground()), 
+                 this, SLOT(bgStartupForegroundGained()) );
+        setTaskSwitcherVisibility(false);
+
+    } else {
+        Hb::ActivationReason reason = static_cast<HbApplication*>(qApp)->activateReason();
+        bool isStartedByService( 
+            mService.isStartedUsingService() || mServiceOld.isStartedUsingService() );
+        
         // Start immediately using all possible resources
         mComponentsRepository->model()->refreshData();
+        
+        if ( reason == Hb::ActivationReasonActivity && loadActivity() ){
+            LOGS_QDEBUG( "logs [UI] loaded saved activity" );    
+            mMainWindow.bringAppToForeground();
+        } else if ( mFirstActivation && !isStartedByService ) {
+            activateDefaultView();
+            mMainWindow.bringAppToForeground();
+        }
+        
+        clearActivities();
     }
-    
-    if ( reason == Hb::ActivationReasonActivity && loadActivity() ){
-        LOGS_QDEBUG( "logs [UI] loaded saved activity" );    
-        mMainWindow.bringAppToForeground();
-    } else if ( mFirstActivation && !isStartedByService ) {
-        changeRecentView( XQService::LogsViewAll, false );
-        mMainWindow.bringAppToForeground();
-    }
-
-    clearActivities();
 
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::handleFirstActivation()" );
 }
@@ -461,14 +457,29 @@ void LogsViewManager::appGainedForeground()
         disconnect( view, SIGNAL(exitAllowed()), this, SLOT(proceedExit()) );
     }
     
-    if ( static_cast<LogsApplication*>( qApp )->logsFeatureFakeExitEnabled() || 
-         static_cast<LogsApplication*>( qApp )->logsFeaturePreloadingEnabled() ){
-        mComponentsRepository->model()->refreshData();
-        TsTaskSettings taskSettings;
-        taskSettings.setVisibility(true);
+    if ( mSettings.logsFeatureFakeExitEnabled() || mSettings.logsFeaturePreloadingEnabled() ){
+        endFakeExit();
     }
     
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appGainedForeground()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::appLostForeground()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::appLostForeground()" );
+    
+    if ( mSettings.logsFeatureFakeExitEnabled() ){
+        doExitApplication(false); // Bypass view exit handling
+    }
+    // TODO: non-continuus app should also do exit at this point if 
+    // didn't loose foreground because of embedded app. However, no sensible
+    // way at the moment for handling embedded app foreground monitoring.
+    
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::appLostForeground()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -479,10 +490,23 @@ void LogsViewManager::activityRequested(const QString &activityId)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsViewManager::activityRequested()" );
     if ( doLoadActivity(activityId) ){
-        clearActivities();
         mMainWindow.bringAppToForeground();
     }
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::activityRequested()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::bgStartupForegroundGained()
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::bgStartupForegroundGained()" );
+    delete mBackgroundStartupWatcher;
+    mBackgroundStartupWatcher = 0;
+    endFakeExit();
+    mMainWindow.bringAppToForeground(); 
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::bgStartupForegroundGained()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -497,8 +521,21 @@ void LogsViewManager::doFakeExit()
     connect( activityManager, SIGNAL(activityRequested(QString)), 
              this, SLOT(activityRequested(QString)), Qt::UniqueConnection );
     mComponentsRepository->model()->compressData();
-    TsTaskSettings taskSettings;
-    taskSettings.setVisibility(false);
+    setTaskSwitcherVisibility(false);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::endFakeExit()
+{
+    setTaskSwitcherVisibility(true);
+    mComponentsRepository->model()->refreshData();
+    if ( !mMainWindow.currentView() ){
+        activateDefaultView();
+    }
+    clearActivities();
 }
 
 // -----------------------------------------------------------------------------
@@ -546,7 +583,7 @@ bool LogsViewManager::doLoadActivity(const QString& activityId)
         
         QVariant args = matchingView->loadActivity(activityId, stream, params);
         loaded = doActivateView( 
-            matchingView->viewId(), showDialpad, args, dialpadText, true );
+            matchingView->viewId(), showDialpad, args, dialpadText );
     }
     
     LOGS_QDEBUG_2( "logs [UI] <- LogsViewManager::doLoadActivity() loaded:", loaded );
@@ -579,12 +616,64 @@ void LogsViewManager::activateViewViaService(
     LOGS_QDEBUG_2( "logs [UI] -> LogsViewManager::activateViewViaService()", viewId );
     clearActivities();
     closeEmbeddedApplication();
-    mMainWindow.bringAppToForeground();
     Dialpad* dpad = mComponentsRepository->dialpad();
     if ( !showDialpad ){
         dpad->closeDialpad();
     }
     dpad->editor().setText(dialpadText);
-    doActivateView(viewId, showDialpad, args, QString(), true);
+    if ( doActivateView(viewId, showDialpad, args, QString(), true) ){
+        mMainWindow.bringAppToForeground();
+    }
     LOGS_QDEBUG( "logs [UI] <- LogsViewManager::activateViewViaService()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::setTaskSwitcherVisibility(bool visible)
+{
+    LOGS_QDEBUG_2( "logs [UI] -> LogsViewManager::setTaskSwitcherVisibility()", visible );
+    TsTaskSettings taskSettings;
+    taskSettings.setVisibility(visible);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::doExitApplication(bool viewExitHandling)
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsViewManager::doExitApplication()" );
+    
+    bool exitAllowed( true );
+    foreach ( LogsBaseView* view, mViewStack ){
+        if ( viewExitHandling ){
+            view->handleExit();
+        }
+        if ( !view->isExitAllowed() ){
+            exitAllowed = false;
+            connect( view, SIGNAL(exitAllowed()),
+                     this, SLOT(proceedExit()), 
+                     Qt::UniqueConnection );
+        }
+    }
+    if ( exitAllowed ){
+        LOGS_QDEBUG( "logs [UI] Handle exit immediately" );
+        proceedExit();
+    } else {
+        // Just wait for signal from view(s) that exiting can proceed
+        LOGS_QDEBUG( "logs [UI] Delayed exit handling" );
+    }
+    
+    LOGS_QDEBUG( "logs [UI] <- LogsViewManager::doExitApplication()" );
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsViewManager::activateDefaultView()
+{
+    changeRecentView( XQService::LogsViewAll, false );
 }

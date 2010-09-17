@@ -37,6 +37,7 @@
 #include <hbgroupbox.h>
 #include <dialpad.h>
 #include <hbmessagebox.h>
+#include <QGraphicsLinearLayout>
 
 Q_DECLARE_METATYPE(LogsDetailsModel *)
 
@@ -412,3 +413,38 @@ void UT_LogsDetailsView::testLoadActivity()
     QVERIFY( model != 0 );
     delete model;
 }
+
+
+void UT_LogsDetailsView::testUpdateChildItems()
+{
+    HbListView list;
+    LogsDetailsModel* model = new LogsDetailsModel();
+    list.setModel( model, new LogsDetailsViewItem());
+
+    model->mDetailItemsCount = 5;
+    QEvent* event = new QEvent(QEvent::GraphicsSceneResize);
+    qApp->sendEvent(&list, event); //will create list items and call updateChildItems()
+    
+    // No separator item
+    LogsDetailsViewItem* item = static_cast<LogsDetailsViewItem*>(list.viewItem(0));    
+    QVERIFY(item);
+    QVERIFY( !item->mLayout );
+    
+    // Separator item updated OK
+    model->mSeparatorIndex = 0;
+    item->updateChildItems();
+    QVERIFY( item->mLayout );
+    QCOMPARE( item->mLayout->count(), 1 );
+    QGraphicsLayoutItem* layoutItem = item->mLayout->itemAt(0);
+    QVERIFY( static_cast<HbGroupBox*>(layoutItem) );
+
+    // Testing groupBoxClicked()
+    QVERIFY( model->mSeparatorCollapsed );
+    item->groupBoxClicked(false);
+    QVERIFY( !model->mSeparatorCollapsed );
+    
+    
+    list.setModel(0);
+    delete model;
+}
+  

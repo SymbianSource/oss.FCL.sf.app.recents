@@ -17,8 +17,8 @@
 
 //USER
 #include "ut_logsapplication.h"
-//#include "hbapplication.h"
 #include "logsapplication.h"
+#include "logsappsettings.h"
 #include "qthighway_stub_helper.h"
 #include "hbstubs_helper.h"
 //SYSTEM
@@ -39,8 +39,10 @@ void UT_LogsApplication::cleanupTestCase()
 
 void UT_LogsApplication::init()
 {
-    int value = qApp->argc();
-    mLogsApplication = new LogsApplication(value,qApp->argv());
+    char* argv = 0;
+    int argc = 0;
+    mSettings = new LogsAppSettings(argc, &argv);
+    mLogsApplication = new LogsApplication(argc, &argv, *mSettings);
     
 }
 
@@ -48,6 +50,21 @@ void UT_LogsApplication::cleanup()
 {
     delete mLogsApplication;
     mLogsApplication = 0;
+    delete mSettings;
+    mSettings = 0;
+}
+
+void UT_LogsApplication::testConstructor()
+{
+    QVERIFY( mLogsApplication->mTestFlags == Hb::DefaultApplicationFlags );
+    
+    delete mLogsApplication;
+    mLogsApplication = 0;
+    mSettings->mFeaturePreloadedEnabled = true;
+    char* argv = 0;
+    int argc = 0;
+    mLogsApplication = new LogsApplication(argc, &argv, *mSettings);
+    QVERIFY( mLogsApplication->mTestFlags == Hb::NoSplash );
 }
 
 void UT_LogsApplication::testtestLogsAppEngineReady()
@@ -111,5 +128,15 @@ void UT_LogsApplication::testtestLogsHandleAppViewReady()
     
     mLogsApplication->testLogsAppEngineReady();
     QVERIFY( spy.count() == 1 );
+}
+
+void UT_LogsApplication::testtestLogsResetAppReady()
+{
+    mLogsApplication->mViewReady = true;
+    mLogsApplication->mReadCompleted = true;
+    mLogsApplication->testLogsResetAppReady();
+    QVERIFY( mLogsApplication->mViewReady );
+    QVERIFY( !mLogsApplication->mReadCompleted );
+    
 }
 

@@ -60,6 +60,7 @@ private slots: //test methods
 	void testCreateContact();
 	void testContactActionCompleted();
 	void testUpdateConfiguration();
+	void testSetData();
     
 private:
  

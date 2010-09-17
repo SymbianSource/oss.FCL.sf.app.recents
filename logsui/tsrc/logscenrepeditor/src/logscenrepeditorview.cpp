@@ -31,9 +31,15 @@ const QStringList KPredictiveSearchList = (QStringList()
         << "Temporarily Off"
         << "Not defined");
 
+const QStringList KFakeExitList = (QStringList() 
+        << "Disabled" 
+        << "Enabled" 
+        << "Not defined");
+
 LogsCenrepEditorView::LogsCenrepEditorView() 
     : HbView(0),
       mList(0),
+      mFakeExitList(0),
       mRepository(0)
 {
     qDebug() << "[LOGS_CENREP]-> LogsCenrepEditorView::LogsCenrepEditorView()";
@@ -62,9 +68,22 @@ LogsCenrepEditorView::LogsCenrepEditorView()
 
     HbLabel* label = new HbLabel("Predictive search feature", this); 
     
+  
+    HbLabel* label2 = new HbLabel("Fake exit feature", this); 
+    TInt valueFakeExit(-1);
+    err = mRepository->Get( KLogsFakeExitEnabled, valueFakeExit );
+    qDebug() << "[LOGS_CENREP]-> mRepository->Get(KLogsFakeExitEnabled) value: " << valueFakeExit
+         << ", err: " << err;
+    mFakeExitList = new HbRadioButtonList(this);    
+    mFakeExitList->setItems(KFakeExitList);
+    listCurrentIndex = (err == 0) ? valueFakeExit : KFakeExitList.count()-1;
+    mFakeExitList->setSelected(listCurrentIndex);
+    
     QGraphicsLinearLayout* layout = new QGraphicsLinearLayout(Qt::Vertical);
     layout->addItem(label);
     layout->addItem(mList);
+    layout->addItem(label2);
+    layout->addItem(mFakeExitList);
     layout->addItem(buttonSave);
     layout->addItem(buttonExit);
     setLayout(layout);
@@ -81,13 +100,22 @@ LogsCenrepEditorView::~LogsCenrepEditorView()
 void LogsCenrepEditorView::saveSettings()
 {
     qDebug() << "[LOGS_CENREP]-> LogsCenrepEditorView::saveSettings()";
-    if (mList->selected() < KPredictiveSearchList.count()) {
-        int err = mRepository->Set( KLogsPredictiveSearch, mList->selected() );
-        qDebug() << "[LOGS_CENREP]-> mRepository->Set(KLogsPredictiveSearch), value:"
-                << mList->selected() << ", err: " << err;
+    
+    saveSettings( *mList, KPredictiveSearchList, KLogsPredictiveSearch );
+    saveSettings( *mFakeExitList, KFakeExitList, KLogsFakeExitEnabled );
+  
+    qDebug() << "[LOGS_CENREP]<- LogsCenrepEditorView::saveSettings()";
+}
+
+void LogsCenrepEditorView::saveSettings(
+    HbRadioButtonList& list, const QStringList& listSelections, unsigned int key )
+{
+    if (list.selected() < listSelections.count()) {
+        int err = mRepository->Set( key, list.selected() );
+        qDebug() << "[LOGS_CENREP]-> mRepository->Set(...), value:"
+          << list.selected() << ", err: " << err;
     } else {
         qDebug() << "[LOGS_CENREP]-> not saving!!";
     }
 
-    qDebug() << "[LOGS_CENREP]<- LogsCenrepEditorView::saveSettings()";
 }

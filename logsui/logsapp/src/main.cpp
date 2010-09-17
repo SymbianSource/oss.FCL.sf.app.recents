@@ -15,6 +15,7 @@
 *
 */
 //USER
+#include "logsappsettings.h"
 #include "logsapplication.h"
 #include "logsmainwindow.h"
 #include "logsviewmanager.h"
@@ -40,7 +41,8 @@ int main(int argc, char *argv[])
 {
     LOGS_QDEBUG( "logs [UI] -> main()" )
 
-    LogsApplication app(argc, argv);
+    LogsAppSettings appSettings(argc, argv);
+    LogsApplication app(argc, argv, appSettings);
 
 #ifdef LOGS_USE_QTRANSLATOR
     QString lang = QLocale::system().name();
@@ -65,7 +67,8 @@ int main(int argc, char *argv[])
     
     LogsMainWindow window;
     //Application ready signal is emitted after startup when UI is fully loaded and functional
-    QObject::connect( &window, SIGNAL(viewReady()), &app, SLOT(testLogsHandleAppViewReady()) );    
+    QObject::connect( &window, SIGNAL(viewReady()), &app, SLOT(testLogsHandleAppViewReady()) );  
+    QObject::connect( &window, SIGNAL(appLostForeground()), &app, SLOT(testLogsResetAppReady()) );
     HbStyleLoader::registerFilePath(":/logslayouts");
     
     // Create service handler asap so that services are published fast.
@@ -74,7 +77,7 @@ int main(int argc, char *argv[])
     // HbApplication creation takes long time.
     LogsServiceHandler service;
     LogsServiceHandlerOld serviceOld;
-    LogsViewManager viewManager(window, service, serviceOld);
+    LogsViewManager viewManager(window, service, serviceOld, appSettings);
     
     // Don't show window yet as app might be started at background
     int err = app.exec();

@@ -41,7 +41,6 @@
 
 #else // debug build; logs
 
-
 const char logsDebugPrefix[]    = "Debug: ";
 const char logsWarningPrefix[]  = "Warning: ";
 const char logsCriticalPrefix[] = "Critical: ";
@@ -56,6 +55,8 @@ const char logsFatalPrefix[]    = "Fatal: ";
 
 const char logsLogFile[] = "C:/logs/logsapp/logsappdebug.txt";// Logs application log filename.
 
+
+#define LOGS_DEBUG_ENABLED
 
 #define LOGS_QDEBUG( a )\
     qDebug() << a;
@@ -103,20 +104,6 @@ const char logsLogFile[] = "C:/logs/logsapp/logsappdebug.txt";// Logs applicatio
 #else
 #define LOGS_QDEBUG_EVENT( ev )
 #define LOGS_QDEBUG_EVENT_ARR( arr )
-#endif
-
-// File logging can be disabled by commenting definition below. 
-#define LOGS_FILE_LOGGING_ENABLED
-
-#if ( defined __WINSCW__ ) || ( defined __WINS__ )
-// No sense to have file logging enabled in wins
-#undef LOGS_FILE_LOGGING_ENABLED
-#endif
-
-#ifdef LOGS_FILE_LOGGING_ENABLED
-const bool logsFileLoggingEnabled = ETrue;
-#else
-const bool logsFileLoggingEnabled = EFalse;
 #endif
 
 

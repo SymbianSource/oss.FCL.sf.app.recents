@@ -34,3 +34,4 @@ libFiles.sources = serviceapp.exe
 libFiles.path = "!:\sys\bin"
 DEPLOYMENT += libFiles
 
+symbian:MMP_RULES += SMPSAFE
