@@ -36,7 +36,6 @@ INCLUDEPATH += ../../../tsrc/qtestutils/inc
 DEFINES += QT_NO_DEBUG_OUTPUT
 
 # Input
-HEADERS += ../stubs/xqservicerequest.h
 HEADERS += ../stubs/xqaiwrequest.h
 HEADERS += ../../logssymbianos/tsrc/stubs/xqsettingskey.h
 HEADERS += ../../logssymbianos/tsrc/stubs/xqsettingsmanager.h
@@ -126,4 +125,7 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS +=  -lqtcontacts -lthumbnailmanagerqt -lxqservice -lxqserviceutil
     MMP_RULES += SMPSAFE
+    CONFIG += symbian_test
+    coverage: CONFIG -= symbian_test
 }
+

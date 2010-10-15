@@ -79,8 +79,7 @@ void ST_LogsCntFinder::cleanupTestCase()
 
 void ST_LogsCntFinder::init()
 {   
-    HbInputLanguage eng( QLocale::English );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::English );    
     
     m_finder = 0;
     m_finder = new LogsCntFinder(*m_manager);
@@ -109,8 +108,7 @@ void ST_LogsCntFinder::cleanup()
 {
     delete m_finder;
     m_finder = 0;
-    HbInputLanguage eng( QLocale::English );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::English );    
     
 }
 
@@ -991,15 +989,15 @@ void ST_LogsCntFinder::testContactWithSpecialChars()
     m_finder->predictiveSearchQuery( QString("") );
     QCOMPARE( m_finder->resultsCount(), 0 );
     
-    m_finder->predictiveSearchQuery( QString("1") );
+    m_finder->predictiveSearchQuery( QString("*") );
     QCOMPARE( m_finder->resultsCount(), 1 );
     CHECK_RESULTS( 1, "%Hannu", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
-    m_finder->predictiveSearchQuery( QString("14") );
+    m_finder->predictiveSearchQuery( QString("*4") );
     QCOMPARE( m_finder->resultsCount(), 1 );
     CHECK_RESULTS( 1, "%Hannu", "", 2 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     
-    m_finder->predictiveSearchQuery( QString("1") );
+    m_finder->predictiveSearchQuery( QString("*") );
     QCOMPARE( m_finder->resultsCount(), 1 );
     CHECK_RESULTS( 1, "%Hannu", "", 1 ); //SET: cache size, CHECK: 1. result fn, 1. result ln, highlights 
     

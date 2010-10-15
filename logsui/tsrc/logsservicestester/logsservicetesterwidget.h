@@ -35,8 +35,7 @@ public:
 
 public slots:
 
-    void startOldService();
-    void startNewService();
+    void startService();
     
     void dialerClosed();
     void dialerCloseError(int error);

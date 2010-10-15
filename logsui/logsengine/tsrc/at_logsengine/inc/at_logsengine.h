@@ -18,10 +18,14 @@
 #define AT_LOGSENGINE_H
 
 #include <QObject>
+#include <QTimer>
 #include <e32base.h>
 
 class LogsModel;
 class LogsCustomFilter;
+class LogsTestModelObserver;
+class CActiveSchedulerWait;
+class CDeltaTimer;
 
 class AT_LogsEngine : public QObject                 
 {
@@ -59,8 +63,37 @@ private:
 private:
  
     LogsModel* mModel; 
+    LogsTestModelObserver* mWaiter;
 
 };
 
+class LogsTestModelObserver : public QObject                 
+{
+     Q_OBJECT
+     
+public:
+     
+     LogsTestModelObserver();
+     virtual ~LogsTestModelObserver();
+     void startWaiting(int timeoutInMsec);
+     
+public slots:
+
+    void somethingCompleted();
+
+private:
+    
+    void startTimerForAsync(int msecs);
+    
+    static TInt asyncTimerExpired(TAny* ptr);
+    
+private:
+    CActiveSchedulerWait* mWait;
+    CDeltaTimer* mTimer;
+    TCallBack mTimerCallBack;
+    TDeltaTimerEntry mTimerEntry;
+};  
+
 
 #endif //AT_LOGSENGINE_H
+

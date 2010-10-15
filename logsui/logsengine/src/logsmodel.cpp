@@ -31,7 +31,6 @@
 #include <QStringList>
 #include <QtGui>
 #include <hbfontspec.h>
-#include <hbinstance.h>
 #include <hbstringutil.h>
 
 Q_DECLARE_METATYPE(LogsEvent *)
@@ -50,7 +49,11 @@ LogsModel::LogsModel(LogsModelType modelType, bool resourceControl) :
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::LogsModel()" )
     
-    initIcons();
+    if ( LogsCommonData::getInstance().isGui() ){
+        initIcons();
+        connect( &LogsCommonData::getInstance(), SIGNAL(commonDataChanged()),
+                 this, SLOT(resetModel()) );
+    }
     
     bool allEvents( mModelType == LogsFullModel );
     mDbConnector = new LogsDbConnector( mEvents, allEvents, resourceControl );
@@ -62,9 +65,7 @@ LogsModel::LogsModel(LogsModelType modelType, bool resourceControl) :
             this, SLOT( dataRemoved(QList<int>) ));
     connect( mDbConnector, SIGNAL( dataReset() ), 
                 this, SLOT( resetModel() ));
-    
-    connect( hbInstance->theme(), SIGNAL ( changeFinished() ),
-            this, SLOT ( resetModel()));
+
     mDbConnector->init();
     mDbConnector->start();
     
@@ -142,6 +143,7 @@ int LogsModel::refreshData()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::refreshData()" )
     int err = mDbConnector->refreshData();
+    LogsCommonData::getInstance().refreshData();
     LOGS_QDEBUG_2( "logs [ENG] <- LogsModel::refreshData(), err", err )
     return err;
 }
@@ -154,6 +156,7 @@ int LogsModel::compressData()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsModel::compressData()" )
     int err = mDbConnector->compressData();
+    LogsCommonData::getInstance().compressData();
     LOGS_QDEBUG_2( "logs [ENG] <- LogsModel::compressData(), err", err )
     return err;
 }
@@ -232,6 +235,9 @@ QVariant LogsModel::data(const QModelIndex &index, int role) const
         list << dateAndTimeString( event->time().toTimeSpec(Qt::LocalTime) );
         return QVariant(list);
     } else if (role == Qt::DecorationRole) {
+        if ( !LogsCommonData::getInstance().isGui() ){
+            return QVariant();
+        }
         QList<QVariant> icons;
         getDecorationData(*event, icons);
         return QVariant(icons);
@@ -479,4 +485,5 @@ bool LogsModel::matchEventWithClearType(
     }
     return match;
 }
+
 

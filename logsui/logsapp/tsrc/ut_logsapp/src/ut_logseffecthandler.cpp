@@ -22,7 +22,7 @@
 //SYSTEM
 #include <QtTest/QtTest>
 #include <hblabel.h>
-#include <hbmainwindow.h>
+#include "logsmainwindow.h"
 
 
 void UT_LogsEffectHandler::initTestCase()
@@ -36,7 +36,8 @@ void UT_LogsEffectHandler::cleanupTestCase()
 
 void UT_LogsEffectHandler::init()
 {
-    mEffect = new LogsEffectHandler();
+    mMainWindow = new LogsMainWindow();
+    mEffect = new LogsEffectHandler(*mMainWindow);
     mLabel = new HbLabel();
     mLabel2 = new HbLabel();
 }
@@ -49,6 +50,8 @@ void UT_LogsEffectHandler::cleanup()
     mLabel = 0;
     delete mLabel2;
     mLabel2 = 0;
+    delete mMainWindow;
+    mMainWindow = 0;
 }
 
 void UT_LogsEffectHandler::testConstructor()

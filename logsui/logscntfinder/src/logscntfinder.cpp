@@ -274,7 +274,7 @@ void LogsCntFinder::setCurrentPattern( const QString& pattern )
             LogsPredictiveTranslator::instance();
     
     mCurrentInputPattern = pattern;
-    mCurrentPredictivePattern = translator->translatePattern( mCurrentInputPattern );    
+    mCurrentPredictivePattern = translator->preparePattern( mCurrentInputPattern );    
 }
 
 // -----------------------------------------------------------------------------
@@ -351,7 +351,8 @@ const LogsCntEntry& LogsCntFinder::resultAt( int index )
 void LogsCntFinder::insertEntry( int index, LogsCntEntry* entry )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::insertEntry()" )
-    LOGS_QDEBUG_4( "logs [FINDER] handle=", entry->handle()," to index ", index )
+    LOGS_QDEBUG_4( "logs [FINDER] handle=", (entry ? 
+                    (long)entry->handle() : 0 ),"to index ", index )
     
     mHistoryEvents.insert( index, entry );
     
@@ -376,7 +377,7 @@ LogsCntEntry* LogsCntFinder::doGetEntry( const LogsCntEntryList& list,
                                          const LogsCntEntryHandle& handle ) const
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::doGetEntry()" )
-    LOGS_QDEBUG_2( "logs [FINDER] handle= ", &handle )
+    LOGS_QDEBUG_2( "logs [FINDER] handle= ", (long)&handle )
     
     LogsCntEntry* entry = 0;
     QListIterator<LogsCntEntry*> iter(list);
@@ -398,7 +399,7 @@ LogsCntEntry* LogsCntFinder::doGetEntry( const LogsCntEntryList& list,
 void LogsCntFinder::deleteEntry( const LogsCntEntryHandle& handle )
 {
     LOGS_QDEBUG( "logs [FINDER] -> LogsCntFinder::deleteEntry()" )
-    LOGS_QDEBUG_2( "logs [FINDER] handle= ", &handle )
+    LOGS_QDEBUG_2( "logs [FINDER] handle= ", (long)&handle )
     
     LogsCntEntry* toRemoveHistoryEv = doGetEntry( mHistoryEvents, handle );
     mHistoryEvents.removeOne( toRemoveHistoryEv );

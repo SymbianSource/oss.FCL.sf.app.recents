@@ -52,15 +52,16 @@ public: // From LogsAbstractViewManager
         mViewId = viewId;
         return true;
     }
-    virtual bool activateView(LogsAppViewId viewId, bool showDialer, QVariant args)
-    {
+    virtual bool activateView(LogsAppViewId viewId, bool showDialer, QVariant args, const QString& dialpadText = QString())
+    {Q_UNUSED( dialpadText );
         mViewId = viewId;
         mShowDialer = showDialer;
         mArgs = args;
         return true;
     }
-    virtual bool activatePreviousView()
-    {
+    virtual bool activatePreviousView(bool showDialpad,  const QString& dialpadText)
+    { Q_UNUSED( showDialpad );
+    	Q_UNUSED( dialpadText );
         mPreviousActivated = true;
         return true;
     }

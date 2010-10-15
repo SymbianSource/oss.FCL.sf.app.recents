@@ -50,7 +50,7 @@ public:
 
 public: // From LogsBaseView
     
-    virtual void activated(bool showDialer, QVariant args);
+    virtual void activated(bool showDialer, QVariant args, const QString& dialpadText);
     virtual void deactivated();
     virtual bool isExitAllowed();
     virtual QString saveActivity(QDataStream& serializedActivity, QVariantHash& metaData);
@@ -67,10 +67,10 @@ protected slots: // from LogsBaseView
     virtual void handleBackSoftkey();
     void openDialpad();
     virtual void dialpadEditorTextChanged();
-    void changeFilter(HbAction* action);
     virtual void updateEmptyListWidgetsVisibility();
     virtual void updateWidgetsSizeAndLayout();
-    virtual void updateEmptyListLabelVisibility();
+    virtual void updateEmptyListLabelVisibility();    
+    virtual void handleViewSwitchSelected(HbListWidgetItem* item);
     
 private slots:
 
@@ -100,7 +100,8 @@ private:
     void initListWidget();
     void updateFilter(LogsFilter::FilterType type);
     void updateViewName();
-    void updateContextMenuItems(XQService::LogsViewIndex view);
+    void updateViewSwitchList(XQService::LogsViewIndex view);
+    
     LogsFilter::FilterType getFilter(XQService::LogsViewIndex view);  
     void changeView(XQService::LogsViewIndex view);
     void updateMenu();

@@ -43,13 +43,13 @@ public:
      * @param args, custom arguments for view
      * @return true if activated succesfully, otherwise false
      */
-    virtual bool activateView(LogsAppViewId viewId, bool showDialer, QVariant args) = 0;
+    virtual bool activateView(LogsAppViewId viewId, bool showDialer, QVariant args, const QString& dialpadText = QString()) = 0;
     
     /**
      * Activate previous view.
      * @return true if activated succesfully, otherwise false
      */
-    virtual bool activatePreviousView() = 0;
+    virtual bool activatePreviousView(bool showDialpad,  const QString& dialpadText) = 0;
     
     /**
      * Returns application main window

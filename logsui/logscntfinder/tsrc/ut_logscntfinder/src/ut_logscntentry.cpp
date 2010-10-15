@@ -21,26 +21,27 @@
 #include "logspredictivetranslator.h"
 
 #include <QtTest/QtTest>
+#include "qtcontacts_stubs.h"
 
 #define PATTERN( pattern )\
-    LogsPredictiveTranslator::instance()->translatePattern( QString( pattern ) )
+    LogsPredictiveTranslator::instance()->preparePattern( QString( pattern ) )
     
 
 void UT_LogsCntEntry::initTestCase()
 {
-    mOrigLang = HbInputSettingProxy::instance()->globalInputLanguage();
     
 }
 
 void UT_LogsCntEntry::cleanupTestCase()
 {
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( mOrigLang );
+    LOGS_CNTFINDER_SET_PHONE_LANGUAGE( QLocale::English );    
     
 }
 
 
 void UT_LogsCntEntry::init()
 {
+    LOGS_CNTFINDER_SET_PHONE_LANGUAGE( QLocale::English );    
     mEntry = new LogsCntEntry( 0 );
 }
 
@@ -48,8 +49,6 @@ void UT_LogsCntEntry::cleanup()
 {
     delete mEntry;
     mEntry = 0;
-    LogsPredictiveTranslator::deleteInstance();
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( mOrigLang );
     
 }
 
@@ -417,6 +416,33 @@ void UT_LogsCntEntry::testSetHighlights_latin12k()
     QVERIFY( mEntry->firstName()[0].highlights() == 0);
     QVERIFY( mEntry->firstName()[1].highlights() == 0);
     QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setFirstName( QString( "Alice M%ing" ) );
+    mEntry->setHighlights( PATTERN( "6+" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6*" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 2);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+
+    mEntry->setHighlights( PATTERN( "6#" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "6**" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
+    mEntry->setHighlights( PATTERN( "61" ) );
+    QVERIFY( mEntry->firstName()[0].highlights() == 0);
+    QVERIFY( mEntry->firstName()[1].highlights() == 0);
+    QVERIFY( mEntry->lastName()[0].highlights() == 0);
+    
 }
 
 void UT_LogsCntEntry::testSetPhoneNumber()
@@ -710,6 +736,14 @@ void UT_LogsCntEntry::testMatch_latin12k()
     QVERIFY( !mEntry->match( PATTERN( "00202" ) ) );
     QVERIFY( mEntry->match( PATTERN( "0025000000000" ) ) );
     
+    mEntry->setFirstName( QString("Alice") );
+    mEntry->setLastName( QString( "M[ng" ) );
+    QVERIFY( mEntry->match( PATTERN( "6" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "6*" ) ) );
+    QVERIFY( mEntry->match( PATTERN( "6+" ) ) );
+    QVERIFY( !mEntry->match( PATTERN( "61" ) ) );
+    
+    
 }
 
 void UT_LogsCntEntry::testStartsWith_latin12k()
@@ -734,8 +768,10 @@ void UT_LogsCntEntry::testMatch_thai12k()
 {
     
     LogsPredictiveTranslator::deleteInstance();
-    HbInputLanguage thai( QLocale::Thai );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
+    LOGS_CNTFINDER_SET_PHONE_LANGUAGE( QLocale::Thai );    
+    
+
+    QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
     
     mEntry->mType = LogsCntEntry::EntryTypeHistory;
     
@@ -749,7 +785,6 @@ void UT_LogsCntEntry::testMatch_thai12k()
     QVERIFY( mEntry->match( PATTERN( "05" ) ) );
     QVERIFY( mEntry->match( PATTERN( "6" ) ) );
     
-    QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
     
     QVERIFY( mEntry->match( PATTERN( "*#*#*#*5*#*#*#**#*#" ) ) );
     QVERIFY( mEntry->match( PATTERN( "*#*#*****#6" ) ) );
@@ -769,8 +804,7 @@ void UT_LogsCntEntry::testSetHighlights_thai12k()
     QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
     
     LogsPredictiveTranslator::deleteInstance();
-    HbInputLanguage thai( QLocale::Thai );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
+    LOGS_CNTFINDER_SET_PHONE_LANGUAGE( QLocale::Thai );    
     
     mEntry->mType = LogsCntEntry::EntryTypeHistory;
     mEntry->setFirstName( QString( "5643 456456" ) );
@@ -788,5 +822,4 @@ void UT_LogsCntEntry::testSetHighlights_thai12k()
     
     
 }
-
 

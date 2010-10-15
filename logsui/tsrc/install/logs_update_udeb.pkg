@@ -36,6 +36,5 @@
 
 "\epoc32\release\armv5\udeb\logs.exe"-"!:\sys\bin\logs.exe"
 "\epoc32\release\armv5\udeb\logsengine.dll"-"!:\sys\bin\logsengine.dll"
-"\epoc32\release\armv5\udeb\logsservices.dll"-"!:\sys\bin\logsservices.dll"
 "\epoc32\data\z\resource\apps\logs.rsc"-"!:\resource\apps\logs.rsc"
 "\epoc32\data\z\private\10003a3f\import\apps\logs_reg.rsc"-"!:\private\10003a3f\import\apps\logs_reg.rsc"

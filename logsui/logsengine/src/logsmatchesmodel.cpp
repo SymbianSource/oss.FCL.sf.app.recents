@@ -352,6 +352,8 @@ void LogsMatchesModel::initPredictiveSearch()
         mIconManager = new LogsThumbIconManager();
         connect(mIconManager, SIGNAL(contactIconReady(int)),
                 this, SLOT(updateContactIcon(int)));
+        connect(&LogsCommonData::getInstance(), SIGNAL(commonDataChanged()),
+                this, SLOT(forceSearchQuery()));
     }
 }
 
@@ -732,6 +734,27 @@ int LogsMatchesModelItemContainer::resultIndex() const
 }
 
 // -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsMatchesModelItemContainer::richText(const LogsCntText& cntText,
+        bool phoneNumber) const
+{
+    LogsCommonData& cd = LogsCommonData::getInstance();
+    QString richText;
+    if (phoneNumber) {
+        if (cntText.highlights() > 0) {
+            richText = mParentModel.phoneNumString(cntText.text());
+            richText.insert(cntText.highlights(),cd.highlightEnd());
+            richText.insert(0,cd.highlightStart());
+        }
+    } else {
+        richText = cntText.richText(cd.highlightStart(), cd.highlightEnd());
+    }
+    return richText;
+}
+
+// -----------------------------------------------------------------------------
 // Note: Mapping of search result entry into caller ID is depended on
 // updateSearchEntry() implemention.
 // -----------------------------------------------------------------------------
@@ -743,7 +766,7 @@ QString LogsMatchesModelItemContainer::getFormattedCallerId(
     getFormattedName(callerId, entry.firstName());
     
     if  ( callerId.length() == 0 ) {
-        callerId = mParentModel.phoneNumString(entry.phoneNumber().richText());
+        callerId = richText(entry.phoneNumber(), true);
     }
 
     return callerId.trimmed();
@@ -778,7 +801,7 @@ void  LogsMatchesModelItemContainer::getFormattedName(
 {
     foreach( LogsCntText name, list ) {
         if ( name.text().length() > 0 ) {
-            formattedName.append(name.richText());   
+            formattedName.append(richText(name));   
             formattedName.append(" ");
         }
     }
@@ -794,7 +817,7 @@ void  LogsMatchesModelItemContainer::getFormattedName(
 {
     foreach( LogsCntText name, list ) {
         if ( name.text().length() > 0 ) {
-            formattedName.append(name.richText());   
+            formattedName.append(richText(name));   
             formattedName.append(" ");
             formattedNameSimple.append(name.text());
             formattedNameSimple.append(" ");

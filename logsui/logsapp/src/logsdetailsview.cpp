@@ -73,11 +73,11 @@ LogsDetailsView::~LogsDetailsView()
 // 
 // -----------------------------------------------------------------------------
 //
-void LogsDetailsView::activated(bool showDialer, QVariant args)
+void LogsDetailsView::activated(bool showDialer, QVariant args, const QString& dialpadText)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::activated()" );
     //base class handling first
-    LogsBaseView::activated(showDialer, args);
+    LogsBaseView::activated(showDialer, args, dialpadText);
    
     LogsDetailsModel* model = qVariantValue<LogsDetailsModel*>(args);
     if ( !model ){
@@ -231,7 +231,7 @@ void LogsDetailsView::copyNumberToClipboard()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsDetailsView::copyNumberToClipboard()" );
     if ( isDialpadInput() ){
-        mDialpad->editor().setSelection(0, mDialpad->editor().text().length());
+        mDialpad->editor().setSelection(0, currDialpadText().length());
         mDialpad->editor().copy();
         mDialpad->editor().setSelection(0, 0);
     } else if ( mDetailsModel ) {
@@ -268,7 +268,7 @@ void LogsDetailsView::contactActionCompleted(bool modified)
 //
 void LogsDetailsView::handleBackSoftkey()
 {
-    mViewManager.activatePreviousView();
+    mViewManager.activatePreviousView(mDialpad->isOpen(), currDialpadText());
 }
 
 // -----------------------------------------------------------------------------
@@ -477,7 +477,6 @@ void LogsDetailsViewItem::updateChildItems()
         LOGS_QDEBUG( "logs [UI] -> LogsDetailsViewItem::updateChildItems(), groupbox" ); 
         HbGroupBox* groupBox = new HbGroupBox(this);
         groupBox->setHeading(modelIndex().data(Qt::DisplayRole).toString());
-        //groupBox->setCollapsable(true);
 
         HbWidget* content = new HbWidget();
         content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -492,7 +491,6 @@ void LogsDetailsViewItem::updateChildItems()
             mLayout->setContentsMargins(0,0,0,0);        
         }
 
-        mLayout->addItem(layout());
         mLayout->addItem(groupBox);
         mLayout->setItemSpacing(0,0);
         setLayout(mLayout);             
@@ -510,3 +508,4 @@ void LogsDetailsViewItem::groupBoxClicked(bool collapsed)
     model->setData(modelIndex(), QVariant(collapsed));
     LOGS_QDEBUG( "logs [UI] <- LogsDetailsViewItem::groupBoxClicked()" );
 }
+

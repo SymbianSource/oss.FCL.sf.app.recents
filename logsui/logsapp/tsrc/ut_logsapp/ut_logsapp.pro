@@ -44,6 +44,9 @@ HEADERS += ./stubs/xqsettingskey.h
 HEADERS += ./stubs/xqsettingsmanager.h
 HEADERS += ./stubs/tstasksettings.h
 HEADERS += ./stubs/hbapplication.h
+HEADERS += ./stubs/afactivation.h
+HEADERS += ./stubs/afactivitystorage.h
+HEADERS += ./stubs/afactivities_global.h
 HEADERS += inc/ut_logsmainwindow.h
 HEADERS += inc/ut_logscomponentrepository.h
 HEADERS += inc/ut_logsviewmanager.h
@@ -67,7 +70,6 @@ HEADERS += ../../inc/logsbaseview.h
 HEADERS += ../../inc/logsdetailsview.h
 HEADERS += ../../inc/logsmatchesview.h
 HEADERS += ../../inc/logsservicehandler.h
-HEADERS += ../../inc/logsservicehandlerold.h
 HEADERS += ../../inc/logseffecthandler.h
 HEADERS += ../../inc/logspageindicator.h
 HEADERS += ../../inc/logspageindicatoritem.h
@@ -109,7 +111,6 @@ SOURCES += ../../src/logsrecentcallsview.cpp
 SOURCES += ../../src/logsdetailsview.cpp
 SOURCES += ../../src/logsmatchesview.cpp
 SOURCES += ../../src/logsservicehandler.cpp
-SOURCES += ../../src/logsservicehandlerold.cpp
 SOURCES += ../../src/logseffecthandler.cpp
 SOURCES += ../../src/logspageindicator.cpp
 SOURCES += ../../src/logspageindicatoritem.cpp
@@ -122,6 +123,7 @@ SOURCES += ./stubs/qthighway_stub.cpp
 SOURCES += ./stubs/dialpad_stub.cpp
 SOURCES += ./stubs/dialpadkeyhandler_stub.cpp
 SOURCES += ./stubs/xqsettingsmanager_stub.cpp
+SOURCES += ./stubs/afactivityfw_stub.cpp
 
 symbian: {
     TARGET.UID2 = 0x100039CE
@@ -130,6 +132,8 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lxqservice  -lxqserviceutil -lxqkeycapture -lapparc -lcone
     MMP_RULES += SMPSAFE
+    CONFIG += symbian_test
+    coverage: CONFIG -= symbian_test
 }
 
 DOCML += ../../resources/recentCallsView.docml

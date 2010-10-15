@@ -19,8 +19,8 @@
 #include "logsmessage.h"
 #include "logslogger.h"
 #include "logseventdata.h"
-#include <xqservicerequest.h>
 #include <xqaiwdecl.h>
+#include <xqappmgr.h>
 
 //SYSTEM
 
@@ -29,7 +29,7 @@
 // -----------------------------------------------------------------------------
 //
 LogsMessage::LogsMessage(LogsEvent& event)
-    :QObject(), mIsAllowed( false ), mContactId( 0 ), mService( 0 )
+    :QObject(), mIsAllowed(false), mContactId(0), mAiwRequest(0)
 {
     if ( event.logsEventData() && !event.logsEventData()->isCsCompatible() ){
         LOGS_QDEBUG( "logs [ENG]    LogsMessage::LogsMessage, not CS compatible" )
@@ -49,7 +49,7 @@ LogsMessage::LogsMessage(LogsEvent& event)
 //
 LogsMessage::LogsMessage(unsigned int contactId, const QString& number,
 	 const QString& displayName)
-    :QObject(), mIsAllowed( false ), mContactId( 0 ), mService( 0 )
+    :QObject(), mIsAllowed(false), mContactId(0), mAiwRequest(0)
 {
     if ( number.length() == 0 ){
         LOGS_QDEBUG( "logs [ENG]    LogsMessage::LogsMessage, not CS compatible" )
@@ -69,7 +69,7 @@ LogsMessage::LogsMessage(unsigned int contactId, const QString& number,
 LogsMessage::~LogsMessage()
 {
     LOGS_QDEBUG( "logs [ENG] <-> LogsMessage::~LogsMessage()" )
-    delete mService;
+    delete mAiwRequest;
 }
     
 // ----------------------------------------------------------------------------
@@ -88,74 +88,77 @@ bool LogsMessage::isMessagingAllowed()
 bool LogsMessage::sendMessage()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMessage::sendMessage()" )
-    
-    delete mService;
-    mService = 0;
-    QString serviceName("messaging.");     
-    serviceName.append(XQI_MESSAGE_SEND);
-    mService = new XQServiceRequest(serviceName, XQOP_MESSAGE_SEND_WITH_ID, false);
-    bool sending = doSendMessageToNumber(*mService, mNumber, mDisplayName, mContactId);
-    connect(mService, SIGNAL(requestCompleted(QVariant)), this, SLOT(requestCompleted(QVariant)));
-    connect(mService, SIGNAL(requestError(int)), this, SLOT(requestError(int)));
+    cancelServiceRequest();
+    bool sending(false);
+    XQApplicationManager appMng;
+    //TODO: change request to be embedded once messaging team has implemented
+    //handling of clientDisconnected() signal
+    mAiwRequest = appMng.create(XQI_MESSAGE_SEND, XQOP_MESSAGE_SEND_WITH_ID, false); // embedded 
+    if (mAiwRequest) {
+        connect(mAiwRequest, SIGNAL(requestOk(const QVariant&)), 
+                this, SLOT(handleRequestCompleted(const QVariant&)));
+        connect(mAiwRequest, SIGNAL(requestError(int,const QString&)), 
+                this, SLOT(handleError(int,const QString&)));
+
+        QList<QVariant> arguments;
+        arguments.append(QVariant(mNumber));
+        arguments.append(QVariant(mContactId));
+        arguments.append(QVariant(mDisplayName));
+        mAiwRequest->setArguments(arguments);
+        mAiwRequest->setSynchronous(false);
+        sending = mAiwRequest->send();
+    }
     return sending;
 }
 
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 //
-bool LogsMessage::sendMessageToNumber(
+void LogsMessage::cancelServiceRequest()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsMessage::cancelServiceRequest()" )
+    delete mAiwRequest;
+    mAiwRequest = 0;
+    LOGS_QDEBUG( "logs [ENG] <- LogsMessage::cancelServiceRequest()" )
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+//
+LogsMessage* LogsMessage::sendMessageToNumber(
         const QString& number, const QString& displayName, unsigned int contactId)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsMessage::sendMessageToNumber()" )
-    QString serviceName("messaging.");     
-    serviceName.append(XQI_MESSAGE_SEND);
-    XQServiceRequest req(serviceName, XQOP_MESSAGE_SEND_WITH_ID, false);
-    return doSendMessageToNumber(req, number, displayName, contactId);
+    LogsMessage* message = new LogsMessage(contactId, number, displayName);
+    message->sendMessage();
+    return message;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 //
-void LogsMessage::requestCompleted(const QVariant& /*value*/)
+void LogsMessage::handleRequestCompleted(const QVariant& result)
 {
-    LOGS_QDEBUG( "logs [ENG] -> LogsMessage::requestCompleted()" )
+    LOGS_QDEBUG( "logs [ENG] <-> LogsMessage::handleRequestCompleted()" )
+    Q_UNUSED(result)
+    cancelServiceRequest();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 //
-void LogsMessage::requestError(int /*err*/)
+void LogsMessage::handleError(int errorCode, const QString& errorMessage)
 {
-    LOGS_QDEBUG( "logs [ENG] -> LogsMessage::requestError()" )
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-//
-bool LogsMessage::doSendMessageToNumber(
-        XQServiceRequest& request, const QString& number, 
-        const QString& displayName, unsigned int contactId)
-{
-    LOGS_QDEBUG_4( "logs [ENG] -> LogsMessage::doSendMessageToNumber(), (num, name, id)", 
-            number, displayName, contactId )
-
-    QList<QVariant> arguments;
-    arguments.append(QVariant(number));
-    arguments.append(QVariant(contactId));
-    arguments.append(QVariant(displayName));
-    request.setArguments(arguments);
-    XQRequestInfo info;
-    info.setForeground(true);
-    request.setInfo(info);
-    QVariant retValue;
-    bool ret = request.send(retValue);
-    LOGS_QDEBUG_2( "logs [ENG] <- LogsMessage::doSendMessageToNumber()", ret )
-    
-    return ret;
+    LOGS_QDEBUG_4( "logs [ENG] <-> LogsMessage::handleError(): ", errorCode,
+            " ,msg: ", errorMessage)
+    Q_UNUSED(errorCode)
+    Q_UNUSED(errorMessage)
+    cancelServiceRequest();
 }
 
 // End of file

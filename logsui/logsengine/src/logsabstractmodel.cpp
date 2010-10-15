@@ -293,10 +293,12 @@ QString LogsAbstractModel::typeIconName(const LogsEvent& event)
 void LogsAbstractModel::getDecorationData(const LogsEvent& event, 
         QList<QVariant>& iconList) const
 {
-    HbIcon emptyIcon;
-    iconList.append( *mIcons.value(directionIconName(event), &emptyIcon) );
-    
-    // TODO: alternative service icon
+    if ( LogsCommonData::getInstance().isGui() ){
+        HbIcon emptyIcon;
+        iconList.append( *mIcons.value(directionIconName(event), &emptyIcon) );
+        
+        // TODO: alternative service icon
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -366,4 +368,5 @@ LogsEvent* LogsModelItemContainer::event() const
 {
     return mEvent;
 }
+
 

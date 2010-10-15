@@ -73,12 +73,12 @@ void UT_LogsPredictiveThai12KeyTranslator::testTranslateText()
             
 }
 
-void UT_LogsPredictiveThai12KeyTranslator::testTranslatePattern()
+void UT_LogsPredictiveThai12KeyTranslator::testPreparePattern()
 {
     QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
     
-    QCOMPARE( mTranslator->translatePattern( QString( "0123456789" ) ), QString( "0123456789" ) );
-    QCOMPARE( mTranslator->translatePattern( QString( "*0123##456*789*" ) ), QString( "0123456789" ) );
+    QCOMPARE( mTranslator->preparePattern( QString( "0123456789" ) ), QString( "0123456789" ) );
+    QCOMPARE( mTranslator->preparePattern( QString( "*0123##456*789*" ) ), QString( "0123456789" ) );
             
 }
 
@@ -87,29 +87,29 @@ void UT_LogsPredictiveThai12KeyTranslator::testTranslateChar()
     QEXPECT_FAIL("", "No proper Thai keymap yet", Abort );
     bool ok;
     
-    QCOMPARE( mTranslator->translateChar( QChar('0'), ok ), QChar('0') );
+    QCOMPARE( mTranslator->translateChar( QChar('0'), ok ), QString('0') );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar('1'), ok ), QChar('1') );
+    QCOMPARE( mTranslator->translateChar( QChar('1'), ok ), QString('1') );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar('N'), ok ), QChar() );
+    QCOMPARE( mTranslator->translateChar( QChar('N'), ok ), QString() );
     QVERIFY( !ok );
-    QCOMPARE( mTranslator->translateChar( QChar('*'), ok ), QChar() );
+    QCOMPARE( mTranslator->translateChar( QChar('*'), ok ), QString() );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar('#'), ok ), QChar() );
+    QCOMPARE( mTranslator->translateChar( QChar('#'), ok ), QString() );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E01), ok ), QChar('1') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E01), ok ), QString('1') );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E06), ok ), QChar('2') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E0A), ok ), QChar('3') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E0E), ok ), QChar('4') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E14), ok ), QChar('5') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E19), ok ), QChar('6') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E1E), ok ), QChar('7') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E23), ok ), QChar('8') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E2A), ok ), QChar('9') );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E2F), ok ), QChar() );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E06), ok ), QString('2') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E0A), ok ), QString('3') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E0E), ok ), QString('4') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E14), ok ), QString('5') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E19), ok ), QString('6') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E1E), ok ), QString('7') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E23), ok ), QString('8') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E2A), ok ), QString('9') );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E2F), ok ), QString() );
     QVERIFY( ok );
-    QCOMPARE( mTranslator->translateChar( QChar(0x0E30), ok ), QChar() );
+    QCOMPARE( mTranslator->translateChar( QChar(0x0E30), ok ), QString() );
     QVERIFY( ok );
     
 }
@@ -117,6 +117,8 @@ void UT_LogsPredictiveThai12KeyTranslator::testTranslateChar()
 
 void UT_LogsPredictiveThai12KeyTranslator::testEncodes()
 {
+    QCOMPARE( mTranslator->mib(), MIBenumThai );
+    
     //china
     QString uni1;
     uni1.append(QChar(0x4E0E));

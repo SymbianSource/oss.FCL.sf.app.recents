@@ -34,7 +34,6 @@ const char logsDetailsListWidgetId[] = "logs_details_list_view";
 const char logsGroupboxViewNameId[] = "logs_groupbox_recent_calls";
 const char logsGroupboxDetailViewNameId[] = "logs_groupbox_remote_party_info";
 const char logsDetailsViewMenuId[] = "logs_details_view_menu";
-const char logsShowFilterMenuId[] = "logs_show_filter_menu";
 const char logsLabelEmptyListId[] = "logs_label_empty_list";
 const char logsToolbarId[] = "logs_toolbar";
 const char logsButtonAddToContactsId[] = "logs_button_addtocontacts";
@@ -53,10 +52,7 @@ const char logsDetailsCopyNumberMenuActionId[] = "logs_act_copy_number";
 const char logsRecentViewClearListMenuActionId[] = "logs_act_clear_list";
 const char logsRecentViewContactSearchMenuActionId[] = "logs_act_contact_search";
 
-const char logsShowFilterReceivedMenuActionId[] = "logs_act_received";
-const char logsShowFilterDialledMenuActionId[] = "logs_act_dialled";
-const char logsShowFilterMissedMenuActionId[] = "logs_act_missed";
-const char logsShowFilterRecentMenuActionId[] = "logs_act_recent";
+const char logsDialerActionId[] = "logs_act_dialer";
 
 
 //list layout names from *.widgetml

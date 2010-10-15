@@ -57,7 +57,7 @@ private slots: //test methods
     void testInitListWidget();
     void testUpdateFilter();
     void testUpdateViewName();
-    void testChangeFilter();
+    void testHandleViewSwitchSelected();
     void testInitiateCallback();
     void testCallKeyPressed();
     void testShowCallDetails();

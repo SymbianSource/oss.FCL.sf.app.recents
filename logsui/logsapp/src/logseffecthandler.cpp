@@ -22,13 +22,13 @@
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
 #include <hbinstance.h>
+#include <hbmainwindow.h>
 
 const int logsMoveByExtra = 10;
 const int logsEffectDelayBetween = 200;
 const int logsEffectAppearDurationInMs = 500;
 const int logsEffectDissappearDurationInMs = 300;
 const int logsEffectMoveNotPossibleDurationInMs = 200;
-const int logsMoveNotPossibleAmount = 30;
 
 const int logsDissappearByMovingIndex = 0;
 const int logsPauseBetweenDissappearAndAppearIndex = 1;
@@ -38,7 +38,7 @@ const int logsAppearByMovingIndex = 2;
 //
 // -----------------------------------------------------------------------------
 //
-LogsEffectHandler::LogsEffectHandler() : QObject()
+LogsEffectHandler::LogsEffectHandler(HbMainWindow& window) : QObject(), mWindow(window)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsEffectHandler::LogsEffectHandler()" );
     
@@ -181,9 +181,9 @@ void LogsEffectHandler::startMoveNotPossibleEffect(
     
     // Move a bit to attempted direction and then back
     //
-    //int origX = effectTarget.property("x").toInt();
+    const int logsMoveNotPossibleAmount = mWindow.layoutRect().width() / 6;
     int moveNotPossiblePos = 
-        moveLeft ? -logsMoveNotPossibleAmount : logsMoveNotPossibleAmount;
+        moveLeft ? logsMoveNotPossibleAmount : -logsMoveNotPossibleAmount;
     QEasingCurve easing(QEasingCurve::OutBack);
     initMoveHorizontallyEffect(
         *mItemMoveNotPossibleAnimationStart, &effectTarget, origX, moveNotPossiblePos,

@@ -29,3 +29,8 @@ HbListViewItem::text-2[layoutName="logsLandscapeDialpad"]{
     text-height: 0.0un;
 }
 
+HbListWidget#LogsViewSwitchList HbListViewItem::text-1{	
+    text-height: var(hb-param-text-height-secondary);
+    font-variant: secondary;
+    color: var(qtc_popup_list_item_trans_normal);
+}

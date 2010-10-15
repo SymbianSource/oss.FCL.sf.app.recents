@@ -68,7 +68,6 @@ void UT_LogsMatchesView::testConstructor()
     QVERIFY( mMatchesView->viewId() == LogsMatchesViewId );
     QVERIFY( !mMatchesView->mListView );
     QVERIFY( !mMatchesView->mModel );
-    QVERIFY( mMatchesView->mActionMap.count() == 0 );
     QVERIFY( mMatchesView->mLayoutSectionName == "" );
     QVERIFY( !mMatchesView->mAddToContactsButton );
     QCOMPARE( mMatchesView->mActivities.at(0), QString(logsActivityIdViewMatches) );
@@ -82,12 +81,10 @@ void UT_LogsMatchesView::testActivated()
     QVERIFY( !mMatchesView->mInitialized );
     QVERIFY( !mMatchesView->mListView );
     QVERIFY( !mMatchesView->mModel );
-    QVERIFY( mMatchesView->mActionMap.count() == 0 );
-    mMatchesView->activated( false,QVariant() );
+    mMatchesView->activated( false,QVariant(), mMatchesView->mDialpad->editor().text() );
     QVERIFY( mMatchesView->mInitialized );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel );
-    QVERIFY( mMatchesView->mActionMap.count() == 4 );
     QVERIFY( mMatchesView->mListView->layoutName() == logsListDefaultLayout );
     QVERIFY( mMatchesView->mLayoutSectionName == logsViewDefaultSection );
     QVERIFY( mMatchesView->mAddToContactsButton );
@@ -96,11 +93,10 @@ void UT_LogsMatchesView::testActivated()
     //activate once again, model recreated
     mMatchesView->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
     LogsModel::setMatchesModelCreated(false);
-    mMatchesView->activated( true,QVariant() );
+    mMatchesView->activated( true,QVariant(), mMatchesView->mDialpad->editor().text() );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel );    
     QVERIFY( LogsModel::isMatchesModelCreated() ); //model recreated
-    QVERIFY( mMatchesView->mActionMap.count() == 4 );
     QVERIFY( mMatchesView->mListView->layoutName() == logsListLandscapeDialpadLayout );
     QVERIFY( mMatchesView->mLayoutSectionName == logsViewLandscapeDialpadSection );
     QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
@@ -110,7 +106,7 @@ void UT_LogsMatchesView::testActivated()
     LogsMatchesModel* model1 = new LogsMatchesModel(*dbConnector);
     model1->resetLastCall();
     QVariant arg = qVariantFromValue( model1 );
-    mMatchesView->activated( true, arg );
+    mMatchesView->activated( true, arg , mMatchesView->mDialpad->editor().text());
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel == model1 );
     QVERIFY( mMatchesView->mModel->mLastCall.isEmpty() );
@@ -118,7 +114,7 @@ void UT_LogsMatchesView::testActivated()
     LogsMatchesModel* model2 = new LogsMatchesModel(*dbConnector);
     model2->resetLastCall();
     QVariant arg2 = qVariantFromValue( model2 );
-    mMatchesView->activated( true, arg2 );
+    mMatchesView->activated( true, arg2, mMatchesView->mDialpad->editor().text() );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel == model2 );
     QVERIFY( mMatchesView->mModel->mLastCall.isEmpty() );
@@ -126,7 +122,7 @@ void UT_LogsMatchesView::testActivated()
     
     // After passing model as input arg, do not pass model
     mMatchesView->mActivating = true;
-    mMatchesView->activated( true,QVariant() );
+    mMatchesView->activated( true,QVariant(), mMatchesView->mDialpad->editor().text() );
     QVERIFY( mMatchesView->mListView );
     QVERIFY( mMatchesView->mModel );
     QVERIFY( mMatchesView->mModel->mLastCall == QLatin1String("constructor") );
@@ -218,7 +214,7 @@ void UT_LogsMatchesView::testSaveNumberInDialpadToContacts()
 {
     // Nothing happens if there is no text in dialpad
     QVERIFY(!mMatchesView->mContact);
-    QCOMPARE(mMatchesView->mDialpad->editor().text().length(), 0);
+    QCOMPARE(mMatchesView->currDialpadText().length(), 0);
     mMatchesView->saveNumberInDialpadToContacts();
     QVERIFY(!mMatchesView->mContact);
     
@@ -263,7 +259,7 @@ void UT_LogsMatchesView::testDialpadClosed()
     
     mMatchesView->dialpadClosed();
     
-    QVERIFY( mMatchesView->mDialpad->editor().text() == hello );
+    QVERIFY( mMatchesView->currDialpadText() == hello );
     QVERIFY( mMatchesView->mLayoutSectionName == logsViewDefaultSection );
     QVERIFY( !mMatchesView->mAddToContactsButton->isVisible() );
     delete view;
@@ -431,7 +427,7 @@ void UT_LogsMatchesView::testContactSearch()
 	LogsDbConnector* dbConnector = 0;
     LogsMatchesModel* model1 = new LogsMatchesModel(*dbConnector);
     QVariant arg = qVariantFromValue( model1 );
-    view->activated( true, arg );
+    view->activated( true, arg , view->mDialpad->editor().text());
     int status = view->mModel->predictiveSearchStatus();
     QVERIFY( status == 1 );   
     
@@ -442,7 +438,7 @@ void UT_LogsMatchesView::testContactSearch()
     status = view->mModel->predictiveSearchStatus();
     QVERIFY( status == 2 );
     QVERIFY( mViewManager->mViewId == LogsRecentViewId );
-    QVERIFY( mMatchesView->mDialpad->editor().text() == "1234" );
+    QVERIFY( mMatchesView->currDialpadText() == "1234" );
     delete view;    
 }
 

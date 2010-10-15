@@ -65,18 +65,29 @@ void AT_LogsEngine::initTestCase()
 {
     TRAPD( err, clearEventsL() );
     Q_ASSERT( err == KErrNone );
-    QTest::qWait(2000);
+    User::After(2000000);
     TRAP( err, writeEventsL() );
     Q_ASSERT( err == KErrNone );
-    QTest::qWait(2000);
-    mModel = new LogsModel(LogsModel::LogsFullModel);
-    QTest::qWait(5000); // wait model to be populated from db
+    User::After(2000000);
+    mWaiter = new LogsTestModelObserver;
+    mModel = new LogsModel(LogsModel::LogsFullModel, true);
+    mModel->refreshData();
+    connect( mModel, SIGNAL( dataChanged(const QModelIndex&,const QModelIndex&)), 
+           mWaiter, SLOT(somethingCompleted()) );
+    connect( mModel, SIGNAL( rowsInserted(const QModelIndex&,int,int)), 
+        mWaiter, SLOT(somethingCompleted()) );
+    connect( mModel, SIGNAL( rowsRemoved(const QModelIndex&,int,int)), 
+        mWaiter, SLOT(somethingCompleted()) );
+    connect( mModel, SIGNAL(modelReset()), 
+        mWaiter, SLOT(somethingCompleted()) );
+    mWaiter->startWaiting(5000);// wait model to be populated from db
 }
 
 void AT_LogsEngine::cleanupTestCase()
 {
     delete mModel;
     mModel = 0;
+    delete mWaiter;
 }
 
 
@@ -135,7 +146,11 @@ void AT_LogsEngine::testMarkEventsSeen()
     QVERIFY( unseenCount == 2 );
     QSignalSpy spy( &filter, SIGNAL( markingCompleted(int)));
     QVERIFY( filter.markEventsSeen() );
-    QTest::qWait(1000); // wait marking completion
+    connect( &filter, SIGNAL( markingCompleted(int) ), mWaiter, SLOT( somethingCompleted() ) );
+    mWaiter->startWaiting(1000);  // wait marking completion
+    mModel->compressData(); // Force refresh
+    mModel->refreshData();
+    mWaiter->startWaiting(2000);  // wait db refresh completion
    
     QVERIFY( spy.count() == 1 );
     int seenCount = 0;
@@ -146,7 +161,7 @@ void AT_LogsEngine::testMarkEventsSeen()
             seenCount++;
         }
     }
-    QVERIFY( seenCount == 2 );
+    QCOMPARE( seenCount, 2 );
     
 }
 
@@ -159,9 +174,13 @@ void AT_LogsEngine::testClearEvents()
     int unseenCount = 0;
     QSignalSpy spy( &filter, SIGNAL( clearingCompleted(int)));
     QVERIFY( filter.clearEvents() );
-    QTest::qWait(1000); // wait clearing completion
-    QVERIFY( filter.rowCount() == 0 );
-    QVERIFY( spy.count() == 1 );
+    connect( &filter, SIGNAL( clearingCompleted(int) ), mWaiter, SLOT( somethingCompleted() ) );
+    mWaiter->startWaiting(1000); // wait clearing completion
+    mModel->compressData(); // Force refresh
+    mModel->refreshData();
+    mWaiter->startWaiting(2000); // wait db update completion
+    QCOMPARE( filter.rowCount(), 0 );
+    QCOMPARE( spy.count(), 1 );
 }
 
 void AT_LogsEngine::testHomeScreenUsecase()
@@ -176,7 +195,15 @@ void AT_LogsEngine::testHomeScreenUsecase()
     const int maxNumMissedCalls = 2;
     filter.setMaxSize(maxNumMissedCalls);
     LogsModel optimizedModel(LogsModel::LogsFullModel);   
-    QTest::qWait(5000); // wait model to be populated from db
+    connect( &optimizedModel, SIGNAL( dataChanged(const QModelIndex&,const QModelIndex&)), 
+             mWaiter, SLOT(somethingCompleted()) );
+    connect( &optimizedModel, SIGNAL( rowsInserted(const QModelIndex&,int,int)), 
+        mWaiter, SLOT(somethingCompleted()) );
+    connect( &optimizedModel, SIGNAL( rowsRemoved(const QModelIndex&,int,int)), 
+        mWaiter, SLOT(somethingCompleted()) );
+    connect( &optimizedModel, SIGNAL(modelReset()), 
+        mWaiter, SLOT(somethingCompleted()) );
+    mWaiter->startWaiting(5000);// wait model to be populated from db
     filter.setSourceModel(&optimizedModel);
     
     // Test data has 10 missed calls from Jeppa but readsize has been configured to 2 so
@@ -194,8 +221,15 @@ void AT_LogsEngine::testHomeScreenUsecase()
     QStringList displayData = filter.data( filter.index(0, 0), Qt::DisplayRole ).toStringList();
     QVERIFY( displayData.count() == 2 );
     QVERIFY( displayData.at(0) == logsTestHomeScreenMissedCallerName );
-    HbIcon icon = qVariantValue<HbIcon>( filter.data( filter.index(0, 0), Qt::DecorationRole ).toList().at(0) );
-    QVERIFY( !icon.isNull() );
+    QVariant decor = filter.data( filter.index(0, 0), Qt::DecorationRole );
+    QApplication* app = qobject_cast<QApplication*>( qApp );
+    if ( app ){
+        HbIcon icon = qVariantValue<HbIcon>( decor.toList().at(0) );
+        QVERIFY( !icon.isNull() );
+    } else {
+        QVERIFY( decor.isNull() );
+    }
+    
     
     // Cenrep missed calls counter is not tested here
 }
@@ -221,3 +255,59 @@ void AT_LogsEngine::executeL(const TDesC& exeName, const TDesC& commandLine)
     process.Resume();
     CleanupStack::PopAndDestroy( &process );
 }
+
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+
+LogsTestModelObserver::LogsTestModelObserver() : 
+    mWait(0), mTimer(0), mTimerCallBack(asyncTimerExpired, this)
+{
+    mTimerEntry.Set(mTimerCallBack);
+    mWait = new CActiveSchedulerWait;
+    mTimer = CDeltaTimer::NewL(CActive::EPriorityStandard);
+    
+}
+LogsTestModelObserver::~LogsTestModelObserver()
+{
+    if ( mTimer ){
+        mTimer->Remove( mTimerEntry );
+    }
+    delete mTimer;
+    if ( mWait && mWait->IsStarted() ){
+        mWait->AsyncStop();
+    }
+    delete mWait;
+    
+}
+void LogsTestModelObserver::startWaiting(int timeoutInMsec)
+{
+    if ( !mWait->IsStarted() ){
+        startTimerForAsync(timeoutInMsec);
+        mWait->Start();
+    }
+}
+     
+void LogsTestModelObserver::somethingCompleted()
+{
+    if ( mWait->IsStarted() ){
+        mWait->AsyncStop();
+    }
+}
+void LogsTestModelObserver::startTimerForAsync(int msecs)
+{
+    mTimer->Remove(mTimerEntry);
+    TTimeIntervalMicroSeconds32 interval(msecs*1000);
+    mTimer->Queue(interval, mTimerEntry);
+}
+
+TInt LogsTestModelObserver::asyncTimerExpired(TAny* ptr)
+{
+    if ( ptr ){
+        static_cast<LogsTestModelObserver*>( ptr )->somethingCompleted();
+    }
+    return 0;
+}
+

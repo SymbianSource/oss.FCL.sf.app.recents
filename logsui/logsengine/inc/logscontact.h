@@ -83,7 +83,7 @@ public slots:
     LOGSENGINE_EXPORT bool updateExisting();   
 
     /**
-     * Cancel outstanding phonebook request(open(), addNew(), updateExisting()) 
+     * Deletes outstanding phonebook aiw request(open(), addNew(), updateExisting()) 
      */
     LOGSENGINE_EXPORT void cancelServiceRequest();
     

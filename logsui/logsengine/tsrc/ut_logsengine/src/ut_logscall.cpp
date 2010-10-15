@@ -22,9 +22,9 @@
 #include "qthighway_stub_helper.h"
 #include "hbstubs_helper.h"
 
+#include <xqaiwdeclplat.h>
 #include <QtTest/QtTest>
 
-const char logsICallDial[] = "phoneui.com.nokia.symbian.ICallDial";
 
 void UT_LogsCall::initTestCase()
 {
@@ -133,28 +133,44 @@ void UT_LogsCall::testCall()
 {  
     QtHighwayStubHelper::reset();
     mLogsCall->call(LogsCall::TypeLogsVoiceCall);
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dial(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     QtHighwayStubHelper::reset();
     mLogsCall->call(LogsCall::TypeLogsVideoCall);
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dialVideo(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
 
+    // Calling fails (aiwrequest creation fails)
+    QtHighwayStubHelper::reset();
+    QtHighwayStubHelper::setFailCreateAiwRequest(true);
+    mLogsCall->call(LogsCall::TypeLogsVideoCall);
+    QVERIFY( QtHighwayStubHelper::interface().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::operation().isEmpty() );
+    QVERIFY( !QtHighwayStubHelper::isRequestBg() );
+    
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->call(LogsCall::TypeLogsVoIPCall);
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" ); 
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dialVoipService(QString,int)" ); 
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
+    
+    // Calling fails (aiwrequest creation fails)
+    QtHighwayStubHelper::reset();
+    QtHighwayStubHelper::setFailCreateAiwRequest(true);
+    mLogsCall->call(LogsCall::TypeLogsVoIPCall);
+    QVERIFY( QtHighwayStubHelper::interface().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::operation().isEmpty() );
+    QVERIFY( !QtHighwayStubHelper::isRequestBg() );
     
     // Not supported calltype
     QtHighwayStubHelper::reset();
     mLogsCall->call(static_cast<LogsCall::CallType>(9999));
-    QVERIFY( QtHighwayStubHelper::service().isEmpty() );
-    QVERIFY( QtHighwayStubHelper::message().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::interface().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::operation().isEmpty() );
     QVERIFY( !QtHighwayStubHelper::isRequestBg() );
     
     // No number, call is anyway tried so that phone shows error note
@@ -162,8 +178,8 @@ void UT_LogsCall::testCall()
     HbStubHelper::reset();
     mLogsCall->mNumber.clear();
     mLogsCall->call(LogsCall::TypeLogsVoiceCall);
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dial(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     QVERIFY( HbStubHelper::notificationDialogTxt().isEmpty() );
     
@@ -172,8 +188,8 @@ void UT_LogsCall::testCall()
     HbStubHelper::reset();
     mLogsCall->mContactId = 5;
     mLogsCall->call(LogsCall::TypeLogsVoiceCall);
-    QVERIFY( QtHighwayStubHelper::service().isEmpty() );
-    QVERIFY( QtHighwayStubHelper::message().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::interface().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::operation().isEmpty() );
     QVERIFY( HbStubHelper::notificationDialogTxt() == hbTrId("txt_dial_dpopinfo_no_saved_number_for_this_contact") );
 }
 
@@ -181,22 +197,22 @@ void UT_LogsCall::testInitiateCallback()
 {
     QtHighwayStubHelper::reset();
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dial(QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dial(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     mLogsCall->mDefaultCall = LogsCall::TypeLogsVideoCall;
     QtHighwayStubHelper::reset();
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVideo(QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dialVideo(QString)" );
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
     
     mLogsCall->mDefaultCall = LogsCall::TypeLogsVoIPCall;
     QtHighwayStubHelper::reset();
     mLogsCall->mServiceId = 3;
     mLogsCall->initiateCallback();
-    QVERIFY( QtHighwayStubHelper::service() == logsICallDial );
-    QVERIFY( QtHighwayStubHelper::message() == "dialVoipService(QString,int)" );  
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_CALL_DIAL );
+    QVERIFY( QtHighwayStubHelper::operation() == "dialVoipService(QString,int)" );  
     QVERIFY( QtHighwayStubHelper::isRequestBg() );
 }

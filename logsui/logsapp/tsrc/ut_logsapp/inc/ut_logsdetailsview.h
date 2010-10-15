@@ -60,7 +60,7 @@ private slots: //test methods
     void testUpdateMenu();
     void testDeleteEventAnswer();
     void testCopyNumberToClipboard();
-    void testChangeFilter();
+    void testHandleViewSwitchSelected();
     void testContactActionCompleted();
     void testModel();
     void testUpdateWidgetsSizeAndLayout();

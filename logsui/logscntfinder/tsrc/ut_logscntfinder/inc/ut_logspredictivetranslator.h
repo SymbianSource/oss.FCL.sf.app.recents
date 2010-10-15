@@ -47,13 +47,12 @@ private slots: //test methods
      
     void testConstructor();
     void testTranslate();
-    void testTranslatePattern();
+    void testPreparePattern();
     void testTranslateText();
     void testNameTranslator();
     
 private:
  
-   HbInputLanguage mOrigLang; 
    LogsPredictiveTranslator* mTranslator;  
 };
 

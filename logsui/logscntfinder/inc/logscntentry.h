@@ -22,18 +22,17 @@
 #include <QObject>
 #include <QList>
 #include <QString>
-
+#include "logspredictivetranslator.h"
 
 class LogsCntEntry;
 typedef QObject LogsCntEntryHandle;
 
 
-class LogsCntText
+class LogsCntText : public LogsCntToken
 {
-public:
 
+public:
     inline LogsCntText() : mHighlights(0){}
-    inline const QString& text() const {return mText;}
     inline int highlights() const {return mHighlights;}
     LOGSCNTFINDER_EXPORT QString richText( QString startTag = QString("<b><u>"), 
                                            QString endTag = QString("</u></b>")) const;
@@ -41,8 +40,6 @@ public:
     
 private:
     
-    QString mText;
-    QString mTranslatedText;
     int mHighlights;
     
     friend class LogsCntEntry;
@@ -91,8 +88,6 @@ private:
     void doSetHighlights( const QString& patternItem, QMutableListIterator<LogsCntText>& names );
     
     void resetHighlights( LogsCntTextList& nameArray );
-    bool doSimpleMatch( const QString& pattern ) const;
-    bool doComplexMatch( const QStringList& patternArray ) const;
     int startsWith( const LogsCntText& nameItem, const QString& pattern ) const; 
 
 private:

@@ -24,8 +24,9 @@
 
 //SYSTEM
 #include <QVariant>
-#include <xqservicerequest.h>
 #include <xqrequestinfo.h>
+#include <xqaiwdeclplat.h>
+#include <xqappmgr.h>
 #include <hbnotificationdialog.h>
 
 // -----------------------------------------------------------------------------
@@ -133,7 +134,6 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
         unsigned int serviceId, unsigned int contactId)
 {
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::callToNumber(), type", callType )
-    QString service("phoneui.com.nokia.symbian.ICallDial");
         
     if ( number.isEmpty() || callType == TypeLogsCallNotAvailable ){
         LOGS_QDEBUG( "logs [ENG]    Calling not possible!" )
@@ -142,12 +142,12 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
                 hbTrId("txt_dial_dpopinfo_no_saved_number_for_this_contact"));    
         } else {
             // Will fail but intention is to get error notification from phone
-            createcall(service, "dial(QString)", number, false);
+            createcall(XQI_CALL_DIAL, "dial(QString)", number, false);
         }
     } else if (callType == TypeLogsVoiceCall) {
-        createcall(service, "dial(QString)", number, false);
+        createcall(XQI_CALL_DIAL, "dial(QString)", number, false);
     } else if (callType == TypeLogsVideoCall) {
-        createcall(service, "dialVideo(QString)", number, false);
+        createcall(XQI_CALL_DIAL, "dialVideo(QString)", number, false);
     } else if (callType == TypeLogsVoIPCall){
         if ( serviceId ){
         
@@ -157,7 +157,7 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
             // also contact must be passed if available if change service is
             // provided (no point change service and try to call service specific
             // uri with another service)?
-            createCallWithService(service, 
+            createCallWithService(XQI_CALL_DIAL, 
                 "dialVoipService(QString,int)", number, false, serviceId);
         }
         else {
@@ -165,7 +165,7 @@ void LogsCall::callToNumber(LogsCall::CallType callType, const QString& number,
             // offer any kind of service selection. Normally voip call
             // should always have service id set but if it's missing
             // for some reason, then this provides call failure UI.
-            createcall(service, "dialVoip(QString)", number, false);
+            createcall(XQI_CALL_DIAL, "dialVoip(QString)", number, false);
         }
     }
     LOGS_QDEBUG( "logs [ENG] <- LogsCall::callToNumber()" )
@@ -201,19 +201,26 @@ void LogsCall::initiateCallback()
 // LogsCall::createcall
 // ----------------------------------------------------------------------------
 //
-void LogsCall::createcall(QString service, QString type, QString num, bool sync)
+void LogsCall::createcall(QString interface, QString operation, QString num, bool sync)
 {
-    LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), num", num )
-    LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), service", service )
-    XQServiceRequest snd(service, type, sync);
-    snd << num;
-    // Start call at bg, call UI will bring itself to foreground when ever
-    // it thinks it is good time to do it.
-    XQRequestInfo info;
-    info.setBackground(true);
-    snd.setInfo(info);
-    QVariant retValue;
-    snd.send(retValue);
+    LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), XQApplicationManager: num", num )
+    LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createcall(), interface", interface )
+    XQApplicationManager appMgr;
+    XQAiwRequest* request = appMgr.create(interface, operation, false);
+    if (request) {
+        LOGS_QDEBUG_2( "logs [ENG] -> request->isSynchronous():", request->isSynchronous() )
+        
+        QList<QVariant> arglist;
+        arglist.append(QVariant(num));
+        request->setArguments(arglist);
+        XQRequestInfo info;
+        info.setBackground(true);
+        request->setInfo(info);
+        request->setSynchronous(sync);
+        QVariant ret(QVariant::Int);        
+        request->send(ret);
+        delete request;
+    }
     LOGS_QDEBUG( "logs [ENG] <- LogsCall::createcall()" )
 }
 
@@ -221,20 +228,26 @@ void LogsCall::createcall(QString service, QString type, QString num, bool sync)
 // LogsCall::createCallWithService
 // ----------------------------------------------------------------------------
 //
-void LogsCall::createCallWithService(QString service, QString type, QString num, 
-        bool sync, unsigned int serviceId )
+void LogsCall::createCallWithService(QString interface, QString operation,  
+        QString num, bool sync, unsigned int serviceId )
 {
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createCallWithService(), num", num )
     LOGS_QDEBUG_2( "logs [ENG] -> LogsCall::createCallWithService(), num", serviceId )
-    XQServiceRequest snd(service, type, sync);
-    snd << num << serviceId;
-    // Start call at bg, call UI will bring itself to foreground when ever
-    // it thinks it is good time to do it.
-    XQRequestInfo info;
-    info.setBackground(true);
-    snd.setInfo(info);
-    QVariant retValue;
-    snd.send(retValue);
+    XQApplicationManager appMgr;
+    XQAiwRequest* request = appMgr.create(interface, operation, false);
+    if (request) {
+        QList<QVariant> arglist;
+        arglist.append(QVariant(num));
+        arglist.append(QVariant(serviceId));
+        request->setArguments(arglist);
+        XQRequestInfo info;
+        info.setBackground(true);
+        request->setInfo(info);
+        request->setSynchronous(sync);
+        QVariant ret(QVariant::Int);        
+        request->send(ret);
+        delete request;
+    }   
     LOGS_QDEBUG( "logs [ENG] <- LogsCall::createCallWithService()" )
 }
 

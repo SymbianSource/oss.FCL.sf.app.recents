@@ -43,19 +43,14 @@
 #include <hbgroupbox.h>
 #include <hbmessagebox.h>
 #include <xqaiwdecl.h>
+#include <hblistwidget.h>
+#include <hblistwidgetitem.h>
 
-#define VERIFY_CHECKED_ACTION( v, actionName ) { \
-QVERIFY( v->mShowFilterMenu );\
-QVERIFY( v->mShowFilterMenu->actions().count() > 0 );\
-QAction* action = 0;\
-foreach ( action, v->mShowFilterMenu->actions() ){ \
-    if ( action->objectName() == actionName ){ \
-        QVERIFY( action->isChecked() ); \
-    } else { \
-        QVERIFY( !action->isChecked() ); \
-    } \
-}}
-
+#define VERIFY_SELECTED_VIEW( list, viewIndex ) {\
+QVERIFY(list);\
+QVERIFY(list->selectionModel()->selectedIndexes().count() ==1 );\
+QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(),(int)viewIndex);\
+}
 
 void UT_LogsRecentCallsView::initTestCase()
 {
@@ -90,7 +85,6 @@ void UT_LogsRecentCallsView::testConstructor()
     QVERIFY( !mRecentCallsView->mListView );
     QVERIFY( !mRecentCallsView->mFilter );
     QVERIFY( mRecentCallsView->mModel );
-    QVERIFY( !mRecentCallsView->mShowFilterMenu );
     QVERIFY( mRecentCallsView->mCurrentView == XQService::LogsViewAll );
     QVERIFY( mRecentCallsView->viewId() == LogsRecentViewId );
     QVERIFY( mRecentCallsView->mLayoutSectionName == "" );
@@ -107,16 +101,12 @@ void UT_LogsRecentCallsView::testInitView()
     QVERIFY( view );
     QVERIFY( !view->mInitialized );
     QVERIFY( !view->mFilter );
-    QVERIFY( !view->mShowFilterMenu );
     QVERIFY( view->mTitleMap.isEmpty() );
-    QVERIFY( view->mActionMap.isEmpty() );
     view->initView();
     QVERIFY( view->mInitialized );
     QVERIFY( !view->mFilter );
-    QVERIFY( view->mShowFilterMenu );
     QVERIFY( view->mTitleMap.count() == 4 );
-    QVERIFY( view->mActionMap.count() == 4 );
-    
+    delete view;
     //TODO: Init twice not allowed
 }
 
@@ -128,50 +118,52 @@ void UT_LogsRecentCallsView::testActivated()
     QVERIFY( !view->mInitialized );
     QVERIFY( !view->mFilter );
     QVERIFY( !view->mEmptyListLabel );
-    view->activated(false, QVariant(XQService::LogsViewAll));
+    view->activated(false, QVariant(XQService::LogsViewAll), view->mDialpad->editor().text());
     QVERIFY( view->mInitialized );
     QVERIFY( view->mFilter );
     QVERIFY( view->mEmptyListLabel );
-    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
-    VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
+    QVERIFY( view->mModel->mMissedCallsCounterCleared );
+    VERIFY_SELECTED_VIEW(view->mViewSwitchList, XQService::LogsViewAll);
     
     // Change views
-    view->activated(false, QVariant(XQService::LogsViewReceived));
+    view->mModel->mMissedCallsCounterCleared = false;
+    view->activated(false, QVariant(XQService::LogsViewReceived), view->mDialpad->editor().text());
     QVERIFY( view->mFilter );
     QVERIFY( view->mFilter->filterType() == LogsFilter::Received );  
     QVERIFY( !view->mModel->mMissedCallsCounterCleared );
-    VERIFY_CHECKED_ACTION( view, logsShowFilterReceivedMenuActionId )
-    
-    view->activated(false, QVariant(XQService::LogsViewMissed));
+    VERIFY_SELECTED_VIEW(view->mViewSwitchList, XQService::LogsViewReceived);
+
+    view->activated(false, QVariant(XQService::LogsViewMissed), view->mDialpad->editor().text());
     QVERIFY( view->mFilter->filterType() == LogsFilter::Missed );
     QVERIFY( view->mModel->mMissedCallsCounterCleared );
-    VERIFY_CHECKED_ACTION( view, logsShowFilterMissedMenuActionId )
+    VERIFY_SELECTED_VIEW(view->mViewSwitchList, XQService::LogsViewMissed);
 
     // Change to missed view again, no need to update view, only 
     // missed call counter updated
     view->mModel->mMissedCallsCounterCleared = false;
     view->updateFilter(LogsFilter::Received);    
-    view->activated(false, QVariant(XQService::LogsViewMissed));
+    view->activated(false, QVariant(XQService::LogsViewMissed), view->mDialpad->editor().text());
     QVERIFY( view->mFilter->filterType() == LogsFilter::Received );  
     QVERIFY( view->mModel->mMissedCallsCounterCleared );
     
     view->mModel->mMissedCallsCounterCleared = false;
-    view->activated(false, QVariant(XQService::LogsViewCalled));
+    view->activated(false, QVariant(XQService::LogsViewCalled), view->mDialpad->editor().text());
     QVERIFY( view->mFilter->filterType() == LogsFilter::Called );  
     QVERIFY( !view->mModel->mMissedCallsCounterCleared );
-    VERIFY_CHECKED_ACTION( view, logsShowFilterDialledMenuActionId )
-    
+    VERIFY_SELECTED_VIEW(view->mViewSwitchList, XQService::LogsViewCalled);
+
     view->mViewManager.mainWindow().setOrientation( Qt::Horizontal );
     view->mDialpad->editor().setText( QString("hello") );
     view->mActivating = true;
-    view->activated(false, QVariant(XQService::LogsViewAll));
+    view->activated(false, QVariant(XQService::LogsViewAll), view->mDialpad->editor().text());
     QVERIFY( view->mFilter->filterType() == LogsFilter::All );  
-    QVERIFY( !view->mModel->mMissedCallsCounterCleared );
-    VERIFY_CHECKED_ACTION( view, logsShowFilterRecentMenuActionId )
-    QVERIFY( !view->mDialpad->editor().text().isEmpty() );
+    QVERIFY( view->mModel->mMissedCallsCounterCleared );
+    VERIFY_SELECTED_VIEW(view->mViewSwitchList, XQService::LogsViewAll);
+    QVERIFY( !view->currDialpadText().isEmpty() );
     QVERIFY( view->mListView->layoutName() == logsListLandscapeLayout );
     QVERIFY( view->mLayoutSectionName == logsViewDefaultSection );
     QVERIFY( !view->mActivating );
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testDeactivated()
@@ -255,16 +247,21 @@ void UT_LogsRecentCallsView::testUpdateViewName()
     mRecentCallsView->mViewName = 0;
 }
 
-void UT_LogsRecentCallsView::testChangeFilter()
-{
-    mRepository->recentCallsView();
-    mRecentCallsView->activated( false, QVariant(XQService::LogsViewAll) );
+void UT_LogsRecentCallsView::testHandleViewSwitchSelected()
+{    
+    LogsRecentCallsView* view = mRepository->recentCallsView();
+    mRecentCallsView->initToolbarExtension();
+    mRecentCallsView->activated( false, QVariant(XQService::LogsViewAll), mRecentCallsView->mDialpad->editor().text() );
     QVERIFY( mRecentCallsView->mFilter );
     QVERIFY( mRecentCallsView->mFilter->filterType() == LogsFilter::All );
+
+    QVERIFY( mRecentCallsView->mViewSwitchList );
+    HbListWidgetItem* item = new HbListWidgetItem();
+    item->setData(QVariant(XQService::LogsViewMissed), Qt::UserRole);
+
+    mRecentCallsView->handleViewSwitchSelected(item);
     
-    HbAction*  action = new HbAction();
-    action->setObjectName(logsShowFilterMissedMenuActionId);
-    mRecentCallsView->changeFilter(action);
+    delete item;
     // Scrollbar is disbaled while changing the list and is restored when appearByMoving slot is called
     QVERIFY( mRecentCallsView->mListView->verticalScrollBarPolicy() == HbScrollArea::ScrollBarAlwaysOff );
     
@@ -281,12 +278,8 @@ void UT_LogsRecentCallsView::testChangeFilter()
     QVERIFY( !mRecentCallsView->mEmptyListLabel->isVisible() ); // Still hidden as list has data
     mRecentCallsView->appearByMovingComplete();
     QVERIFY( mRecentCallsView->mListView->verticalScrollBarPolicy() != HbScrollArea::ScrollBarAlwaysOff );
-    
-    delete action;
-    delete mRecentCallsView->mListView;
-    mRecentCallsView->mListView = 0;
-    delete mRecentCallsView->mViewName;
-    mRecentCallsView->mViewName = 0;
+        
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testInitiateCallback()
@@ -314,7 +307,7 @@ void UT_LogsRecentCallsView::testCallKeyPressed()
     
     // No any item where to call
     LogsCall::resetTestData();
-    view->activated( false, QVariant(XQService::LogsViewAll) );
+    view->activated( false, QVariant(XQService::LogsViewAll), view->mDialpad->editor().text() );
     view->callKeyPressed();
     QVERIFY( LogsCall::lastCalledFunction() != "initiateCallback" );
     
@@ -359,6 +352,8 @@ void UT_LogsRecentCallsView::testCallKeyPressed()
     view->callKeyPressed();
     QVERIFY( !LogsCall::isCallToNumberCalled() );
     QVERIFY( LogsCall::lastCalledFunction() == "initiateCallback" );
+    
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testShowCallDetails()
@@ -427,7 +422,7 @@ void UT_LogsRecentCallsView::testGestureEvent()
 {
     LogsRecentCallsView* view = mRepository->recentCallsView();
     view->setLayoutDirection(Qt::LeftToRight);
-    view->activated( false, QVariant(XQService::LogsViewCalled) );
+    view->activated( false, QVariant(XQService::LogsViewCalled), view->mDialpad->editor().text() );
     view->mCurrentView = XQService::LogsViewCalled;
     view->mAppearingView = XQService::LogsViewCalled;
 
@@ -519,6 +514,7 @@ void UT_LogsRecentCallsView::testGestureEvent()
     QVERIFY(event2.isAccepted(Qt::SwipeGesture));
     
     qDeleteAll(list);
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testViewChangeByFlicking()
@@ -528,7 +524,7 @@ void UT_LogsRecentCallsView::testViewChangeByFlicking()
     // At leftmost list, moving to left not possible
     // List not empty, starting list animation
     LogsRecentCallsView* view = mRepository->recentCallsView();
-    view->activated( false, QVariant(XQService::LogsViewAll) );
+    view->activated( false, QVariant(XQService::LogsViewAll), view->mDialpad->editor().text() );
     view->mCurrentView = XQService::LogsViewAll;
     QVERIFY(view->model() && view->model()->rowCount()>0);
     view->moveBackwardInLists();
@@ -605,17 +601,17 @@ void UT_LogsRecentCallsView::testViewChangeByFlicking()
     QVERIFY(view->mCurrentView == XQService::LogsViewCalled);
     QVERIFY(view->mAppearingView == XQService::LogsViewAll);
     QVERIFY(!view->mMoveLeftInList);
-    
-    
+    delete view;
 }
 
 
 void UT_LogsRecentCallsView::testModel()
 {
     LogsRecentCallsView* view = mRepository->recentCallsView();
-    view->activated(false, QVariant(XQService::LogsViewAll));
+    view->activated(false, QVariant(XQService::LogsViewAll), view->mDialpad->editor().text());
     QVERIFY( view->mFilter );
     QVERIFY( view->model() == view->mFilter );
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testShowListItemMenu()
@@ -731,6 +727,7 @@ void UT_LogsRecentCallsView::testActivateEmptyListIndicator()
     QVERIFY( view->mEmptyListLabel );
     QVERIFY( !view->mEmptyListLabel->isVisible() );
     QVERIFY(action && action->isVisible());
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testUpdateMenu()
@@ -764,7 +761,8 @@ void UT_LogsRecentCallsView::testUpdateMenu()
     view->updateMenu();
     QVERIFY(action && action->isVisible());
     QVERIFY(addToContactsAction && addToContactsAction->isVisible());
-    QVERIFY(contactsSearchAction && contactsSearchAction->isVisible());
+    QVERIFY(contactsSearchAction && contactsSearchAction->isVisible());    
+    delete view;
 }
 
 
@@ -810,6 +808,7 @@ void UT_LogsRecentCallsView::testUpdateWidgetsSizeAndLayout()
     view->mDialpad->editor().setText( hello );
     view->updateWidgetsSizeAndLayout();
     QVERIFY(action && action->isVisible());
+    delete view;
 }
 
 
@@ -850,7 +849,7 @@ void UT_LogsRecentCallsView::testDialpadClosed()
     QString hello("hello");
     mRecentCallsView->mDialpad->editor().setText( hello );
     mRecentCallsView->dialpadClosed();
-    QVERIFY( !mRecentCallsView->mDialpad->editor().text().isEmpty()  );
+    QVERIFY( !mRecentCallsView->currDialpadText().isEmpty()  );
     QVERIFY( mRecentCallsView->mLayoutSectionName == logsViewDefaultSection );
 }
 
@@ -957,13 +956,13 @@ void UT_LogsRecentCallsView::testContactSearch()
     view->toggleContactSearch();
     status = view->mModel->predictiveSearchStatus();
     QVERIFY( status == 1 );
-    
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testDialpadOpened()
 {
-    mRepository->recentCallsView();
-    mRecentCallsView->activated( false, QVariant(XQService::LogsViewAll) );
+    LogsRecentCallsView* view = mRepository->recentCallsView();
+    mRecentCallsView->activated( false, QVariant(XQService::LogsViewAll), mRecentCallsView->mDialpad->editor().text() );
         
     // If contact search is disabled, opening dialpad containing input
     // does not cause going to matches view
@@ -986,6 +985,7 @@ void UT_LogsRecentCallsView::testDialpadOpened()
     mRecentCallsView->mDialpad->editor().setText( "" );
     mRecentCallsView->dialpadOpened();
     QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    delete view;
 }
 
 void UT_LogsRecentCallsView::testSaveActivity()

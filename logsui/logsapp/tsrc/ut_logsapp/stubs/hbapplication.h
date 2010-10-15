@@ -22,19 +22,11 @@
 #include <qapplication.h>
 #include <hbnamespace.h>
 
-class HbActivityManager;
-
 class HbApplication : public QApplication
 {
 public:
     HbApplication(int &/*argc*/, char */*argv*/[], Hb::ApplicationFlags flags = Hb::DefaultApplicationFlags);
-    ~HbApplication();
-    
-    HbActivityManager *activityManager();
-    Hb::ActivationReason activateReason() const;
-    QVariantHash activateParams() const;
-    QString activateId() const; 
-    QVariant activateData();    
+    ~HbApplication(); 
     
     static void quit();
 

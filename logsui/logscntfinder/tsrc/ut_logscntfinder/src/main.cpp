@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
             
     QApplication app(argc, argv);
     QStringList args = app.arguments();
-    QString combinedOutputFileName;
+    QString combinedOutputFileName = "C:/shared/eunit/logs/ut_logscntfinder_log.xml"; // ATS default
     for ( int i = 0; i < args.count(); i++ ){
         QString arg = args.at(i);
         if ( arg == QString("-o") && i + 1 < args.count() ){

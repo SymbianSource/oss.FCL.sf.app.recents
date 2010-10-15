@@ -18,6 +18,7 @@
 #include "logscommondata.h"
 #include "logsconfigurationparams.h"
 #include <xqsettingsmanager.h>
+#include <hbcolorscheme.h>
 
 #include <QtTest/QtTest>
 
@@ -135,5 +136,73 @@ void UT_LogsCommonData::testSetPredictiveSearch()
     QVERIFY( LogsCommonData::getInstance().setPredictiveSearch(true) == -1 );
     QVERIFY( LogsCommonData::getInstance().mPredictiveSearchStatus == 2 );
     QVERIFY( XQSettingsManager::mCurrentVal == 2 );
+}
+
+void UT_LogsCommonData::testRefreshData()
+{
+    // Theme change not pending
+    LogsCommonData& ct = LogsCommonData::getInstance();
+    QSignalSpy spy( &ct, SIGNAL(commonDataChanged()) ); 
+    ct.mCompressed = true;
+    ct.mHighlightColorStart.clear();
+    ct.refreshData();
+    QCOMPARE( spy.count(), 0 );
+    QVERIFY( !ct.mCompressed );
+    QVERIFY( !ct.mHighlightColorStart.isEmpty() );
+    
+    // Pending theme change
+    ct.mPendingThemeChange = true;
+    ct.mCompressed = true;
+    ct.mHighlightColorStart.clear();
+    ct.refreshData();
+    QCOMPARE( spy.count(), 1 );
+    QVERIFY( !ct.mCompressed );
+    QVERIFY( !ct.mHighlightColorStart.isEmpty() );
+    
+    // No action when already refreshed
+    ct.refreshData();
+    QCOMPARE( spy.count(), 1 );
+    QVERIFY( !ct.mCompressed );
+    QVERIFY( !ct.mHighlightColorStart.isEmpty() );
+}
+
+void UT_LogsCommonData::testCompressData()
+{
+    LogsCommonData& ct = LogsCommonData::getInstance();
+    ct.mCompressed = false;
+    ct.compressData();
+    QVERIFY( ct.mCompressed );
+}
+
+void UT_LogsCommonData::testHandleThemeChange()
+{
+    LogsCommonData& ct = LogsCommonData::getInstance();
+    QSignalSpy spy( &ct, SIGNAL(commonDataChanged()) ); 
+    
+    // Theme changed when not compressed
+    ct.mCompressed = false;
+    ct.mPendingThemeChange = false;
+    ct.handleThemeChange();
+    QCOMPARE( spy.count(), 1 );
+    QVERIFY( !ct.mPendingThemeChange );
+    
+    // Theme changed when compressed
+    spy.clear();
+    ct.mCompressed = true;
+    ct.handleThemeChange();
+    QCOMPARE( spy.count(), 0 );
+    QVERIFY( ct.mPendingThemeChange );
+}
+
+void UT_LogsCommonData::testHighlightColor()
+{
+    LogsCommonData& ct = LogsCommonData::getInstance();
+    QColor highlight = HbColorScheme::color("qtc_lineedit_marker_normal");
+    QColor color = HbColorScheme::color("qtc_lineedit_selected");
+    QString start = QString("<span style=\"background-color: %1; color: %2\">")
+              .arg(highlight.name().toUpper())
+              .arg(color.name().toUpper());
+    QCOMPARE( ct.highlightStart(), start );
+    QCOMPARE( ct.highlightEnd(), QString("</span>") );
 }
 

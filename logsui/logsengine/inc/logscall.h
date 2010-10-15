@@ -64,8 +64,8 @@ public slots:
     
 private: 
     
-    static void createcall(QString service, QString type, QString num, bool sync);
-    static void createCallWithService(QString service, QString type, QString num, 
+    static void createcall(QString interface, QString operation, QString num, bool sync);
+    static void createCallWithService(QString interface, QString operation, QString num, 
             bool sync, unsigned int serviceId );
         
 private: //data 

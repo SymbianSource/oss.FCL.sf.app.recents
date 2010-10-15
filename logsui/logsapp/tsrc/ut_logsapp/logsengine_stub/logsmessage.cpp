@@ -23,6 +23,7 @@
 bool logsTestMessageSent = false;
 bool defaultMessageSent = false;
 QString lostTestMessageNumber;
+bool LogsMessage::mServiceRequestCanceled = false;
 
 // -----------------------------------------------------------------------------
 //
@@ -65,7 +66,7 @@ bool LogsMessage::sendMessage()
 //
 // ----------------------------------------------------------------------------
 //
-bool LogsMessage::sendMessageToNumber(
+LogsMessage* LogsMessage::sendMessageToNumber(
             const QString& number, const QString& displayName, unsigned int contactId)
 {
     Q_UNUSED(number);
@@ -73,6 +74,7 @@ bool LogsMessage::sendMessageToNumber(
     Q_UNUSED(contactId);
     logsTestMessageSent = true;
     lostTestMessageNumber = number;
+    return new LogsMessage();
 }
 
 bool LogsMessage::isMessageSent()
@@ -94,6 +96,11 @@ bool LogsMessage::isDefaultMessageSent()
 QString LogsMessage::sentToNumber()
 {
     return lostTestMessageNumber;
+}
+
+void LogsMessage::cancelServiceRequest()
+{
+    mServiceRequestCanceled = true;
 }
 
 // End of file

@@ -15,17 +15,21 @@
 *
 */
 
-#include <QApplication>
-#include "serviceapp.h"
+#ifndef AF_STUB_HELPER_H
+#define AF_STUB_HELPER_H
 
-int main(int argc, char **argv)
+#include <afactivities_global.h>
+
+/**
+* Helper class to control stub behavior
+*
+*/ 
+class AfStubHelper 
 {
-    QApplication a( argc, argv );
+    public:
+        static void reset();
+        static void setActivityReason(Af::ActivationReason reason);
+        static void setActivityId(QString activityId);
+};
 
-    ServiceApp *cl = new ServiceApp();
-    cl->show();
-    int rv = a.exec();
-    delete cl;
-    return rv;
-}
-
+#endif

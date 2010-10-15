@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ad:metadata xmlns="http://nokia.com/arrow/repository/ia_component" xmlns:ad="http://nokia.com/arrow/application_metadata">
+  <appResources>
+     <appResource>
+        <language>1</language>
+        <iacName>Dialer</iacName>
+        <iacDescription>Upgrade package for Dailer</iacDescription>
+     </appResource>
+  </appResources>
+  <!-- Specifies for what versions of what platform this component is for. -->
+  <swPlatformDep>
+     <platform>S60</platform>
+     <versionFrom>
+     	  <!--
+        platform version number separated in major and minor number (i.e. 
+        3.0 has 3 as major and 0 as minor)
+        -->
+        <major>5</major>
+        <minor>0</minor>
+        <!--
+        date-element can be used to pinpoint platform version number to even 
+        more specific one. It is not currently used in the system.
+        -->
+        <date>
+           <year>2010</year>
+           <week>39</week>
+        </date>
+     </versionFrom>
+  </swPlatformDep>
+  <!-- specifies dependencies to other IACs -->
+  <interDeps>
+  </interDeps>
+  <firmwareDependencies>
+  </firmwareDependencies>
+  <rebootAfterInstall>true</rebootAfterInstall>
+</ad:metadata>

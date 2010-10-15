@@ -37,6 +37,8 @@
 #include <hbgroupbox.h>
 #include <dialpad.h>
 #include <hbmessagebox.h>
+#include <hblistwidget.h>
+#include <hblistwidgetitem.h>
 #include <QGraphicsLinearLayout>
 
 Q_DECLARE_METATYPE(LogsDetailsModel *)
@@ -91,12 +93,11 @@ void UT_LogsDetailsView::testActivated()
     QVariant arg2 = qVariantFromValue( model2 );
     LogsDetailsView* view = mRepository->detailsView();
     QVERIFY( !view->mInitialized );
-    view->activated(false, arg2);
+    view->activated(false, arg2, view->mDialpad->editor().text());
     QVERIFY( view->mInitialized );
     QVERIFY(view->mListView);
     QVERIFY(view->mDetailsModel == model2);
     QVERIFY(view->mListView->model() == model2);
-    QVERIFY(view->mActionMap.count() == 4);
     
     LogsDetailsModel* model3 = new LogsDetailsModel();
     delete model3->mEvent;
@@ -104,10 +105,10 @@ void UT_LogsDetailsView::testActivated()
     model3->mEvent = new LogsEvent();
     model3->mEvent->mIsPrivate = false;
     QVariant arg3 = qVariantFromValue( model3 );
-    mDetailsView->activated(false, arg3);
+    mDetailsView->activated(false, arg3, view->mDialpad->editor().text());
     QVERIFY( mDetailsView->mDetailsModel == model3);
     QVERIFY(view->mListView->model() == model3);
-    //QT_NO_DEBUG_OUTPUT
+    delete view;
 }
 
 void UT_LogsDetailsView::testDeactivated()
@@ -125,11 +126,12 @@ void UT_LogsDetailsView::testDeactivated()
     model->mEvent = 0;
     model->mEvent = new LogsEvent();
     QVariant arg = qVariantFromValue( model );
-    view->activated(false, arg);
+    view->activated(false, arg, view->mDialpad->editor().text());
     QVERIFY( view->mListView );
     view->deactivated();
     QVERIFY( view->mListView );
     QVERIFY( !view->mDetailsModel );
+    delete view;
 }
 
 void UT_LogsDetailsView::testHandleBackSoftkey()
@@ -152,11 +154,12 @@ void UT_LogsDetailsView::testCallKeyPressed()
     model->mEvent = new LogsEvent();
     model->mEvent->mEventType = LogsEvent::TypeVoiceCall;
     QVariant arg = qVariantFromValue( model );
-    mRepository->detailsView();
-    mDetailsView->activated(false, arg);
+    LogsDetailsView* view = mRepository->detailsView();
+    mDetailsView->activated(false, arg, mDetailsView->mDialpad->editor().text());
     QVERIFY( mDetailsView->mCall );
     mDetailsView->callKeyPressed();
     QVERIFY( mDetailsView->mCall->mTestLastCallType != -1 );
+    delete view;
 }
 
 void UT_LogsDetailsView::testInitiateVoiceCall()
@@ -190,14 +193,14 @@ void UT_LogsDetailsView::testUpdateMenu()
 
     // No call, call actions disabled
     QVERIFY( !mDetailsView->mCall );
-    mRepository->detailsView(); // Set correct object tree
+    LogsDetailsView* view = mRepository->detailsView(); // Set correct object tree
     LogsDetailsModel* model = new LogsDetailsModel();
     delete model->mEvent;
     model->mEvent = 0;
     model->mEvent = new LogsEvent();
     
     QVariant arg = qVariantFromValue( model );
-    mDetailsView->activated(false, arg);
+    mDetailsView->activated(false, arg, mDetailsView->mDialpad->editor().text());
     mDetailsView->updateMenu();
     QObject* obj = mRepository->findObject( logsDetailsViewVoiceCallMenuActionId );
     HbAction* voiceCallAction = qobject_cast<HbAction*>( obj );
@@ -237,6 +240,7 @@ void UT_LogsDetailsView::testUpdateMenu()
     QVERIFY( openContactAction->isVisible() );
     QVERIFY( voiceCallAction->isVisible() );
     LogsContact::reset();
+    delete view;
 }
 
 void UT_LogsDetailsView::testDeleteEventAnswer()
@@ -275,16 +279,21 @@ void UT_LogsDetailsView::testCopyNumberToClipboard()
     QVERIFY( LogsDetailsModel::mLastCallName.isEmpty() );
 }
 
-
-
-void UT_LogsDetailsView::testChangeFilter()
+void UT_LogsDetailsView::testHandleViewSwitchSelected()
 {
     mViewManager->reset();
-    HbAction action;
-    action.setObjectName(logsShowFilterMissedMenuActionId);
-    mDetailsView->changeFilter(&action);
+    QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
+    HbListWidgetItem* item = new HbListWidgetItem();
+    item->setData(QVariant(XQService::LogsViewReceived), Qt::UserRole);
+    mDetailsView->mViewSwitchList = new HbListWidget();
+    mDetailsView->mViewSwitchList->addItem(item);
+    
+    mDetailsView->handleViewSwitchSelected(item);
+    
     QVERIFY( mViewManager->mViewId == LogsRecentViewId );
-    QVERIFY( mViewManager->mArgs.toInt() == (int)XQService::LogsViewAll );
+    QVERIFY( mViewManager->mArgs.toInt() == (int)XQService::LogsViewReceived );    
+    delete mDetailsView->mViewSwitchList;
+    mDetailsView->mViewSwitchList = 0;
 }
 
 void UT_LogsDetailsView::testContactActionCompleted()

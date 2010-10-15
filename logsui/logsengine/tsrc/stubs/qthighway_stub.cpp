@@ -15,14 +15,12 @@
 *
 */
 
-#include <xqservicerequest.h>
 #include <xqrequestinfo.h>
 #include <xqappmgr.h>
+#include <xqaiwrequest.h>
 #include <QHash>
 #include "qthighway_stub_helper.h"
 
-QString qtHighwayStubService;
-QString qtHighwayStubMessage;
 bool qtHighwayStubRequestBg = false;
 bool qtHighwayStubRequestEmbedded = false;
 
@@ -33,8 +31,6 @@ bool qtAiwFailCreateRequest = false;
 
 void QtHighwayStubHelper::reset()
 {
-    qtHighwayStubService.clear();
-    qtHighwayStubMessage.clear();
     qtHighwayStubRequestBg = false;
     qtHighwayStubRequestEmbedded = false;
     qtAiwStubInterface.clear();
@@ -53,14 +49,14 @@ void QtHighwayStubHelper::setFailCreateAiwRequest(bool fail)
     qtAiwFailCreateRequest = fail;
 }
 
-QString QtHighwayStubHelper::service()
+QString QtHighwayStubHelper::interface()
 {
-    return qtHighwayStubService;
+    return qtAiwStubInterface;
 }
 
-QString QtHighwayStubHelper::message()
+QString QtHighwayStubHelper::operation()
 {
-    return qtHighwayStubMessage;
+    return qtAiwStubOperation;
 }
 
 bool QtHighwayStubHelper::isRequestBg()
@@ -71,48 +67,6 @@ bool QtHighwayStubHelper::isRequestBg()
 bool QtHighwayStubHelper::isRequestEmbedded()
 {
     return qtHighwayStubRequestEmbedded;
-}
-
-XQServiceRequest::XQServiceRequest(
-    const QString& service, const QString& message, const bool& synchronous)
-{
-    qtHighwayStubService = service;
-    qtHighwayStubMessage = message;
-}
-
-XQServiceRequest::~XQServiceRequest()
-{
-
-}
-
-
-void XQServiceRequest::setArguments(const QList<QVariant> &arguments)
-{
-    Q_UNUSED(arguments)
-}
-
-QString XQServiceRequest::service() const
-{
-    return qtHighwayStubService;
-}
-
-QString XQServiceRequest::message() const
-{
-    return qtHighwayStubMessage;
-}
-
-bool XQServiceRequest::send(QVariant& retValue) 
-{
-    return true;
-}
-void XQServiceRequest::addArg(const QVariant& v)
-{
-
-}
-
-void XQServiceRequest::setInfo(const XQRequestInfo &info)
-{
-    Q_UNUSED(info);
 }
 
 XQRequestInfo::XQRequestInfo()
@@ -204,10 +158,22 @@ bool XQAiwRequest::send()
     return true;
 }
 
+bool XQAiwRequest::send(QVariant &returnValue)
+{
+    Q_UNUSED(returnValue)
+    return true;
+}
+
 void XQAiwRequest::setSynchronous(bool synchronous)
 {
     qtAiwStubSynchronous = synchronous;
 }
+
+void XQAiwRequest::setInfo(const XQRequestInfo &info)
+{
+    Q_UNUSED(info)
+}
+
 
 XQAiwInterfaceDescriptor::XQAiwInterfaceDescriptor()
 {    

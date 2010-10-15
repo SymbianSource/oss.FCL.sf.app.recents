@@ -20,7 +20,6 @@
 #include "logsmainwindow.h"
 #include "logsviewmanager.h"
 #include "logsservicehandler.h"
-#include "logsservicehandlerold.h"
 #include "logslogger.h"
 #include "logsdefs.h"
 
@@ -76,8 +75,7 @@ int main(int argc, char *argv[])
     // This can cause problem of service request not coming through if
     // HbApplication creation takes long time.
     LogsServiceHandler service;
-    LogsServiceHandlerOld serviceOld;
-    LogsViewManager viewManager(window, service, serviceOld, appSettings);
+    LogsViewManager viewManager(window, service, appSettings);
     
     // Don't show window yet as app might be started at background
     int err = app.exec();

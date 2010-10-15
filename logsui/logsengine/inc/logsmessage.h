@@ -23,7 +23,7 @@
 
 #include "logsevent.h"
 
-class XQServiceRequest;
+class XQAiwRequest;
 
 /**
  * LogsMessage can be used to send message.
@@ -38,7 +38,11 @@ public:
     explicit LogsMessage(unsigned int contactId, const QString& number, const QString& displayName);
     LOGSENGINE_EXPORT ~LogsMessage();
     
-    LOGSENGINE_EXPORT static bool sendMessageToNumber(
+    /**
+     * Creates LogsMessage instance and sends message. Ownership of created
+     *  message instance is transferred to the caller
+     */
+    LOGSENGINE_EXPORT static LogsMessage* sendMessageToNumber(
             const QString& number, const QString& displayName = QString(), unsigned int contactId = 0);
     
     bool isMessagingAllowed();
@@ -51,14 +55,17 @@ public slots:
      */
     LOGSENGINE_EXPORT bool sendMessage();
     
-protected slots:
-    void requestCompleted(const QVariant& value);
-    void requestError(int err);    
+    /**
+     * Deletes outstanding aiw request 
+     */
+    LOGSENGINE_EXPORT void cancelServiceRequest();
 
-private:
-    static bool doSendMessageToNumber(
-            XQServiceRequest& request, const QString& number, 
-            const QString& displayName, unsigned int contactId);
+    
+protected slots:
+    
+    void handleRequestCompleted(const QVariant& result);
+    void handleError(int,const QString&);
+
     
 private: //data 
     
@@ -66,7 +73,7 @@ private: //data
     QString mNumber;
     unsigned int mContactId;
     QString mDisplayName;
-    XQServiceRequest* mService;
+    XQAiwRequest* mAiwRequest;
 private:
     friend class UT_LogsMessage;
     friend class UT_LogsMatchesModel;

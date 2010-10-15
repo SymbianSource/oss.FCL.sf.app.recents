@@ -23,7 +23,6 @@ data=DATAZ_\private\101F4CD5\backup_registration.xml  private\101F4CD5\backup_re
 // Sis stub
 data=DATAZ_\system\install\logs_stub.sis    system\install\logs_stub.sis
 
-file=ABI_DIR\UREL\logsservices.dll SHARED_LIB_DIR\logsservices.dll
 file=ABI_DIR\UREL\logsengine.dll SHARED_LIB_DIR\logsengine.dll
 file=ABI_DIR\UREL\logscntfinder.dll SHARED_LIB_DIR\logscntfinder.dll
 file=ABI_DIR\UREL\logs.exe PROGRAMS_DIR\logs.exe

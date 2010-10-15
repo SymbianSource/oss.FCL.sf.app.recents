@@ -44,9 +44,11 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -llogsengine
     MMP_RULES += SMPSAFE
+    CONFIG += symbian_test
 }
 
-BLD_INF_RULES.prj_mmpfiles = "../../../tsrc/logdbmodifier/addeventtest/group/logclienttest.mmp"\
-                             "../../../tsrc/logdbmodifier/clearlisttest/group/clearlisttest.mmp"
+BLD_INF_RULES.prj_testmmpfiles = "../../../tsrc/logdbmodifier/addeventtest/group/logclienttest.mmp"\
+                             		 "../../../tsrc/logdbmodifier/clearlisttest/group/clearlisttest.mmp"
                              
-BLD_INF_RULES.prj_exports += "../../../tsrc/logdbmodifier/addeventtest/data/testlogclients.dat /epoc32/winscw/c/system/testlogclients.dat"
+BLD_INF_RULES.prj_testexports += "../../../tsrc/logdbmodifier/addeventtest/data/testlogclients.dat /epoc32/winscw/c/system/testlogclients.dat"
+

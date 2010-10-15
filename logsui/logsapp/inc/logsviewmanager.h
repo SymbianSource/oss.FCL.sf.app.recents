@@ -22,6 +22,7 @@
 #include <QList>
 #include <QVariant>
 #include <xqaiwdecl.h>
+#include <afactivities_global.h>
 #include "logsabstractviewmanager.h"
 
 class HbMainWindow;
@@ -33,6 +34,8 @@ class HbView;
 class LogsBaseView;
 class LogsAppSettings;
 class LogsForegroundWatcher;
+class AfActivation;
+class AfActivityStorage;
 
 /**
  * 
@@ -52,7 +55,7 @@ public:
      * @param service
      */
     LogsViewManager( LogsMainWindow& mainWindow, LogsServiceHandler& service,
-            LogsServiceHandlerOld& serviceOld, LogsAppSettings& settings );
+            LogsAppSettings& settings );
     ~LogsViewManager();
 
 public slots:
@@ -65,8 +68,8 @@ public slots:
 public: // From LogsAbstractViewManager
     
     virtual bool activateView(LogsAppViewId viewId);
-    virtual bool activateView(LogsAppViewId viewId, bool showDialpad, QVariant args);
-    virtual bool activatePreviousView();
+    virtual bool activateView(LogsAppViewId viewId, bool showDialpad, QVariant args, const QString& dialpadText = QString());
+    virtual bool activatePreviousView(bool showDialpad,  const QString& dialpadText);
     virtual HbMainWindow& mainWindow();
     virtual void exitApplication();
     
@@ -80,7 +83,7 @@ private slots:
     void closeEmbeddedApplication();
     void appGainedForeground();
     void appLostForeground();
-    void activityRequested(const QString &activityId);
+    void activityRequested(Af::ActivationReason reason, QString name, QVariantHash parameters);
     void bgStartupForegroundGained();
     
 private:
@@ -108,7 +111,6 @@ private: //data
     
     LogsMainWindow& mMainWindow;
     LogsServiceHandler& mService;
-    LogsServiceHandlerOld& mServiceOld;
     LogsAppSettings& mSettings;
     LogsComponentRepository* mComponentsRepository;
     QList<LogsBaseView*> mViewStack;
@@ -116,7 +118,9 @@ private: //data
     QVariant mViewActivationArgs;
     bool mViewActivationShowDialpad;
     LogsForegroundWatcher* mBackgroundStartupWatcher;
-    
+    QString mDialpadText;
+    AfActivityStorage* mActivityManager;
+    AfActivation* mActivation;
 };
 
 #endif //LOGVIEWMANAGER_H

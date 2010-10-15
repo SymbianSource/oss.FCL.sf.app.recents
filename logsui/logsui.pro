@@ -43,7 +43,6 @@ symbian: {
 
 }
 
-SUBDIRS += logsservices
 SUBDIRS += logscntfinder
 SUBDIRS += logsengine
 SUBDIRS += logsapp

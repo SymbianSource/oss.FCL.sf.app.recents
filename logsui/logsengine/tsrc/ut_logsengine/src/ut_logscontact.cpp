@@ -24,12 +24,10 @@
 #include "qthighway_stub_helper.h"
 
 #include <xqaiwrequest.h>
+#include <xqaiwdecl.h>
 #include <QtTest/QtTest>
 
 const int logsContactsLocalIdTest1 = 1;
-const char logsIContactsView[] = "com.nokia.symbian.IContactsView";
-const char logsIContactsEdit[] = "com.nokia.symbian.IContactsEdit";
-
 const int groupId = 99;
 
 
@@ -131,8 +129,8 @@ void UT_LogsContact::testOpen()
     QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactOpen );
     QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
-             == logsIContactsView );
-    QVERIFY( mLogsContact->mAiwRequest->operation() == "openContactCard(int)" );
+             == XQI_CONTACTS_VIEW );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == XQOP_CONTACTS_VIEW_CONTACT_CARD );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );    
     
@@ -143,8 +141,8 @@ void UT_LogsContact::testOpen()
     QVERIFY( contactWithoutEvent.mAiwRequest );
     QVERIFY( contactWithoutEvent.mCurrentRequest == LogsContact::TypeLogsContactOpen );
     QVERIFY( contactWithoutEvent.mAiwRequest->descriptor().interfaceName()
-             == logsIContactsView );
-    QVERIFY( contactWithoutEvent.mAiwRequest->operation() == "openContactCard(int)" );
+             == XQI_CONTACTS_VIEW );
+    QVERIFY( contactWithoutEvent.mAiwRequest->operation() == XQOP_CONTACTS_VIEW_CONTACT_CARD );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
     
@@ -159,8 +157,8 @@ void UT_LogsContact::testOpen()
     QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactOpenGroup );
     QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
-             == logsIContactsView );
-    QVERIFY( mLogsContact->mAiwRequest->operation() == "openGroup(int)" );
+             == XQI_CONTACTS_VIEW );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == XQOP_CONTACTS_VIEW_GROUP );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
 
@@ -192,8 +190,8 @@ void UT_LogsContact::testAddNew()
     QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
-             == logsIContactsEdit );
-    QVERIFY( mLogsContact->mAiwRequest->operation() == "editCreateNew(QString,QString)" );
+             == XQI_CONTACTS_EDIT );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == XQOP_CONTACTS_EDIT_CREATE_NEW );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
     
@@ -212,8 +210,8 @@ void UT_LogsContact::testAddNew()
     QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
-             == logsIContactsEdit );
-    QVERIFY( mLogsContact->mAiwRequest->operation() == "editCreateNew(QString,QString)" );
+             == XQI_CONTACTS_EDIT );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == XQOP_CONTACTS_EDIT_CREATE_NEW );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
 }
@@ -234,8 +232,8 @@ void UT_LogsContact::testUpdateExisting()
     QVERIFY( mLogsContact->mAiwRequest );
     QVERIFY( mLogsContact->mCurrentRequest == LogsContact::TypeLogsContactSave );
     QVERIFY( mLogsContact->mAiwRequest->descriptor().interfaceName()
-             == logsIContactsEdit );
-    QVERIFY( mLogsContact->mAiwRequest->operation() == "editUpdateExisting(QString,QString)" );
+             == XQI_CONTACTS_EDIT );
+    QVERIFY( mLogsContact->mAiwRequest->operation() == XQOP_CONTACTS_EDIT_UPDATE_EXISTING );
     QVERIFY( QtHighwayStubHelper::isRequestEmbedded() );
     QVERIFY( !QtHighwayStubHelper::isRequestSynchronous() );
 }

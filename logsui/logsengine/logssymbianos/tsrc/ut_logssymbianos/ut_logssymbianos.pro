@@ -98,4 +98,6 @@ symbian: {
     LIBS += -lecom -lflogger -lws32 -lbafl -lqtcontacts -lefsrv -lapparc -lcone
     TARGET.EPOCALLOWDLLDATA = 1
     MMP_RULES += SMPSAFE
+    CONFIG += symbian_test
+    coverage: CONFIG -= symbian_test
 }

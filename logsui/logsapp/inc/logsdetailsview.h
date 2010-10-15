@@ -44,7 +44,7 @@ public:
     
 public: // From LogsBaseView
     
-    virtual void activated(bool showDialer, QVariant args);
+    virtual void activated(bool showDialer, QVariant args, const QString& dialpadText);
     virtual void deactivated();
     virtual QString saveActivity(QDataStream& serializedActivity, QVariantHash& metaData);
     virtual QVariant loadActivity(

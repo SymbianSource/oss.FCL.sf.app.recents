@@ -43,10 +43,16 @@
 #include <hblistview.h>
 #include <QGraphicsLinearLayout>
 #include <hbpushbutton.h>
-#include <hbactivitymanager.h>
+#include <afactivitystorage.h>
 #include <hbmodeliterator.h>
 #include <hbscrollbar.h>
 #include <hbstringutil.h>
+#include <hbtoolbarextension.h>
+#include <hblistwidget.h>
+#include <hblistwidgetitem.h>
+#include <hblistviewitem.h>
+#include <hbframebackground.h>
+
 
 Q_DECLARE_METATYPE(LogsCall*)
 Q_DECLARE_METATYPE(LogsMessage*)
@@ -66,7 +72,6 @@ LogsBaseView::LogsBaseView(
       mViewId( viewId ),
       mRepository( repository ),
       mViewManager( viewManager ),
-      mShowFilterMenu(0),
       mEmptyListLabel(0),
       mInitialized(false),
       mCall(0),
@@ -75,7 +80,9 @@ LogsBaseView::LogsBaseView(
       mDetailsModel(0),
       mCallTypeMapper(0),
       mOptionsMenu(0),
-      mActivating(false)
+      mActivating(false),
+      mShowDialpad(true),
+      mViewSwitchList(0)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::LogsBaseView()" );
 
@@ -141,7 +148,7 @@ void LogsBaseView::resetView()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::clearActivity(HbActivityManager& manager)
+void LogsBaseView::clearActivity(AfActivityStorage& manager)
 {
     foreach ( const QString& activity, mActivities ){
         manager.removeActivity(activity);
@@ -186,7 +193,7 @@ bool LogsBaseView::matchWithActivityId(const QString& activityId)
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::activated(bool showDialer, QVariant args)
+void LogsBaseView::activated(bool showDialer, QVariant args, const QString& dialpadText)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::activated()" );
     Q_UNUSED(args);
@@ -207,6 +214,13 @@ void LogsBaseView::activated(bool showDialer, QVariant args)
 
     if (showDialer && !mDialpad->isOpen()) {
         openDialpad();
+    }
+    if (!showDialer && mDialpad->isOpen()) {
+        mDialpad->closeDialpad();
+        }
+    
+    if (currDialpadText() != dialpadText){
+        mDialpad->editor().setText(dialpadText);
     }
     
     updateWidgetsSizeAndLayout();
@@ -248,6 +262,9 @@ void LogsBaseView::cancelServiceRequest()
     if (mContact) {
         mContact->cancelServiceRequest();
     }
+    if (mMessage) {
+        mMessage->cancelServiceRequest();
+    }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::cancelServiceRequest()" );
 }
 
@@ -270,7 +287,7 @@ void LogsBaseView::notSupported()
 void LogsBaseView::handleBackSoftkey()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleBackSoftkey()" );
-    mViewManager.activateView( LogsRecentViewId, false, QVariant() );
+    mViewManager.activateView( LogsRecentViewId, mShowDialpad,QVariant(), currDialpadText() );
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::handleBackSoftkey()" );
 }
 
@@ -278,35 +295,120 @@ void LogsBaseView::handleBackSoftkey()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::initFilterMenu()
-{
-    mShowFilterMenu = 
-        qobject_cast<HbMenu*>( mRepository.findWidget( logsShowFilterMenuId ) );
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-void LogsBaseView::addActionNamesToMap()
-{
-    mActionMap.clear();
-    mActionMap.insert(XQService::LogsViewReceived, logsShowFilterReceivedMenuActionId);
-    mActionMap.insert(XQService::LogsViewCalled, logsShowFilterDialledMenuActionId);
-    mActionMap.insert(XQService::LogsViewMissed, logsShowFilterMissedMenuActionId);
-    mActionMap.insert(XQService::LogsViewAll, logsShowFilterRecentMenuActionId);  
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
 void LogsBaseView::initView()
-{   
+{
     Q_ASSERT_X( !mInitialized, "logs [UI] ", "view is already initialized!!" );
     mInitialized = true;
-    initFilterMenu();
-    addActionNamesToMap();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+qreal LogsBaseView::populateViewSwitchList(HbListWidget& list)
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::populateViewSwitchList()" );    
+    qreal maxWidth = 0.0;
+    qreal width = 0.0;
+    QFontMetricsF fontMetrics(HbFontSpec(HbFontSpec::Secondary).font());
+    
+    typedef QPair<XQService::LogsViewIndex, QString> QListViewPair;
+    QList<QListViewPair> viewList;
+    viewList.append( QListViewPair(XQService::LogsViewAll, 
+                           hbTrId("txt_dialer_ui_list_recent") ));
+    viewList.append( QListViewPair(XQService::LogsViewCalled, 
+                           hbTrId("txt_dialer_ui_list_dialled") ));
+    viewList.append( QListViewPair(XQService::LogsViewReceived, 
+                           hbTrId("txt_dialer_ui_list_received") ));
+    viewList.append( QListViewPair(XQService::LogsViewMissed, 
+                           hbTrId("txt_dialer_ui_list_missed") ));
+    
+    for (int i=0; i<viewList.count(); i++) {
+        HbListWidgetItem* item = new HbListWidgetItem();
+        item->setText(viewList.at(i).second);
+        item->setData(viewList.at(i).first, Qt::UserRole);
+        list.addItem(item);
+        
+        width = fontMetrics.width(viewList.at(i).second);
+        LOGS_QDEBUG_2( "logs [UI] -> width: ", width );
+        maxWidth = qMax(maxWidth, width);        
+    }
+    LOGS_QDEBUG_2( "logs [UI] -> maxwidth: ", maxWidth );
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::populateViewSwitchList()" );
+    return maxWidth;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::initToolbarExtension()
+{
+    Q_ASSERT_X( !mViewSwitchList, "logs [UI] ", "toolbar extension is already initialized!!" );
+    bool singleSelection = mViewId == LogsRecentViewId;
+    HbToolBarExtension* toolbarExtention = new HbToolBarExtension();
+    toolbarExtention->setContentsMargins(0.0,0.0,0.0,0.0);
+    
+    mViewSwitchList = new HbListWidget();
+    mViewSwitchList->setObjectName("LogsViewSwitchList");//used in CSS
+    mViewSwitchList->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
+
+    qreal maxWidth = populateViewSwitchList(*mViewSwitchList);
+    qreal width = 0.0;    
+    qreal shortEdge = 0.0;
+    if (style()->parameter(QString("var(hb-param-screen-short-edge)"),shortEdge)){
+        mViewSwitchList->setMaximumWidth(shortEdge);
+        mViewSwitchList->setMinimumWidth(shortEdge*2.0/3.0);
+    }
+    
+    QString expr;
+    if (singleSelection) {
+        mViewSwitchList->setSelectionMode(HbAbstractItemView::SingleSelection);
+        expr = "expr(var(hb-param-margin-gene-left) + var(hb-param-graphic-size-secondary) ";
+        expr += "+ var(hb-param-margin-gene-middle-horizontal) + var(hb-param-margin-gene-right))";
+    } else {
+        expr = "expr(var(hb-param-margin-gene-left) + var(hb-param-margin-gene-right))";
+    }
+    
+    if (style()->parameter(expr, width)) {
+        LOGS_QDEBUG_2( "logs [UI] -> margins: ", width );
+        width += maxWidth;
+        LOGS_QDEBUG_2( "logs [UI] -> total width: ", width );
+        mViewSwitchList->setPreferredWidth(width);
+    }
+    
+    HbFrameBackground frame("qtg_fr_popup_list_normal", HbFrameDrawer::NinePieces);
+    mViewSwitchList->listItemPrototype()->setDefaultFrame(frame);
+    
+    connect(mViewSwitchList, SIGNAL(activated(HbListWidgetItem*)), 
+            this, SLOT(handleViewSwitchSelected(HbListWidgetItem*)));
+    connect(mViewSwitchList, SIGNAL(activated(HbListWidgetItem*)), 
+            toolbarExtention, SLOT(close()));
+ 
+    toolbarExtention->setContentWidget(mViewSwitchList);
+    
+    HbAction* dialerAction = qobject_cast<HbAction*>( 
+                         mRepository.findObject( logsDialerActionId ) );
+    if (dialerAction) {
+        HbAction* extensionAction = toolBar()->insertExtension(dialerAction,toolbarExtention);
+        extensionAction->setIcon(HbIcon("qtg_mono_show_view"));
+    } else {
+        delete toolbarExtention;
+        mViewSwitchList = 0;
+    }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsBaseView::handleViewSwitchSelected(HbListWidgetItem* item)
+{
+    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::handleViewSwitchSelected()" );
+    int viewId = item->data(Qt::UserRole).toInt();
+    QVariant args(viewId);
+    mViewManager.activateView( LogsRecentViewId, false, args );
+    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::handleViewSwitchSelected()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -384,44 +486,12 @@ void LogsBaseView::localeChanged()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::showFilterMenu()
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::showFilterMenu()" );
-    if ( mShowFilterMenu ) {
-        QRectF toolbarGeometry = toolBar()->geometry();
-        QSizeF menuSize = mShowFilterMenu->size();
-        LOGS_QDEBUG_2("logs [UI]    menusize:", menuSize)
-        
-        if ( layoutDirection() == Qt::LeftToRight ){
-            QPointF pos( toolbarGeometry.bottomRight().x(),
-                         toolbarGeometry.topRight().y() ); 
-    
-            mShowFilterMenu->setPreferredPos(pos,HbPopup::BottomRightCorner);
-            LOGS_QDEBUG_2("logs [UI]    menu br pos:", pos)
-        } else {
-            QPointF pos( toolbarGeometry.topLeft().x(),
-                         toolbarGeometry.topLeft().y() ); 
-               
-            mShowFilterMenu->setPreferredPos(pos,HbPopup::BottomLeftCorner);
-            LOGS_QDEBUG_2("logs [UI]    menu bl pos:", pos)
-        }
-        mShowFilterMenu->open();
-    }
-    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::showFilterMenu()" );
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
 void LogsBaseView::openDialpad()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::openDialpad()" );
-   
     updateCallButton();
     setDialpadPosition();
     mDialpad->openDialpad();
-    
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::openDialpad()" );
 }
 
@@ -508,20 +578,6 @@ void LogsBaseView::dialpadEditorTextChanged()
 // 
 // -----------------------------------------------------------------------------
 //
-void LogsBaseView::changeFilter(HbAction* action)
-{
-    LOGS_QDEBUG( "logs [UI] -> LogsBaseView::changeFilter()" );
-    XQService::LogsViewIndex view = mActionMap.key( action->objectName(),
-            XQService::LogsViewAll );
-    QVariant args(view);
-    mViewManager.activateView( LogsRecentViewId, false, args );
-    LOGS_QDEBUG( "logs [UI] <- LogsBaseView::changeFilter()" );
-}
-
-// -----------------------------------------------------------------------------
-// 
-// -----------------------------------------------------------------------------
-//
 void LogsBaseView::addToContacts()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::addToContacts()" );
@@ -545,11 +601,11 @@ void LogsBaseView::addToContacts()
 void LogsBaseView::saveNumberInDialpadToContacts()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::saveNumberInDialpadToContacts()" );
-    if (mDialpad->editor().text().length() > 0){
+    if (currDialpadText().length() > 0){
         delete mContact;
         mContact = 0;
         QString phoneNumber = 
-            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
+            HbStringUtil::convertDigitsTo(currDialpadText(), WesternDigit);
         mContact = logsModel()->createContact(phoneNumber);
         saveContact();
     }
@@ -681,7 +737,7 @@ void LogsBaseView::updateListItemData(const QModelIndex& listIndex)
 //
 void LogsBaseView::updateCallButton()
 {
-    mDialpad->setCallButtonEnabled( !mDialpad->editor().text().isEmpty() );
+    mDialpad->setCallButtonEnabled( !currDialpadText().isEmpty() );
 }
 
 // -----------------------------------------------------------------------------
@@ -695,7 +751,7 @@ bool LogsBaseView::tryCallToDialpadNumber( LogsCall::CallType callType )
     if ( isDialpadInput() ){
         // Call to inputted number
         QString phoneNumber = 
-            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
+            HbStringUtil::convertDigitsTo(currDialpadText(), WesternDigit);
         LogsCall::callToNumber( callType, phoneNumber );
         called = true;
     }
@@ -715,8 +771,10 @@ bool LogsBaseView::tryMessageToDialpadNumber()
     if ( isDialpadInput() ){
         // Message to inputted number
         QString phoneNumber = 
-            HbStringUtil::convertDigitsTo(mDialpad->editor().text(), WesternDigit);
-        LogsMessage::sendMessageToNumber( phoneNumber );
+            HbStringUtil::convertDigitsTo(currDialpadText(), WesternDigit);
+        delete mMessage;
+        mMessage = 0;
+        mMessage = LogsMessage::sendMessageToNumber( phoneNumber );
         messageSent = true;
     }
     LOGS_QDEBUG_2( "logs [UI] <- LogsBaseView::tryMessageToDialpadNumber(), sent", 
@@ -964,7 +1022,7 @@ void LogsBaseView::showCallDetails()
     }
     
     QVariant arg = qVariantFromValue( mDetailsModel );
-    if ( mViewManager.activateView(LogsDetailsViewId, false, arg) ){
+    if ( mViewManager.activateView(LogsDetailsViewId, false, arg, currDialpadText()) ){
         mDetailsModel = 0;
     }
    
@@ -1201,8 +1259,8 @@ bool LogsBaseView::tryMatchesViewTransition()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsBaseView::tryMatchesViewTransition()" );
     bool viewChanged = false;
-    if ( mDialpad->editor().text().length() > 0  && isContactSearchEnabled() ) {
-        viewChanged = mViewManager.activateView( LogsMatchesViewId, true, QVariant() ); 
+    if ( currDialpadText().length() > 0  && isContactSearchEnabled() ) {
+        viewChanged = mViewManager.activateView( LogsMatchesViewId, true, QVariant(), currDialpadText() ); 
     }
     LOGS_QDEBUG( "logs [UI] <- LogsBaseView::tryMatchesViewTransition()" );
     return viewChanged;
@@ -1214,7 +1272,7 @@ bool LogsBaseView::tryMatchesViewTransition()
 //
 bool LogsBaseView::isDialpadInput() const 
 {
-    return ( mDialpad->isOpen() && !mDialpad->editor().text().isEmpty() );
+    return ( mDialpad->isOpen() && !currDialpadText().isEmpty() );
 }
 
 // -----------------------------------------------------------------------------
@@ -1328,4 +1386,13 @@ void LogsBaseView::setMenuVisible(bool visible)
         setMenu(mOptionsMenu);
         mOptionsMenu = 0;
     }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+QString LogsBaseView::currDialpadText() const
+{
+    return mDialpad->editor().text();
 }

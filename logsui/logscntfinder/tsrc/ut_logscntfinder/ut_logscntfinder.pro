@@ -71,4 +71,6 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     LIBS += -lflogger -lqtcontacts
     MMP_RULES += SMPSAFE
+    CONFIG += symbian_test
+    coverage: CONFIG -= symbian_test
 }

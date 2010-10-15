@@ -75,17 +75,17 @@ LogsPredictiveThai12KeyTranslator::~LogsPredictiveThai12KeyTranslator()
 // LogsPredictiveThai12KeyTranslator::translateChar()
 // -----------------------------------------------------------------------------
 //
-const QChar LogsPredictiveThai12KeyTranslator::translateChar( 
+const QString LogsPredictiveThai12KeyTranslator::translateChar( 
                                                     const QChar character, 
                                                     bool& ok ) const
 {
     ok = true;
-    QChar keycode;
+    QString keycode;
     if ( !isIgnored( character ) ) {
         keycode = LogsPredictive12KeyTranslator::translateChar( character );
-        ok = !keycode.isNull();
-        keycode = !keycode.isNull() && !isIgnored( keycode ) ? 
-                    keycode : QChar();
+        ok = !keycode.isEmpty();
+        keycode = !keycode.isEmpty() && !isIgnored( *keycode.data() ) ? 
+                keycode : QString();
     }
     return keycode;
 }
@@ -100,6 +100,38 @@ QStringList LogsPredictiveThai12KeyTranslator::nameTokens(
     return QStringList( name );
 }
         
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveThai12KeyTranslator::patternTokens()
+// -----------------------------------------------------------------------------
+//
+QStringList LogsPredictiveThai12KeyTranslator::patternTokens( 
+                                                const QString& pattern ) const
+{
+    return QStringList( pattern );
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveThai12KeyTranslator::hasPatternSeparators()
+// -----------------------------------------------------------------------------
+//
+int LogsPredictiveThai12KeyTranslator::hasPatternSeparators( 
+                                                    const QString& pattern ) const
+{
+    Q_UNUSED( pattern )
+    return 0;
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictiveThai12KeyTranslator::trimPattern()
+// -----------------------------------------------------------------------------
+//
+QString& LogsPredictiveThai12KeyTranslator::trimPattern( 
+                                    QString& pattern, bool tailOnly ) const
+{
+    Q_UNUSED( tailOnly )
+    return pattern;        
+}
 
 
 // -----------------------------------------------------------------------------

@@ -29,6 +29,7 @@ $projectdrive = "z:"; #is set to correct at run-time
 $unitTestRunner = "unittest_qt.pl";
 $scriptLocation = "logsui/tsrc/unittestrunner";
 $coverageResultsDirDefault = "logsui/tsrc/unittestrunner/qtresults/";
+$coverageResultsDirFunctional = "logsui/tsrc/unittestrunner/qtfunctionalresults";
 $testConfigDefault = "unittest_qt_config.txt";
 $qtProFileDefault = "tsrc.pro";
 $buildResults = "BuildResults.txt";
@@ -47,6 +48,8 @@ $xmlCaseFailed = "failed";
 $xmlCasePassed = "pass";
 $outputString = "";
 $outputFileBodyStart = "<body";
+
+$qmakeConfig = "-config coverage";
 
 $totalCount = 0;
 $passedCount = 0;
@@ -99,6 +102,9 @@ chdir($startdir);
 chdir("$coverageResultsDir");
 doSystemCall("ctcpost $coverageSymbols $coverageDat -p $coverageProfile -T 70");
 doSystemCall("ctc2html -i $coverageProfile -t 70");
+$coverageResultsDirFunctional = "$projectdrive$projectrootname$coverageResultsDirFunctional";
+doSystemCall("ctcpost $coverageSymbols $coverageDat -ff -p $coverageProfile");
+doSystemCall("ctc2html -i $coverageProfile -o $coverageResultsDirFunctional");
 
 # clear target for intrumentation result
 $ENV{'CTC_DATA_PATH'}= "";	
@@ -220,9 +226,9 @@ sub buildTests()
         print("Pro file not defined, using default. \n");
         $qtProFile = $qtProFileDefault;
     }
-    doSystemCall( "qmake $qtProFile" );
+    doSystemCall( "qmake $qtProFile $qmakeConfig" );
     doSystemCall( "sbs reallyclean" );
-    doSystemCall( "qmake $qtProFile" );
+    doSystemCall( "qmake $qtProFile $qmakeConfig" );
     
     $exclude = "-C \"EXCLUDE+*\tsrc\*\" -C \"EXCLUDE+*/*/tsrc/*\" -C \"EXCLUDE+*/*/*/tsrc/*\" -C \"EXCLUDE+moc_*\"";
     

@@ -64,7 +64,6 @@ private slots: //test methods
 private:
  
     LogsCntEntry* mEntry;
-    HbInputLanguage mOrigLang; 
     
 };
 

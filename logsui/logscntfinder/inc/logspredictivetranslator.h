@@ -22,8 +22,44 @@
 #include <QChar>
 #include <QList>
 
+
+
+class LogsCntToken 
+{
+public:
+    
+    const QString& text() const {return mText;}
+    const QString& translation() const {return mTranslatedText;}
+    
+protected:
+    
+    QString mText;
+    QString mTranslatedText;
+    
+};
+
+typedef QList<LogsCntToken> LogsCntTokenArray;
+
+class LogsCntTokenIterator : public QListIterator<LogsCntToken> 
+{
+public:            
+
+    inline LogsCntTokenIterator( LogsCntTokenArray& container )
+        : QListIterator<LogsCntToken>( container ), mCount( container.count() ) {}
+   inline int count() const {return mCount;}
+    
+private:
+    
+    int mCount;
+    
+};
+
+
 class HbKeymap;
 class HbInputLanguage;
+
+
+
 
 /**
  * predictive translator. Singelton
@@ -36,26 +72,32 @@ public:
 
     static LogsPredictiveTranslator* instance();
     static void deleteInstance();
+    static HbInputLanguage currentLanguage(); 
     
     ~LogsPredictiveTranslator();
     
-    const QString translatePattern( const QString& pattern ) const;
+    virtual const QString preparePattern( const QString& pattern ) const;
     const QString translateText( const QString& text );
     
 public: //abstracts
     
-    virtual QStringList nameTokens( const QString& name ) const = 0;
+    virtual bool match( const QString& pattern, 
+                        LogsCntTokenIterator& names ) const = 0;
+    
     virtual QStringList patternTokens( const QString& pattern ) const = 0;
     virtual QString& trimPattern( QString& pattern, bool tailOnly = false ) const = 0;
+    virtual QStringList nameTokens( const QString& name ) const = 0;
     virtual int hasPatternSeparators( const QString& pattern ) const = 0;
-    virtual const QChar translateChar( const QChar character, bool& ok ) const = 0;
     virtual int mib() const = 0;
     
 protected:
     
+    virtual const QString translateChar( const QChar character, bool& ok ) const = 0;
+    
     explicit LogsPredictiveTranslator( const HbInputLanguage& lang );
     bool encodes( const QString& sniplet );
     const QString translate( const QString& text, bool* ok = 0, int count = -1 ) const;
+    inline virtual void* keyMap() const { return (void*)mKeyMap; }
     
 private:
     

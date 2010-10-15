@@ -19,35 +19,48 @@
 #include <QtTest/QtTest>
 
 #include "at_logsengine.h"
-#include "testresultxmlparser.h"
+#include "testrunner.h"
 
 
 int main(int argc, char *argv[]) 
 {
-    bool promptOnExit(true);
+    bool noGui(false);
+    bool noFullGui(false);
+    QString combinedOutputFileName;
     for (int i=0; i<argc; i++) {
-        if (QString(argv[i]) == "-noprompt")
-            promptOnExit = false;
+        if (QString(argv[i]) == "-nogui"){
+            noGui = true;
+        } else if (QString(argv[i]) == "-nofullgui"){
+            noFullGui = true;
+        } else if (QString(argv[i]) == "-o" && i + 1 < argc ){
+            i++;
+            combinedOutputFileName = QString(argv[i]);
+        }
     }
-    printf("Running tests...\n");
+    TestRunner testRunner("API_Test_LogsEngine", combinedOutputFileName);
+    if ( noGui ){
+        CActiveScheduler* sched = new CActiveScheduler;
+        CActiveScheduler::Install(sched);
+        AT_LogsEngine test;
+        testRunner.runTests(test);
+        CActiveScheduler::Install(0);
+        delete sched;
+    } else if ( noFullGui ){
+        QCoreApplication app(argc, argv);
+        AT_LogsEngine test;
+        testRunner.runTests(test);
+    } else {
+        printf("Running tests...\n");
     
-    QApplication app(argc, argv);
-    TestResultXmlParser parser;
-    
-    AT_LogsEngine test;
-    QString resultFileName = "c:/at_logs_logsEngine.xml";
-    QStringList args_test( "at_logsEngine");
-    args_test << "-xml" << "-o" << resultFileName;
-    QTest::qExec(&test, args_test);
-    parser.parseAndPrintResults(resultFileName,true); 
-
-    if (promptOnExit) {
-        printf("Press any key...\n");
-        getchar(); 
+        QApplication app(argc, argv);
+        AT_LogsEngine test;
+        testRunner.runTests(test);
     }
+    testRunner.printResults(); 
     return 0;   
 }
 
 
 
  
+

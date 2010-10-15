@@ -158,14 +158,15 @@ bool LogsDetailsModel::setData(const QModelIndex &index, const QVariant &value,
         && mSeparatorIndex < mDetailTexts.count()-1) {
       
         LOGS_QDEBUG( "logs [ENG]    separator state changed!" )
-        mSeparatorCollapsed = !mSeparatorCollapsed;
-        if (mSeparatorCollapsed) {
+        if (!mSeparatorCollapsed) {
             LOGS_QDEBUG( "logs [ENG]    collapsing separator" )
             beginRemoveRows(QModelIndex(), mSeparatorIndex+1, mDetailTexts.count()-1);
+            mSeparatorCollapsed = !mSeparatorCollapsed;
             endRemoveRows();
         } else {
             LOGS_QDEBUG( "logs [ENG]    expanding separator" )
             beginInsertRows(QModelIndex(), mSeparatorIndex+1, mDetailTexts.count()-1);
+            mSeparatorCollapsed = !mSeparatorCollapsed;
             endInsertRows();
         }  
         dataSet = true;              

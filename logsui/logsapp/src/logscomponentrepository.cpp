@@ -23,6 +23,7 @@
 #include "logsmodel.h"
 #include "logsabstractviewmanager.h"
 #include "logspageindicator.h"
+#include "logsbaseview.h"
 
 //SYSTEM
 #include <QObject>
@@ -282,6 +283,8 @@ QGraphicsWidget* LogsComponentRepository::doLoadView(
     if ( ok ) {
         view = findWidget(viewName);
         addToolbarToObjectList(viewComponents);
+        LogsBaseView* baseView = qobject_cast<LogsBaseView*>(view);
+        baseView->initToolbarExtension();
     } else {
        LOGS_QCRITICAL( "logs [UI] XML loading failed..." );
     }  

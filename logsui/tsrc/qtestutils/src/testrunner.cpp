@@ -160,7 +160,8 @@ void TestRunner::combineResults()
     if ( mCombinedOutputFileName.isEmpty() ){
         return;
     }
-    if ( !mCombinedOutputFileName.contains(QString::fromAscii("/")) ){
+    if ( !mCombinedOutputFileName.contains(QString::fromAscii("/")) && 
+         !mCombinedOutputFileName.contains(QString::fromAscii("\\")) ) {
         mCombinedOutputFileName.prepend( mHomeDir );
     }
     QFile file(mCombinedOutputFileName);

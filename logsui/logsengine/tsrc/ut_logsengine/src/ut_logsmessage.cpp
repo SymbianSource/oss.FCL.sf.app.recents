@@ -20,6 +20,7 @@
 #include "logseventdata.h"
 #include "qthighway_stub_helper.h"
 
+#include <xqaiwdecl.h>
 #include <QtTest/QtTest>
 
 void UT_LogsMessage::initTestCase()
@@ -79,24 +80,43 @@ void UT_LogsMessage::testSendMessage()
 {
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsMessage->sendMessage() );
-    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
-    QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_MESSAGE_SEND );
+    QVERIFY( QtHighwayStubHelper::operation() == XQOP_MESSAGE_SEND_WITH_ID );
+    QVERIFY( mLogsMessage->mAiwRequest );
+        
+    //Test handleError() and handleRequestComplete()
+    mLogsMessage->handleError(0, QString());
+    QVERIFY( !mLogsMessage->mAiwRequest );
+    mLogsMessage->handleRequestCompleted(QVariant());
+    QVERIFY( !mLogsMessage->mAiwRequest );
     
+    // Sending message fails (aiwrequest creation fails)
+    QtHighwayStubHelper::reset();
+    QtHighwayStubHelper::setFailCreateAiwRequest(true);
+    QVERIFY( !mLogsMessage->sendMessage() );
+    QVERIFY( QtHighwayStubHelper::interface().isEmpty() );
+    QVERIFY( QtHighwayStubHelper::operation().isEmpty() );
+    QVERIFY( !mLogsMessage->mAiwRequest );
 }
 
 void UT_LogsMessage::testSendMessageToNumber()
 {
     QtHighwayStubHelper::reset();
-    QVERIFY( mLogsMessage->sendMessageToNumber( "1234567" ) );
-    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
-    QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
-    QtHighwayStubHelper::reset();
-    QVERIFY( mLogsMessage->sendMessageToNumber( "1234567", "name" ) );
-    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
-    QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
-    QtHighwayStubHelper::reset();
-    QVERIFY( mLogsMessage->sendMessageToNumber( "4234567", "namef", 3 ) );
-    QVERIFY( QtHighwayStubHelper::service() == "messaging.com.nokia.symbian.IMessageSend" );
-    QVERIFY( QtHighwayStubHelper::message() == "send(QString,qint32,QString)" );
-}
+    LogsMessage* message(0);
+    QVERIFY( message = mLogsMessage->sendMessageToNumber( "1234567" ) );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_MESSAGE_SEND );
+    QVERIFY( QtHighwayStubHelper::operation() == XQOP_MESSAGE_SEND_WITH_ID );
+    delete message;
 
+    QtHighwayStubHelper::reset();
+    QVERIFY( message = mLogsMessage->sendMessageToNumber( "1234567", "name" ) );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_MESSAGE_SEND );
+    QVERIFY( QtHighwayStubHelper::operation() == XQOP_MESSAGE_SEND_WITH_ID );
+    delete message;
+
+    QtHighwayStubHelper::reset();
+    QVERIFY( message = mLogsMessage->sendMessageToNumber( "4234567", "namef", 3 ) );
+    QVERIFY( QtHighwayStubHelper::interface() == XQI_MESSAGE_SEND );
+    QVERIFY( QtHighwayStubHelper::operation() == XQOP_MESSAGE_SEND_WITH_ID );
+    delete message;    
+}

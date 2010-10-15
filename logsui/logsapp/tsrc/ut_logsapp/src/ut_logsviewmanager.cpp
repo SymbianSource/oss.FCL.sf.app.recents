@@ -19,7 +19,6 @@
 #include "ut_logsviewmanager.h"
 #include "logsviewmanager.h"
 #include "logsservicehandler.h"
-#include "logsservicehandlerold.h"
 #include "logsmainwindow.h"
 #include "logscomponentrepository.h"
 #include "logsrecentcallsview.h"
@@ -27,16 +26,18 @@
 #include "logsdetailsview.h"
 #include "hbstubs_helper.h"
 #include "logscontact.h"
+#include "logsmessage.h"
 #include "qthighway_stub_helper.h"
 #include "hbapplication.h"
 #include "logsappsettings.h"
 #include "logsforegroundwatcher.h"
+#include "af_stub_helper.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
 #include <HbView.h>
 #include <hbapplication.h>
-#include <hbactivitymanager.h>
+#include <afactivitystorage.h>
 #include <dialpad.h>
 
 void UT_LogsViewManager::initTestCase()
@@ -52,11 +53,10 @@ void UT_LogsViewManager::init()
 {
     mMainWindow =  new LogsMainWindow();
     mService = new LogsServiceHandler();
-    mServiceOld = new LogsServiceHandlerOld();  
     int argc = 0;
     char* argv = 0;
     mSettings = new LogsAppSettings(argc, &argv);
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld, *mSettings);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mSettings);
 }
 
 void UT_LogsViewManager::cleanup()
@@ -65,8 +65,6 @@ void UT_LogsViewManager::cleanup()
     mLogsViewManager = 0;
     delete mService;
     mService = 0;
-    delete mServiceOld;
-    mServiceOld = 0;
     delete mMainWindow;
     mMainWindow = 0;
     delete mSettings;
@@ -91,8 +89,8 @@ void UT_LogsViewManager::testConstructorDestructor()
     delete mMainWindow;
     mMainWindow = 0;
     mMainWindow = new LogsMainWindow();
-    HbStubHelper::setActivityReason(Hb::ActivationReasonActivity);
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld, *mSettings);
+    AfStubHelper::setActivityReason(Af::ActivationReasonActivity);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mSettings);
     QVERIFY( mLogsViewManager->mComponentsRepository );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( mLogsViewManager->mViewStack.count() == 1 );
@@ -103,11 +101,11 @@ void UT_LogsViewManager::testConstructorDestructor()
     delete mMainWindow;
     mMainWindow = 0;
     mMainWindow = new LogsMainWindow();
-    HbStubHelper::setActivityReason(Hb::ActivationReasonNormal);
+    AfStubHelper::setActivityReason(Af::ActivationReasonNormal);
     QtHighwayStubHelper::setIsService(true);
     LogsServiceHandler* handler2 = new LogsServiceHandler();
     mLogsViewManager->mComponentsRepository->model()->mRefreshCalled = false;
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *handler2, *mServiceOld, *mSettings);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *handler2, *mSettings);
     QVERIFY( mLogsViewManager->mComponentsRepository );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( mLogsViewManager->mViewStack.count() == 0 ); // Waiting for signal
@@ -123,7 +121,7 @@ void UT_LogsViewManager::testConstructorDestructor()
     mMainWindow = 0;
     mMainWindow = new LogsMainWindow();
     mLogsViewManager->mComponentsRepository->model()->mRefreshCalled = false;
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld, *mSettings);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mSettings);
     QVERIFY( mLogsViewManager->mComponentsRepository );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( mLogsViewManager->mViewStack.count() == 0 ); // Waiting for coming to foreground
@@ -162,7 +160,7 @@ void UT_LogsViewManager::testActivateView()
              mLogsViewManager->mComponentsRepository->detailsView() );
     
     // Go back to previous view
-    QVERIFY( mLogsViewManager->activatePreviousView() );
+    QVERIFY( mLogsViewManager->activatePreviousView(mLogsViewManager->mComponentsRepository->dialpad()->isOpen(), mLogsViewManager->mComponentsRepository->dialpad()->editor().text()) );
     QVERIFY( mLogsViewManager->mMainWindow.views().count() == 2 );
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
              mLogsViewManager->mComponentsRepository->recentCallsView() );
@@ -193,8 +191,10 @@ void UT_LogsViewManager::testchangeMatchesView()
     QtHighwayStubHelper::reset();
     QVERIFY( mLogsViewManager->mViewStack.count() );
     mLogsViewManager->mViewStack.at(0)->mContact = new LogsContact();
+    mLogsViewManager->mViewStack.at(0)->mMessage = new LogsMessage();
     mLogsViewManager->changeMatchesViewViaService(QString("+123456"));
     QVERIFY( LogsContact::mServiceRequestCanceled );
+    QVERIFY( LogsMessage::mServiceRequestCanceled );
     QVERIFY( HbStubHelper::isWidgetRaised() );
     
     //Open Matches view, view stack is empty, embedded service not canceled
@@ -212,7 +212,7 @@ void UT_LogsViewManager::testchangeRecentView()
     QString dialString("+123456777");
     mLogsViewManager->changeRecentViewViaService(XQService::LogsViewCalled, false, dialString);
     QVERIFY( mLogsViewManager->mMainWindow.currentView() == 
-             mLogsViewManager->mComponentsRepository->recentCallsView() );
+            mLogsViewManager->mComponentsRepository->matchesView() );        
     QVERIFY( mLogsViewManager->mComponentsRepository->mDialpad->mLineEdit->text() == dialString );
     QVERIFY( HbStubHelper::isWidgetRaised() );
     
@@ -273,15 +273,15 @@ void UT_LogsViewManager::testExitApplication()
     HbStubHelper::reset();
     mLogsViewManager->mComponentsRepository->model()->mCompressCalled = false;
     QtHighwayStubHelper::reset();
-    HbApplication* app = static_cast<HbApplication*>( qApp );
-    QCOMPARE( app->activityManager()->activities().count(), 0 );
+    AfStubHelper::reset();
+    QCOMPARE( mLogsViewManager->mActivityManager->allActivities().count(), 0 );
     mLogsViewManager->exitApplication();
     QVERIFY( !HbStubHelper::quitCalled() );
     QVERIFY( QtHighwayStubHelper::utilToBackground() );
     QVERIFY( mLogsViewManager->mComponentsRepository->model()->mCompressCalled );
     QVERIFY( HbStubHelper::isTsTaskVisibilitySet() );
     QVERIFY( !HbStubHelper::tsTaskVisibility() );
-    QCOMPARE( app->activityManager()->activities().count(), 1 );
+    QCOMPARE( mLogsViewManager->mActivityManager->allActivities().count(), 1 );
     
 }
 
@@ -292,9 +292,8 @@ void UT_LogsViewManager::testStartingWithService()
     LogsMainWindow window;
     window.setCurrentView(0); // clear stub static data
     LogsServiceHandler service;
-    LogsServiceHandlerOld serviceOld;
     service.mIsAppStartedUsingService = true;
-    LogsViewManager vm(window, service, serviceOld, *mSettings);
+    LogsViewManager vm(window, service, *mSettings);
     QVERIFY( vm.mComponentsRepository );
     QVERIFY( vm.mMainWindow.views().count() == 0 );
     QVERIFY( vm.mMainWindow.currentView() == 0 );
@@ -320,67 +319,67 @@ void UT_LogsViewManager::testCompleteViewActivation()
 void UT_LogsViewManager::testSaveActivity()
 {
     mLogsViewManager->activateView(LogsRecentViewId, false, QVariant());
-    HbStubHelper::setActivityReason(Hb::ActivationReasonActivity);
-    HbApplication* hbApp = static_cast<HbApplication*>(qApp);
-    HbActivityManager* manager = hbApp->activityManager();
-    QCOMPARE( manager->activities().count(), 0 );
+    AfStubHelper::reset();
+    AfStubHelper::setActivityReason(Af::ActivationReasonActivity);
+    AfActivityStorage* afManager = mLogsViewManager->mActivityManager;
+    QCOMPARE( afManager->allActivities().count(), 0 );
     mLogsViewManager->saveActivity();
-    QCOMPARE( manager->activities().count(), 1 );
-    QVERIFY( !manager->activities().at(0).value(logsActivityParamShowDialpad).toBool() );
-    QVERIFY( manager->activities().at(0).value(logsActivityParamDialpadText).toString().isEmpty() );
-    QCOMPARE( manager->activities().at(0).value(logsActivityParamInternalViewId).toInt(), (int)LogsRecentViewId );
+    QCOMPARE( afManager->allActivities().count(), 1 );
+    QVERIFY( !afManager->activityMetaData(QString()).value(logsActivityParamShowDialpad).toBool() );
+    QVERIFY( afManager->activityMetaData(QString()).value(logsActivityParamDialpadText).toString().isEmpty() );
+    QCOMPARE( afManager->activityMetaData(QString()).value(logsActivityParamInternalViewId).toInt(), (int)LogsRecentViewId );
     
     // Make sure that only one activity is reported
     mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen = true;
     mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->setText("12345");
     mLogsViewManager->saveActivity();
-    QCOMPARE( manager->activities().count(), 1 );
-    QVERIFY( manager->activities().at(0).value(logsActivityParamShowDialpad).toBool() );
-    QCOMPARE( manager->activities().at(0).value(logsActivityParamDialpadText).toString(), QString("12345") );
-    QCOMPARE( manager->activities().at(0).value(logsActivityParamInternalViewId).toInt(), (int)LogsMatchesViewId );
+    QCOMPARE( afManager->allActivities().count(), 1 );
+    QVERIFY( afManager->activityMetaData(QString()).value(logsActivityParamShowDialpad).toBool() );
+    QCOMPARE( afManager->activityMetaData(QString()).value(logsActivityParamDialpadText).toString(), QString("12345") );
+    QCOMPARE( afManager->activityMetaData(QString()).value(logsActivityParamInternalViewId).toInt(), (int)LogsMatchesViewId );
     
     // No views, nothing to save
     mLogsViewManager->mViewStack.clear();
     mLogsViewManager->saveActivity();
-    QCOMPARE( manager->activities().count(), 1 );
+    QCOMPARE( afManager->allActivities().count(), 1 );
 }
 
 void UT_LogsViewManager::testLoadActivity()
 {
+    AfStubHelper::reset();
+    AfActivityStorage* afManager = mLogsViewManager->mActivityManager;
     mLogsViewManager->mComponentsRepository->mModel->mPredectiveSearchStatus = 1;
-    HbStubHelper::setActivityReason(Hb::ActivationReasonActivity);
-    HbApplication* hbApp = static_cast<HbApplication*>(qApp);
-    HbActivityManager* manager = hbApp->activityManager();
+    AfStubHelper::setActivityReason(Af::ActivationReasonActivity);
     
     // View activity loaded, no dialpad shown, nor text in it
-    HbStubHelper::setActivityId(logsActivityIdViewRecent);
+    AfStubHelper::setActivityId(logsActivityIdViewRecent);
     mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen = false;
     mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->setText("");
     QVariantHash params;
     params.insert(logsActivityParamShowDialpad, false);
     params.insert(logsActivityParamDialpadText, QString(""));
     params.insert(logsActivityParamInternalViewId, LogsRecentViewId);
-    manager->addActivity(QString(), QVariant(), params);
+    afManager->saveActivity(QString(), QVariant(), params);
     QVERIFY( mLogsViewManager->loadActivity() );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( !mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen );
     QCOMPARE( mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->text(), QString("") );
   
     // Other activity loaded, show dialpad with text
-    HbStubHelper::setActivityId(logsActivityIdViewMatches);
-    manager->removeActivity(QString());
+    AfStubHelper::setActivityId(logsActivityIdViewMatches);
+    afManager->removeActivity(QString());
     QVariantHash params2;
     params2.insert(logsActivityParamShowDialpad, true);
     params2.insert(logsActivityParamDialpadText, QString("33333"));
     params.insert(logsActivityParamInternalViewId, LogsMatchesViewId);
-    manager->addActivity(QString(), QVariant(), params2);
+    afManager->saveActivity(QString(), QVariant(), params2);
     QVERIFY( mLogsViewManager->loadActivity() );
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsMatchesViewId );
     QVERIFY( mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen );
     QCOMPARE( mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->text(), QString("33333") );
     
     // View activity not loaded
-    HbStubHelper::setActivityId("unknownActivity");
+    AfStubHelper::setActivityId("unknownActivity");
     QVERIFY( !mLogsViewManager->loadActivity() );
 }
 
@@ -425,23 +424,23 @@ void UT_LogsViewManager::testAppGainedForeground()
 
 void UT_LogsViewManager::testActivityRequested()
 {
-    HbApplication* hbApp = static_cast<HbApplication*>(qApp);
-    HbActivityManager* manager = hbApp->activityManager();
-    
     HbStubHelper::reset();
-    HbStubHelper::setActivityId("unknownActivity");
-    mLogsViewManager->activityRequested("unknownActivity");
+    AfStubHelper::reset();
+    AfStubHelper::setActivityId("unknownActivity");
+    mLogsViewManager->activityRequested(
+            Af::ActivationReasonActivity, "unknownActivity", QVariantHash());
     QVERIFY( !HbStubHelper::isWidgetRaised() );
     
-    HbStubHelper::setActivityId(logsActivityIdViewRecent);
+    AfStubHelper::setActivityId(logsActivityIdViewRecent);
     mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen = false;
     mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->setText("");
     QVariantHash params;
     params.insert(logsActivityParamShowDialpad, false);
     params.insert(logsActivityParamDialpadText, QString(""));
     params.insert(logsActivityParamInternalViewId, LogsRecentViewId);
-    manager->addActivity(QString(), QVariant(), params);
-    mLogsViewManager->activityRequested(logsActivityIdViewRecent);
+    mLogsViewManager->mActivityManager->saveActivity(QString(), QVariant(), params);
+    mLogsViewManager->activityRequested(
+            Af::ActivationReasonActivity, logsActivityIdViewRecent, QVariantHash());
     QVERIFY( static_cast<LogsBaseView*>( mLogsViewManager->mMainWindow.currentView() )->viewId() == LogsRecentViewId );
     QVERIFY( !mLogsViewManager->mComponentsRepository->dialpad()->mIsOpen );
     QCOMPARE( mLogsViewManager->mComponentsRepository->dialpad()->mLineEdit->text(), QString("") );

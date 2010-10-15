@@ -36,7 +36,9 @@ class HbLabel;
 class HbListView;
 class LogsAbstractModel;
 class QDataStream;
-class HbActivityManager;
+class AfActivityStorage;
+class HbListWidget;
+class HbListWidgetItem;
 
 /**
  * 
@@ -60,16 +62,17 @@ public:
     };
     
     LogsAppViewId viewId() const;
-    virtual void activated(bool showDialer, QVariant args);
+    virtual void activated(bool showDialer, QVariant args, const QString& dialpadText);
     virtual void deactivated();
     virtual bool isExitAllowed();
     virtual void resetView(); 
-    virtual void clearActivity(HbActivityManager& manager);
+    virtual void clearActivity(AfActivityStorage& manager);
     virtual QString saveActivity(QDataStream& serializedActivity, QVariantHash& metaData);
     virtual QVariant loadActivity(
         const QString& activityId, QDataStream& serializedActivity, QVariantHash& metaData);
     virtual bool matchWithActivityId(const QString& activityId);
     virtual void cancelServiceRequest();
+    void initToolbarExtension();
 
 public slots:
     
@@ -91,13 +94,12 @@ protected slots:
     virtual void updateWidgetsSizeAndLayout();
     virtual void contactActionCompleted(bool modified);
     virtual void updateEmptyListLabelVisibility();
+    virtual void handleViewSwitchSelected(HbListWidgetItem* item);
     
     //slots bellow are used in *.docml
-    void showFilterMenu();
     void openDialpad();
     void openContactsApp();
     void notSupported();
-    void changeFilter(HbAction* action);
     void addToContacts();
     void saveNumberInDialpadToContacts();
     
@@ -117,6 +119,7 @@ protected slots:
 
     void handleOrientationChanged();
     
+    
 protected:
   
     explicit LogsBaseView( LogsAppViewId viewId, 
@@ -124,8 +127,6 @@ protected:
                            LogsAbstractViewManager& viewManager );
         
     void setDialpadPosition();
-    void initFilterMenu();
-    void addActionNamesToMap();
 
     void updateCall(const QModelIndex& listIndex);
     void updateMessage(const QModelIndex& listIndex);
@@ -198,6 +199,10 @@ protected:
     
     void updateMenuVisibility();
     void setMenuVisible(bool visible);
+    QString currDialpadText() const;
+    
+    //Populates list and returns width of longest text item
+    qreal populateViewSwitchList(HbListWidget& list);
     
 protected:
     
@@ -205,11 +210,8 @@ protected:
     LogsComponentRepository& mRepository;
     LogsAbstractViewManager& mViewManager;
     
-    HbMenu* mShowFilterMenu; //not owned
     Dialpad* mDialpad; //not owned
     HbLabel* mEmptyListLabel; // not owned
-    
-    QMap<XQService::LogsViewIndex, QString>   mActionMap;
     
     bool mInitialized;
     
@@ -224,6 +226,9 @@ protected:
     QStringList mActivities;
     HbMenu* mOptionsMenu;
     bool mActivating;
+    bool mShowDialpad;
+    
+    HbListWidget* mViewSwitchList;
 };
 
 

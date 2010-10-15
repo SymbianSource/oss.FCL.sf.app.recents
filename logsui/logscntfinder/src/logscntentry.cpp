@@ -356,97 +356,23 @@ void LogsCntEntry::setSpeedDial( const QString& number )
 //
 bool LogsCntEntry::match( const QString& pattern ) const
 {
-    bool match = false;
+    bool match = false; 
     if ( pattern.length() > 0 ) {
-        LogsPredictiveTranslator* translator = LogsPredictiveTranslator::instance();
+
+        match = type() == EntryTypeHistory && 
+                mPhoneNumber.mTranslatedText.startsWith( pattern );
         
-        QString modifiedPattern = pattern;
-        modifiedPattern = translator->trimPattern( modifiedPattern, true );
-        
-        //direct match with phone number is enough
-        match = ( type() == EntryTypeHistory && 
-                  mPhoneNumber.mTranslatedText.startsWith( pattern ) ) ||
-                doSimpleMatch( modifiedPattern );
-        
-        if (!match && translator->hasPatternSeparators( modifiedPattern ) ) {
-            QStringList patternArray = translator->patternTokens( modifiedPattern );
-            match = doComplexMatch( patternArray );
-            if (!match ) {
-                for(int i=0;i<patternArray.length();i++ ) {
-                    translator->trimPattern( patternArray[i] );
-                }
-                match = doComplexMatch( patternArray );
-            }
+        if ( !match ) {
+            LogsCntTextList nameArray = mFirstName + mLastName; //with empties
+            LogsCntTokenArray* tokenArray = reinterpret_cast<LogsCntTokenArray*>( &nameArray );
+            LogsCntTokenIterator names( *tokenArray );
+            match = LogsPredictiveTranslator::instance()->match( pattern, names );
         }
     }
     
     return match;
 }
 
-// -----------------------------------------------------------------------------
-// LogsCntEntry::doSimpleMatch()
-// -----------------------------------------------------------------------------
-//
-bool LogsCntEntry::doSimpleMatch( const QString& pattern ) const
-{
-    LogsCntTextList nameArray = mFirstName + mLastName; //with empties
-    QListIterator<LogsCntText> names( nameArray ); 
-    int matchCount = 0;
-
-    while( names.hasNext() && !matchCount ) {
-        matchCount = (int)names.next().mTranslatedText.startsWith( pattern );
-    }
-
-    return matchCount > 0;
-}
-
-
-// -----------------------------------------------------------------------------
-// LogsCntEntry::doComplexMatch()
-// -----------------------------------------------------------------------------
-//
-bool LogsCntEntry::doComplexMatch( const QStringList& patternArray ) const
-{
-    const bool zero = false;
-
-    LogsCntTextList nameArray = mFirstName + mLastName; //with empties
-
-    int targetMatchCount = patternArray.count();
-    int namesCount = nameArray.count();
-
-    //if pattern has more tokens than name(s), it is a missmatch
-    if ( namesCount < targetMatchCount ) {
-        return false;
-    }
-
-    QListIterator<LogsCntText> names( nameArray ); 
-    QListIterator<QString> patterns( patternArray );
-    QVector<bool> matchVector(targetMatchCount, zero );
-    int currentPattern = 0;
-    int matchCount = 0;
-    bool match = false;
-    
-    while( names.hasNext() && matchCount < targetMatchCount ) {
-        LogsCntText name = names.next();
-        currentPattern = 0;
-        patterns.toFront();
-        match = false;
-        while ( !name.mText.isEmpty() && 
-                 patterns.hasNext() && !match ) {
-            QString pattern = patterns.next();
-            //unique match check
-            if ( !matchVector.at( currentPattern ) ) {
-                match = matchVector[ currentPattern ] 
-                      = name.mTranslatedText.startsWith( pattern );
-                matchCount = match ? matchCount+1 : matchCount;
-            }
-            currentPattern++;
-        }
-    }
-    return matchCount >= targetMatchCount;
-
-    }
-    
     
 
 // -----------------------------------------------------------------------------

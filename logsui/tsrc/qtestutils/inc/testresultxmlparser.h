@@ -19,7 +19,11 @@
 #define TESTRESULTXMLPARSER_H
 
 #include <QXmlDefaultHandler>
+#include <hbinputsettingproxy.h>
 
+#define ST_LOGSCNTFINDER_SET_LANGUAGE( lang )\
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( HbInputLanguage( lang ) )
+    
 
 class TestResultXmlParser : public QXmlDefaultHandler
 {

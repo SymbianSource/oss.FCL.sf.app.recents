@@ -45,8 +45,9 @@ QString LogsDetailsModel::mLastCallName = QString();
 //
 LogsDetailsModel::LogsDetailsModel() 
     : LogsAbstractModel(),
-      mEvent( 0 ),
-      mDetailItemsCount( 0 )
+      mEvent(0),
+      mDetailItemsCount(0),
+      mSeparatorCollapsed(true)
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsDetailsModel::LogsDetailsModel()" )
     mLastCallName = QString();
@@ -165,4 +166,5 @@ bool LogsDetailsModel::setData(const QModelIndex &index, const QVariant &value,
     if (value.isValid() && value.toBool() != mSeparatorCollapsed) {
         mSeparatorCollapsed = !mSeparatorCollapsed;
     }
+    return true;
 }

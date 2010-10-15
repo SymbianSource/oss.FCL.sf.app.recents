@@ -671,10 +671,15 @@ void UT_LogsMatchesModel::testGetFormattedCallerId()
     QVERIFY( callerId == "long firstname" );
     
     // Firstname is missing, phone number is used
+    LogsCommonData& cd = LogsCommonData::getInstance();
+    cd.mHighlightColorStart = "<b>";
+    cd.mHighlightColorEnd = "</b>";
     HbStubHelper::stringUtilDigitConversion(true);
     entry.setFirstName("");
+    entry.setHighlights("12");
+    
     callerId = item.getFormattedCallerId(entry);
-    QCOMPARE( callerId, QString("conv number") );
+    QCOMPARE( callerId, QString("<b>co</b>nv number") );    
 }
 
 // -----------------------------------------------------------------------------

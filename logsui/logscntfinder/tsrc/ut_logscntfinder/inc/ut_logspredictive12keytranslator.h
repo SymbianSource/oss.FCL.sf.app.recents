@@ -46,17 +46,12 @@ private slots:
 private slots: //test methods
 
     void testConstructor();
-    void testPatternTokens();
-    void testHasPatternSeparators();
     void testTranslateChar();
-    void testSplitPattern();
-    void testTrimPattern();
     
 
 private:
  
     LogsPredictive12KeyTranslator* mTranslator;
-    HbInputLanguage mOrigLang; 
     
 };
 

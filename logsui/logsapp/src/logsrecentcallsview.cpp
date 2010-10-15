@@ -40,8 +40,9 @@
 #include <hbmainwindow.h>
 #include <hbswipegesture.h>
 #include <hbmessagebox.h>
-#include <hbactivitymanager.h>
 #include <hbstyleloader.h>
+#include <hblistwidget.h>
+#include <hblistwidgetitem.h>
 #include <QTimer>
 
 Q_DECLARE_METATYPE(LogsMatchesModel*)
@@ -106,13 +107,11 @@ LogsRecentCallsView::~LogsRecentCallsView()
 // LogsRecentCallsView::activated
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::activated(bool showDialer, QVariant args)
+void LogsRecentCallsView::activated(bool showDialer, QVariant args, const QString& dialpadText)
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::activated()" );
-    HbStyleLoader::registerFilePath(":/hbgroupboxheadingwidget.css");
-    
     // base class handling first
-    LogsBaseView::activated(showDialer, args);
+    LogsBaseView::activated(showDialer, args, dialpadText);
     
     int internalViewId = args.toInt();
     if ( internalViewId < 0 || internalViewId > XQService::LogsViewMissed ){
@@ -146,8 +145,6 @@ void LogsRecentCallsView::activated(bool showDialer, QVariant args)
 //
 void LogsRecentCallsView::deactivated()
 {
-    HbStyleLoader::unregisterFilePath(":/hbgroupboxheadingwidget.css");
-
     //base class handling first
     LogsBaseView::deactivated();
     
@@ -216,7 +213,7 @@ void LogsRecentCallsView::initView()
     addStringsToMap();
     initListWidget();
     
-    mEffectHandler = new LogsEffectHandler;
+    mEffectHandler = new LogsEffectHandler(mViewManager.mainWindow());
     connect(mEffectHandler, SIGNAL(dissappearByMovingComplete()), 
             this, SLOT(dissappearByMovingComplete()));
     connect(mEffectHandler, SIGNAL(dissappearByFadingComplete()), 
@@ -299,9 +296,10 @@ void LogsRecentCallsView::openDialpad()
 void LogsRecentCallsView::dialpadEditorTextChanged()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::dialpadEditorTextChanged()" );
-    if ( mDialpad->editor().text().length() > 0 && isContactSearchEnabled() ) {
+    if ( currDialpadText().length() > 0 && isContactSearchEnabled() ) {
+        LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::dialpadEditorTextChanged() editor().txt.length() > 0" );
         QVariant arg = qVariantFromValue( mMatchesModel );
-        if ( mViewManager.activateView( LogsMatchesViewId, true, arg ) ){
+        if ( mViewManager.activateView( LogsMatchesViewId, true, arg , currDialpadText()) ){
             mMatchesModel = 0; // Ownership was given to matches view
         }
     } else {
@@ -377,25 +375,24 @@ void LogsRecentCallsView::updateView(XQService::LogsViewIndex view)
     LogsFilter::FilterType filter = getFilter( view );
     updateFilter(filter);
     updateViewName();
-    updateContextMenuItems(mCurrentView);
+    updateViewSwitchList(mCurrentView);
     handleMissedCallsCounter();
     LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateView()" );
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::changeFilter
+// LogsRecentCallsView::handleViewSwitchSelected
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::changeFilter(HbAction* action)
+void LogsRecentCallsView::handleViewSwitchSelected(HbListWidgetItem* item)
 {
-    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::changeFilter()" );
-    XQService::LogsViewIndex view = mActionMap.key( action->objectName(),
-            XQService::LogsViewAll );
-    updateContextMenuItems(view);
-    changeView(view);
-
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::changeFilter()" );
+    LOGS_QDEBUG( "logs [UI] -> LogsRecentCallsView::handleViewSwitchSelected()" );
+    XQService::LogsViewIndex viewId = 
+            (XQService::LogsViewIndex)item->data(Qt::UserRole).toInt();
+    changeView(viewId);    
+    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::handleViewSwitchSelected()" );
 }
+
 
 // -----------------------------------------------------------------------------
 // LogsRecentCallsView::handleBackSoftkey
@@ -501,20 +498,23 @@ void LogsRecentCallsView::updateViewName()
 }
 
 // -----------------------------------------------------------------------------
-// LogsRecentCallsView::updateContextMenuItems
+// LogsRecentCallsView::updateViewSwitchList
 // -----------------------------------------------------------------------------
 //
-void LogsRecentCallsView::updateContextMenuItems(XQService::LogsViewIndex view)
+void LogsRecentCallsView::updateViewSwitchList(XQService::LogsViewIndex view)
 {
-    LOGS_QDEBUG_2( 
-        "logs [UI] -> LogsRecentCallsView::updateContextMenuItems(), view:", view );
-    if ( mShowFilterMenu ) {
-        QString activeActionName = mActionMap.value(view);
-        foreach (QAction* action, mShowFilterMenu->actions() ) {
-            action->setChecked( action->objectName() == activeActionName );
-        }
+    LOGS_QDEBUG_2( "logs [UI] -> LogsRecentCallsView::updateShowViewList(), view:", view );
+    if (mViewSwitchList) {
+        for (int i=0; i < mViewSwitchList->count(); i++) {
+            if (mViewSwitchList->item(i)->data(Qt::UserRole).toInt() == view) {
+                mViewSwitchList->setCurrentRow(i);
+                mViewSwitchList->selectionModel()->setCurrentIndex(
+                        mViewSwitchList->currentIndex(), 
+                        QItemSelectionModel::SelectCurrent);
+                break;
+            }
+        }        
     }
-    LOGS_QDEBUG( "logs [UI] <- LogsRecentCallsView::updateContextMenuItems()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -844,7 +844,7 @@ int LogsRecentCallsView::getListItemTextWidth()
 //
 void LogsRecentCallsView::updateCallButton()
 {  
-    bool isVisible = !mDialpad->editor().text().isEmpty();
+    bool isVisible = !currDialpadText().isEmpty();
     if ( !isVisible && mFilter ) {
         isVisible = ( mFilter->rowCount() > 0 );
     }
@@ -902,9 +902,11 @@ bool LogsRecentCallsView::moveToLeft(bool toLeft) const
 //
 void LogsRecentCallsView::handleMissedCallsCounter()
 {
-    if (mModel && mCurrentView == XQService::LogsViewMissed) {
+    if (mModel && (mCurrentView == XQService::LogsViewMissed 
+        || mCurrentView == XQService::LogsViewAll)) {
         LOGS_QDEBUG( "logs [UI] <-> LogsRecentCallsView::clearMissedCallsCounter()" );
         mModel->clearMissedCallsCounter();
     }
 }
+
 

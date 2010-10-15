@@ -18,12 +18,9 @@
 #ifndef LOGSPREDICTIVELATIN12KEYTRANSLATOR_H
 #define LOGSPREDICTIVELATIN12KEYTRANSLATOR_H
 
-#include <QObject>
-#include <QChar>
+#include "logspredictive12keytranslator.h"
 #include <QHash>
 
-#include "logspredictive12keytranslator.h"
-class HbInputLanguage;
 
 //Name: ISO_8859-1:1987 [RFC1345,KXS2]
 //MIBenum: 4
@@ -45,18 +42,18 @@ public:
 
 public: //from LogsPredictiveTranslator
     
+    QStringList patternTokens( const QString& pattern ) const;
+    int hasPatternSeparators( const QString& pattern ) const;
+    QString& trimPattern( QString& pattern, bool tailOnly ) const;
     QStringList nameTokens( const QString& name ) const;
     inline int mib() const {return MIBenumLatin;}
-    
-    
-public: //from LogsPredictive12KeyTranslator
-    
-    const QChar translateChar( const QChar character, bool& ok ) const;
+    const QString translateChar( const QChar character, bool& ok ) const;
     
 private:
     
     void createSpecialMapping();
-    
+    void splitPattern( const QString& pattern, QString& car, QString& cdr ) const;
+
 private:
     
     QHash<QChar,QChar> mSpecialKeyMap;

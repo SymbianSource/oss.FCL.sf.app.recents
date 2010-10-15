@@ -20,7 +20,6 @@
 
 #include <qtcontacts.h>
 #include <QtTest/QtTest>
-#include <hbinputsettingproxy.h>
 
 void ST_LogsCntFinderThai::initTestCase()
 {
@@ -34,8 +33,7 @@ void ST_LogsCntFinderThai::cleanupTestCase()
 
 void ST_LogsCntFinderThai::init()
 {   
-    HbInputLanguage eng( QLocale::Thai );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::Thai );
     
     m_finder = 0;
     //open symbian database
@@ -62,8 +60,8 @@ void ST_LogsCntFinderThai::cleanup()
     m_manager = 0;
     delete m_finder;
     m_finder = 0;
-    HbInputLanguage eng( QLocale::English );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::English );
     
 }
 
@@ -124,9 +122,6 @@ void ST_LogsCntFinderThai::createOneContact(QString firstname, QString Lastname,
 
 void ST_LogsCntFinderThai::testPredictiveThaiSearchQuery()
 {
-    HbInputLanguage thai( QLocale::Thai );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( thai );
-    		  
     createThaiContacts();
 
     QEXPECT_FAIL("", "Not supported yet. Issues", Abort );

@@ -18,14 +18,7 @@
 #ifndef LOGSPREDICTIVETHAI12KEYTRANSLATOR_H
 #define LOGSPREDICTIVETHAI12KEYTRANSLATOR_H
 
-#include <QObject>
-#include <QChar>
-#include <QHash>
-
 #include "logspredictive12keytranslator.h"
-
-class HbKeymap;
-class HbInputLanguage;
 
 
 //Name: TIS-620
@@ -50,8 +43,11 @@ public:
     
 public: //from LogsPredictiveTranslator
     
-    const QChar translateChar( const QChar character, bool& ok ) const;
+    QStringList patternTokens( const QString& pattern ) const;
+    int hasPatternSeparators( const QString& pattern ) const;
+    QString& trimPattern( QString& pattern, bool tailOnly ) const;
     QStringList nameTokens( const QString& name ) const;
+    const QString translateChar( const QChar character, bool& ok ) const;
     inline int mib() const {return MIBenumThai;}
   
 private:

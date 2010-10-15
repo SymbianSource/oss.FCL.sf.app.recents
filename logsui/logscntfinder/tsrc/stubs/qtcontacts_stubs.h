@@ -24,6 +24,9 @@
 const QString cntDetailPhoneNumber = "555789987";
 const QString cntPhoneNumberWithActionCall = "98765";
 
+#define LOGS_CNTFINDER_SET_PHONE_LANGUAGE( lang )\
+    HbInputSettingProxy::instance()->setGlobalInputLanguage( HbInputLanguage( lang ) )
+
 class ContactStubHelper
 {
 public:

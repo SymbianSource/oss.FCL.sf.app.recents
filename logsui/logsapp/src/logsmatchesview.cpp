@@ -67,9 +67,10 @@ LogsMatchesView::~LogsMatchesView()
 // LogsMatchesView::activated
 // -----------------------------------------------------------------------------
 //
-void LogsMatchesView::activated(bool showDialer, QVariant args)
-{
-    LogsBaseView::activated(showDialer, args);
+void LogsMatchesView::activated(bool showDialer, QVariant args, const QString& dialpadText)
+{LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::activated()" );
+    mShowDialpad = showDialer;
+    LogsBaseView::activated(showDialer, args, dialpadText);
     
     LogsMatchesModel* model = qVariantValue<LogsMatchesModel*>(args);
     updateModel(model);
@@ -80,6 +81,7 @@ void LogsMatchesView::activated(bool showDialer, QVariant args)
     scrollToTopItem(mListView);
     
     LogsBaseView::activationCompleted();
+    LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::activated()" );
 }
 
 // -----------------------------------------------------------------------------
@@ -195,21 +197,8 @@ void LogsMatchesView::updateModel(LogsMatchesModel* model)
 void LogsMatchesView::handleBackSoftkey()
 {
     LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::::handleBackSoftkey()" );
-    mDialpad->editor().blockSignals(true);
-    mDialpad->editor().setText(QString());
-    mDialpad->editor().blockSignals(false);
-    
-    if (mDialpad->isOpen()){
-        LOGS_QDEBUG( "logs [UI] -> LogsMatchesView::::handleBackSoftkey() closeDialpad" );
-        // Block aboutToClose signal to interfere with layout loading 
-        // at backstepping phase
-        mDialpad->blockSignals(true);
-        mDialpad->closeDialpad();
-        mDialpad->blockSignals(false);
-    }
-
-    LogsBaseView::handleBackSoftkey();
-
+    mShowDialpad = false;
+    mDialpad->editor().setText(QString());   
     LOGS_QDEBUG( "logs [UI] <- LogsMatchesView::::handleBackSoftkey()" );
 }
 
@@ -223,7 +212,7 @@ void LogsMatchesView::dialpadEditorTextChanged()
     updateCallButton();
     updateMenu();
     
-    QString pattern = mDialpad->editor().text();
+    QString pattern = currDialpadText();
     if ( pattern.isEmpty() ){
         // Treat empty input field same way as back press
         LogsBaseView::handleBackSoftkey();

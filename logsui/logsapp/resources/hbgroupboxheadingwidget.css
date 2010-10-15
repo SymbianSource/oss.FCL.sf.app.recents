@@ -1,9 +1,5 @@
-HbGroupBoxHeadingWidget[groupBoxType="1"]::text
+HbGroupBox#logs_groupbox_recent_calls > HbGroupBoxHeadingWidget[groupBoxType="1"]::text
 {
     right:expr(4*var(hb-param-graphic-size-secondary));
 }
- 
-HbGroupBoxHeadingWidget[groupBoxType="3"]::text
-{
-    right:expr(4*var(hb-param-graphic-size-secondary));
-}
+

@@ -24,7 +24,6 @@
 #include <hbapplication.h>
 #include <hbcolorscheme.h>
 #include <hbview.h>
-#include <hbactivitymanager.h>
 #include <QCoreApplication>
 #include <QApplication>
 #include <QTimer>
@@ -54,10 +53,6 @@ bool testIsWidgetOpen = false;
 bool testIsWidgetRaised = false;
 QColor testColor = Qt::white;
 QList<HbView *> testViews;
-QList<QVariantHash> testActivities;
-HbActivityManager testActivityManager;
-Hb::ActivationReason testActivationReason = Hb::ActivationReasonNormal;
-QString testActivityId = "LogsViewMatches";
 QList<HbListViewItem*> testViewItems;
 bool testEnsureVisibleCalled = false;
 bool testScrollToCalled = false;
@@ -85,9 +80,6 @@ void HbStubHelper::reset()
     testIsWidgetRaised = false;
     testDialogShown = false;
     testColor = Qt::white;
-    testActivationReason = Hb::ActivationReasonNormal;
-    testActivityId = "LogsViewMatches";
-    testActivities.clear();
     qDeleteAll(testViewItems);
     testViewItems.clear();
     testScrollToCalled = false;
@@ -162,16 +154,6 @@ void HbStubHelper::setWidgetOpen(bool isOpen)
 void HbStubHelper::setColorScheme(QColor col)
 {
     testColor = col;
-}
-
-void HbStubHelper::setActivityReason(Hb::ActivationReason reason)
-{
-    testActivationReason = reason;
-}
-
-void HbStubHelper::setActivityId(QString activityId)
-{
-    testActivityId = activityId;
 }
 
 QList<HbListViewItem*>& HbStubHelper::listItems()
@@ -317,42 +299,6 @@ QPixmap QPixmap::grabWidget(QWidget *widget, const QRect &rect)
 //
 // -----------------------------------------------------------------------------
 //
-HbActivityManager::HbActivityManager(QObject *parent) : QObject(parent)
-{
-    
-}
-HbActivityManager::~HbActivityManager()
-{
-    
-}
-    
-bool HbActivityManager::addActivity(const QString &activityId, const QVariant &data, const QVariantHash &parameters)
-{
-    testActivities.append(parameters);
-    return true;
-}
-
-bool HbActivityManager::removeActivity(const QString &activityId)
-{
-    if ( !testActivities.isEmpty() ){
-        testActivities.takeFirst();
-    }
-    return true;
-}
-QList<QVariantHash> HbActivityManager::activities() const
-{
-    return testActivities;
-}
-
-bool HbActivityManager::waitActivity()
-{
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
 HbApplication::HbApplication(int &argc, char *argv[], Hb::ApplicationFlags flags) :
     QApplication(0, argc, argv, 0), mTestFlags(flags)
 {
@@ -365,28 +311,6 @@ HbApplication::~HbApplication()
 void HbApplication::quit()
 { 
     testQuitCalled = true; 
-}
-
-HbActivityManager *HbApplication::activityManager()
-{
-    return &testActivityManager;
-}
-
-Hb::ActivationReason HbApplication::activateReason() const
-{
-    return testActivationReason;
-}
-QVariantHash HbApplication::activateParams() const
-{
-    return QVariantHash();
-}
-QString HbApplication::activateId() const
-{
-    return testActivityId;
-}
-QVariant HbApplication::activateData()
-{
-    return QVariant();
 }
     
 // -----------------------------------------------------------------------------

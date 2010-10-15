@@ -75,7 +75,15 @@ void UT_LogsModel::cleanup()
 
 void UT_LogsModel::testConstructor()
 {
+    // Model in gui process
     QVERIFY( mModel );
+    QVERIFY( mModel->mIcons.count() > 0 );
+    
+    // Model in non-gui process
+    LogsCommonData::getInstance().mIsInGuiProcess = false;
+    LogsModel noGuiModel;
+    QVERIFY( noGuiModel.mIcons.count() == 0 );
+    
 }
 
 void UT_LogsModel::testRowCount()
@@ -112,6 +120,10 @@ void UT_LogsModel::testData()
     
     QVariant decorationData = mModel->data(mModel->index(0), Qt::DecorationRole);
     QVERIFY ( decorationData.canConvert< QList<QVariant> >() );
+    QList<QVariant> iconList = decorationData.toList();
+    QVERIFY ( iconList.count() > 0 );
+    HbIcon icon = qVariantValue<HbIcon>( iconList.at(0) );
+    QVERIFY ( !icon.isNull() );
     
     // Full event
     QVariant fullEventdata = mModel->data(mModel->index(0), LogsModel::RoleFullEvent);
@@ -164,6 +176,16 @@ void UT_LogsModel::testData()
     contactData = mModel->data(mModel->index(0), LogsModel::RoleContact);
     contact = qVariantValue<LogsContact *>( contactData );
     QVERIFY( !contact );
+    
+    // No gui
+    LogsCommonData::getInstance().mIsInGuiProcess = false;
+    LogsModel noGuiModel;
+    LogsEvent* event2 = new LogsEvent();
+    event2->setDirection(LogsEvent::DirMissed);
+    event2->setEventType(LogsEvent::TypeVideoCall);
+    noGuiModel.mEvents.append(event2);
+    QVariant decorationData2 = noGuiModel.data(noGuiModel.index(0), Qt::DecorationRole);
+    QVERIFY ( decorationData2.isNull() );
 }
 
 void UT_LogsModel::testDataAdded()
@@ -347,6 +369,18 @@ void UT_LogsModel::testGetDecorationData()
     mModel->getDecorationData(*event, icons);
     QVERIFY(icons.count() == 1);    
     LOGS_TEST_CMP_ICONS(icons.at(0), mModel->mIcons.value( logsMissedVoiceCallUnseenIconId ));
+    
+    // Model in non-gui process, no icons used
+    LogsCommonData::getInstance().mIsInGuiProcess = false;
+    icons.clear();
+    LogsModel noGuiModel;
+    LogsEvent* event2 = new LogsEvent();
+    event2->setDirection(LogsEvent::DirMissed);
+    event2->setEventType(LogsEvent::TypeVideoCall);
+    noGuiModel.mEvents.append(event2);
+    noGuiModel.getDecorationData(*event2, icons);
+    QVERIFY(icons.count() == 0);    
+    
 }
 
 void UT_LogsModel::testIconName()
@@ -530,14 +564,17 @@ void UT_LogsModel::testClearMissedCallsCounter()
 
 void UT_LogsModel::testRefreshData()
 {
+    LogsCommonData::getInstance().mCompressed = true;
     QVERIFY( mModel->refreshData() == 0 );
     QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "refreshData" );
+    QVERIFY( !LogsCommonData::getInstance().mCompressed );
 }
 
 void UT_LogsModel::testCompressData()
 {
     QVERIFY( mModel->compressData() == 0 );
     QVERIFY( LogsDbConnectorStubHelper::lastCalledFunction() == "compressData" );
+    QVERIFY( LogsCommonData::getInstance().mCompressed );
 }
 
 void UT_LogsModel::testPredictiveSearchStatus()
@@ -604,3 +641,4 @@ void UT_LogsModel::testUpdateConfiguration()
     QVERIFY( spy.count() == 0 );
     QVERIFY( spy2.count() == 0 );    
 }
+

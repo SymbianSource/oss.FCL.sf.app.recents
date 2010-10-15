@@ -22,8 +22,8 @@
 class QtHighwayStubHelper{
     public:
         static void reset();
-        static QString service();
-        static QString message();
+        static QString interface();
+        static QString operation();
         static bool isRequestBg();
         static bool isRequestEmbedded();
         static bool isRequestSynchronous();

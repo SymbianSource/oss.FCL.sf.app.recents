@@ -91,7 +91,7 @@ LogsMatchesModel* LogsModel::logsMatchesModel()
 // -----------------------------------------------------------------------------
 //
 LogsDetailsModel* LogsModel::logsDetailsModel(LogsEvent& event)
-{
+{Q_UNUSED( event );
     return new LogsDetailsModel();
 }
 

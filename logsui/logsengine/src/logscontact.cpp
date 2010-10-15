@@ -29,6 +29,7 @@
 #include <qcontactmanager.h>
 #include <qcontactonlineaccount.h>
 #include <qcontactphonenumber.h>
+#include <xqaiwdecl.h>
 #include <xqappmgr.h>
 #include <cntservicescontact.h>
 
@@ -125,14 +126,13 @@ bool LogsContact::open()
     LogsContact::RequestType type = allowedRequestType();
     if ( type == TypeLogsContactOpen || type == TypeLogsContactOpenGroup) {
         mCurrentRequest = type;
-        QString interface("com.nokia.symbian.IContactsView");
-        QString operation("openContactCard(int)");
+        QString operation(XQOP_CONTACTS_VIEW_CONTACT_CARD);
         if (type == TypeLogsContactOpenGroup) {
-            operation = "openGroup(int)";
+            operation = XQOP_CONTACTS_VIEW_GROUP;
         }
         QList<QVariant> arguments;
         arguments.append( QVariant(mContactId) );
-        ret = requestPhonebookService( interface, operation, arguments );
+        ret = requestPhonebookService( XQI_CONTACTS_VIEW, operation, arguments );
     }
     
     LOGS_QDEBUG_2( "logs [ENG] <- LogsContact::open(): ", ret )
@@ -147,7 +147,7 @@ bool LogsContact::addNew()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsContact::save()" )
             
-    bool ret = save("editCreateNew(QString,QString)");
+    bool ret = save(XQOP_CONTACTS_EDIT_CREATE_NEW);
     
     LOGS_QDEBUG_2( "logs [ENG] <- LogsContact::save(): ", ret )
     return ret;
@@ -161,7 +161,7 @@ bool LogsContact::updateExisting()
 {
     LOGS_QDEBUG( "logs [ENG] -> LogsContact::updateExisting()" )
     
-    bool ret = save("editUpdateExisting(QString,QString)");
+    bool ret = save(XQOP_CONTACTS_EDIT_UPDATE_EXISTING);
     
     LOGS_QDEBUG( "logs [ENG] <- LogsContact::updateExisting()" )
     return ret;
@@ -215,8 +215,7 @@ bool LogsContact::save(const QString& operation)
     
     if ( arguments.count() == 2 ) {
         mCurrentRequest = TypeLogsContactSave;
-        QString interface("com.nokia.symbian.IContactsEdit");
-        ret = requestPhonebookService( interface, operation, arguments );        
+        ret = requestPhonebookService( XQI_CONTACTS_EDIT, operation, arguments );        
     } else {
         LOGS_QDEBUG( "logs [ENG]  !No Caller ID, not saving the contact..")
     }
@@ -257,6 +256,8 @@ void LogsContact::handleError(int errorCode, const QString& errorMessage)
 {
     LOGS_QDEBUG_4( "logs [ENG] <-> LogsContact::handleError(): ", errorCode,
             " ,msg: ", errorMessage)
+    Q_UNUSED(errorCode)
+    Q_UNUSED(errorMessage)
     cancelServiceRequest();
 }
 
@@ -270,8 +271,7 @@ void LogsContact::handleError(int errorCode, const QString& errorMessage)
 //
 void LogsContact::handleRequestCompleted(const QVariant& result)
 {
-    delete mAiwRequest;
-    mAiwRequest = 0;
+    cancelServiceRequest();
     bool retValOk = false;
     int serviceRetVal = result.toInt(&retValOk);
     LOGS_QDEBUG_3( "logs [ENG] -> LogsContact::handleRequestCompleted(), (retval, is_ok)", 

@@ -18,7 +18,6 @@
 //USER
 #include "ut_logsservicehandler.h"
 #include "logsservicehandler.h"
-#include "logsservicehandlerold.h"
 #include "qthighway_stub_helper.h"
 #include "ut_logsviewmanager.h"
 #include "logsviewmanager.h"
@@ -47,11 +46,10 @@ void UT_LogsServiceHandler::init()
 {
     mMainWindow =  new LogsMainWindow();
     mService = new LogsServiceHandler();
-    mServiceOld = new LogsServiceHandlerOld();
     char* argv = 0;
     int argc = 0;
     mSettings = new LogsAppSettings(argc, &argv);
-    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mServiceOld, *mSettings);
+    mLogsViewManager = new LogsViewManager(*mMainWindow, *mService, *mSettings);
     
 }
 
@@ -59,8 +57,6 @@ void UT_LogsServiceHandler::cleanup()
 {
     delete mService;
     mService = 0;
-    delete mServiceOld;
-    mServiceOld = 0;
     delete mMainWindow;
     mMainWindow = 0;
     delete mLogsViewManager;
@@ -76,48 +72,11 @@ void UT_LogsServiceHandler::testConstructor()
     QVERIFY( mService );
     QVERIFY( !mService->mIsAppStartedUsingService );
     QVERIFY( !mService->isStartedUsingService() );
-
-    QVERIFY( mServiceOld );
-    QVERIFY( !mServiceOld->mIsAppStartedUsingService );
-    QVERIFY( !mServiceOld->isStartedUsingService() );
-
     
     QtHighwayStubHelper::setIsService(true);
     LogsServiceHandler serviceHandler;
     QVERIFY( serviceHandler.mIsAppStartedUsingService );
     QVERIFY( serviceHandler.isStartedUsingService() );
-    
-    LogsServiceHandlerOld serviceHandlerOld;
-    QVERIFY( serviceHandlerOld.mIsAppStartedUsingService );
-    QVERIFY( serviceHandlerOld.isStartedUsingService() );
-}
-
-void UT_LogsServiceHandler::testStart()
-{
-    qRegisterMetaType< XQService::LogsViewIndex >("XQService::LogsViewIndex");
-    QSignalSpy spy(mServiceOld, SIGNAL(activateView(XQService::LogsViewIndex, bool, QString)));
-     
-    // Wrong view
-    QVERIFY( mServiceOld->start( 9999, true ) != 0 );
-    QVERIFY( spy.count() == 0 );
-
-    // Correct view
-    QVERIFY( mServiceOld->start( (int)XQService::LogsViewReceived, true  ) == 0 );
-    QVERIFY( spy.count() == 1 );
-    XQService::LogsViewIndex view = 
-        qvariant_cast< XQService::LogsViewIndex >(spy.at(0).at(0));
-    QVERIFY( view == XQService::LogsViewReceived );
-}
-
-void UT_LogsServiceHandler::testStartWithNum()
-{
-    qRegisterMetaType< XQService::LogsViewIndex >("XQService::LogsViewIndex");
-    QSignalSpy spy2(mServiceOld, SIGNAL(activateView(QString)));
-
-    QVERIFY( mServiceOld->startWithNum( (int)XQService::LogsViewReceived, true,
-            QString("+123456")  ) == 0 );
-    QVERIFY( spy2.count() == 1 );
-    QVERIFY( spy2.at(0).at(0).toString() == QString("+123456"));
 }
 
 void UT_LogsServiceHandler::testShow()

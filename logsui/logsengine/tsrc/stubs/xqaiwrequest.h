@@ -24,7 +24,7 @@
 #include <QList>
 #include <QVariant>
 #include <xqaiwinterfacedescriptor.h>
-
+class XQRequestInfo;
 
 class XQAiwRequest : public QObject
     {
@@ -41,11 +41,12 @@ public slots:
     const XQAiwInterfaceDescriptor &descriptor() const;
 
     bool send();
+    bool send(QVariant &returnValue);
 
     const QString &operation() const;
 
     void setSynchronous(bool synchronous);
-    
+    void setInfo(const XQRequestInfo &info);
     
 signals:
 

@@ -22,7 +22,7 @@
 
 class LogsEffectHandler;
 class HbLabel;
-class HbMainWindow;
+class LogsMainWindow;
 
 class UT_LogsEffectHandler : public QObject
 {
@@ -58,7 +58,7 @@ private:
     LogsEffectHandler* mEffect;
     HbLabel* mLabel;
     HbLabel* mLabel2;
-    HbMainWindow* mMainWindow;
+    LogsMainWindow* mMainWindow;
 };
 
 #endif //UT_LOGSEFFECTHANDLER_H

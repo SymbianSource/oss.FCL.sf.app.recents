@@ -25,6 +25,7 @@ class QEasingCurve;
 class QSequentialAnimationGroup;
 class QAbstractAnimation;
 class LogsEffectContainer;
+class HbMainWindow;
 
 /**
  * 
@@ -36,7 +37,7 @@ class LogsEffectHandler : public QObject
     friend class UT_LogsRecentCallsView;
     
 public:
-    explicit LogsEffectHandler();
+    explicit LogsEffectHandler(HbMainWindow& window);
     ~LogsEffectHandler();
 
     void startDissappearAppearByFadingEffect(QObject& effectTarget);
@@ -76,6 +77,7 @@ private:
  
 private:
     
+    HbMainWindow& mWindow;
     QPropertyAnimation* mItemAppearByFadingAnimation;
     QPropertyAnimation* mItemDissappearByFadingAnimation;
     QPropertyAnimation* mItemMoveNotPossibleAnimationStart;

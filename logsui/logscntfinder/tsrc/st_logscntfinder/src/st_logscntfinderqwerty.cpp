@@ -69,8 +69,7 @@ void ST_LogsCntFinderQwerty::cleanupTestCase()
 
 void ST_LogsCntFinderQwerty::init()
 {   
-    HbInputLanguage eng( QLocale::English );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::English );    
     
     //open symbian database
     m_manager = new QContactManager("symbian");
@@ -87,8 +86,7 @@ void ST_LogsCntFinderQwerty::cleanup()
 {
     delete m_manager;
     m_manager = 0;
-    HbInputLanguage eng( QLocale::English );
-    HbInputSettingProxy::instance()->setGlobalInputLanguage( eng );
+    ST_LOGSCNTFINDER_SET_LANGUAGE( QLocale::English );    
     
 }
 

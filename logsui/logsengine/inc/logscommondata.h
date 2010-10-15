@@ -18,6 +18,7 @@
 #ifndef LOGSCOMMONDATA_H
 #define LOGSCOMMONDATA_H
 
+#include <QObject>
 #include <qmobilityglobal.h>
 #include "logsevent.h"
 #include "logsconfigurationparams.h"
@@ -33,8 +34,10 @@ class XQSettingsManager;
 /**
  * Commonly shared data.
  */
-class LogsCommonData 
+class LogsCommonData : public QObject
 { 
+    Q_OBJECT
+    
     private: 
         explicit LogsCommonData();
         virtual ~LogsCommonData();
@@ -92,10 +95,26 @@ class LogsCommonData
         
         bool getTelNumMatchLen(int& matchLen);
         
+        bool isGui() const;
+        
+        const QString& highlightStart() const;
+        const QString& highlightEnd() const;
+        
+        void refreshData();
+        void compressData();
+        
+    signals:
+    
+        void commonDataChanged();
+    
+    private slots:
+    
+        void handleThemeChange();
         
     private:
         
         int getPredictiveSearchStatus();
+        void updateHighlightColor();
         
     private:
         
@@ -106,12 +125,18 @@ class LogsCommonData
         XQSettingsManager* mSettingsManager;
         int mMatchLen;
         int mPredictiveSearchStatus;
+        bool mIsInGuiProcess;
+        QString mHighlightColorStart;
+        QString mHighlightColorEnd;
+        bool mCompressed;
+        bool mPendingThemeChange;
         
     private:
         friend class UT_LogsCommonData;
         friend class UT_LogsModel;
-        
+        friend class UT_LogsMatchesModel;
 };
 
 
 #endif // LOGSCOMMONDATA_H
+

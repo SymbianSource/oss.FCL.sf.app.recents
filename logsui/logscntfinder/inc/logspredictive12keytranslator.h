@@ -24,6 +24,9 @@
 
 #include "logspredictivetranslator.h"
 
+const char StarKey = '*';
+const char HashKey = '#';
+
 
 /**
  * abstract translator for ITU-T 12 keys keyboard 
@@ -38,10 +41,9 @@ public:
     
 public: //from LogsPredictiveTranslator
     
-    QStringList patternTokens( const QString& pattern ) const;
-    int hasPatternSeparators( const QString& pattern ) const;
-    const QChar translateChar( const QChar character ) const;
-    QString& trimPattern( QString& pattern, bool tailOnly ) const;
+    bool match( const QString& pattern, 
+                LogsCntTokenIterator& names ) const;
+    const QString translateChar( const QChar character ) const;
 
 protected:
     
@@ -49,8 +51,8 @@ protected:
 
 private:
     
-    void splitPattern( const QString& pattern, QString& car, QString& cdr ) const;
-    
+    bool doSimpleMatch( const QString& pattern, LogsCntTokenIterator& names ) const;
+    bool doComplexMatch( const QStringList& patternArray, LogsCntTokenIterator& names ) const;
 
 private:
     

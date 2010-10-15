@@ -530,27 +530,27 @@ void UT_LogsDetailsModel::testSetData()
     
     // Collapsing duplicates ok
     QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
-    mModel->setData( mModel->index(separatorIdx), QVariant(true) );
+    QVERIFY( mModel->setData( mModel->index(separatorIdx), QVariant(true) ) );
     QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
     QVERIFY( mModel->mSeparatorCollapsed );
     
     // Expanding fails, wrong separator index 
-    mModel->setData( mModel->index(separatorIdx+2), QVariant(false) );
+    QVERIFY( !mModel->setData( mModel->index(separatorIdx+2), QVariant(false) ) );
     QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
     QVERIFY( mModel->mSeparatorCollapsed );
 
     // Expanding fails, invalid data 
-    mModel->setData( mModel->index(separatorIdx), QVariant() );
+    QVERIFY( !mModel->setData( mModel->index(separatorIdx), QVariant() ) );
     QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
     QVERIFY( mModel->mSeparatorCollapsed );
 
     // Collapsing fails, already collapsed
-    mModel->setData( mModel->index(separatorIdx), QVariant(true) );
+    QVERIFY( !mModel->setData( mModel->index(separatorIdx), QVariant(true) ) );
     QVERIFY( mModel->rowCount(QModelIndex()) == 3 );
     QVERIFY( mModel->mSeparatorCollapsed );
         
     // Expanding ok
-    mModel->setData( mModel->index(separatorIdx), QVariant(false) );
+    QVERIFY( mModel->setData( mModel->index(separatorIdx), QVariant(false) ) );
     QVERIFY( mModel->rowCount(QModelIndex()) == 5 );
     QVERIFY( !mModel->mSeparatorCollapsed );
 }

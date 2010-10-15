@@ -47,7 +47,7 @@ private slots: //test methods
      
     void testConstructor();
     void testTranslateText();
-    void testTranslatePattern();
+    void testPreparePattern();
     void testTranslateChar();
     void testEncodes();
     

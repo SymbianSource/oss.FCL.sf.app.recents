@@ -137,6 +137,8 @@ public:
     void updateData(const LogsCntEntry& entry);
     int resultIndex() const;
     
+    QString richText(const LogsCntText& cntText, bool phoneNumber = false) const;
+    
 private:
     
     QString getFormattedCallerId(const LogsCntEntry& entry) const;

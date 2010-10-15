@@ -49,6 +49,10 @@ private slots: //test methods
     void testClearMissedCallsCounter();
     void testPredictiveSearchStatus();
     void testSetPredictiveSearch();
+    void testRefreshData();
+    void testCompressData();
+    void testHandleThemeChange();
+    void testHighlightColor();
     
 private:
 

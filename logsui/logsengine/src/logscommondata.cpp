@@ -25,6 +25,9 @@
 #include <xqsettingsmanager.h>
 #include <qcontactmanager.h>
 #include <LogsDomainCRKeys.h>
+#include <QCoreApplication>
+#include <hbinstance.h>
+#include <hbcolorscheme.h>
 
 static LogsCommonData* mLogsCommonInstance = 0;
 
@@ -44,14 +47,27 @@ const int logsNotInitialized = -1;
 //
 // -----------------------------------------------------------------------------
 //
-LogsCommonData::LogsCommonData() : 
+LogsCommonData::LogsCommonData() : QObject(),
     mContactManager(0), mMaxReadSize(-1), 
     mMaxReadSizeDir(LogsEvent::DirUndefined), 
     mSettingsManager(new XQSettingsManager()),
     mMatchLen(logsDefaultMatchLength),
-    mPredictiveSearchStatus(logsNotInitialized)
+    mPredictiveSearchStatus(logsNotInitialized),
+    mCompressed(false),
+    mPendingThemeChange(false)
 {
-    LOGS_QDEBUG( "logs [ENG] <-> LogsCommonData::LogsCommonData()" )
+    LOGS_QDEBUG( "logs [ENG] -> LogsCommonData::LogsCommonData()" )
+    // If client has created only coreapp, don't treat as GUI client
+    // since many things will not work properly
+    QApplication* app = qobject_cast<QApplication*>( qApp );
+    mIsInGuiProcess = ( app != 0 );
+    if ( mIsInGuiProcess ){
+        LOGS_QDEBUG( "logs [ENG]    Full GUI" )
+        updateHighlightColor();
+        connect( hbInstance->theme(), SIGNAL ( changeFinished() ),
+                 this, SLOT ( handleThemeChange()));
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsCommonData::LogsCommonData()" )
 }
     
 // -----------------------------------------------------------------------------
@@ -259,5 +275,98 @@ bool LogsCommonData::getTelNumMatchLen(int& matchLen)
     return ok;
 }
 
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+bool LogsCommonData::isGui() const
+{
+    return mIsInGuiProcess;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+const QString& LogsCommonData::highlightStart() const
+{
+    return mHighlightColorStart;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+const QString& LogsCommonData::highlightEnd() const
+{
+    return mHighlightColorEnd;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsCommonData::refreshData()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsCommonData::refreshData()" )
+    bool prevCompressed = mCompressed;
+    mCompressed = false;
+    if ( isGui() && prevCompressed ){
+        updateHighlightColor();
+        if ( mPendingThemeChange ){
+            LOGS_QDEBUG( "logs [ENG]    Theme changed while compressed" )
+            emit commonDataChanged();
+        }
+    }
+    mPendingThemeChange = false;
+    LOGS_QDEBUG( "logs [ENG] <- LogsCommonData::refreshData()" )
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsCommonData::compressData()
+{
+    mCompressed = true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsCommonData::handleThemeChange()
+{
+    LOGS_QDEBUG_2( "logs [ENG] -> LogsCommonData::handleThemeChange(), compr", mCompressed )
+    if ( mCompressed ){
+        mPendingThemeChange = true;
+    } else {
+        updateHighlightColor();
+        emit commonDataChanged();
+    }
+    LOGS_QDEBUG( "logs [ENG] <- LogsCommonData::handleThemeChange()" )
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//
+void LogsCommonData::updateHighlightColor()
+{
+    LOGS_QDEBUG( "logs [ENG] -> LogsCommonData::updateHighlightColor()" )
+    QColor highlight = HbColorScheme::color("qtc_lineedit_marker_normal");
+    QColor color = HbColorScheme::color("qtc_lineedit_selected");
+                    
+    mHighlightColorStart = QString("<span style=\"background-color: %1; color: %2\">")
+            .arg(highlight.name().toUpper())
+            .arg(color.name().toUpper());
+    mHighlightColorEnd = "</span>";
+    
+    LOGS_QDEBUG_2( "logs [ENG] <- LogsCommonData::updateHighlightColor():", 
+                   mHighlightColorStart )
+}
+
+   
 // End of file
+
 

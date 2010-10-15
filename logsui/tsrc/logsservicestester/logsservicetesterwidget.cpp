@@ -28,7 +28,6 @@
 #include <xqappmgr.h>
 #include <xqaiwrequest.h>
 #include <xqaiwdecl.h>
-#include <logsservices.h> 
 
 #include "logsservicetesterwidget.h"
 #include "logsservicetesterappcloser.h"
@@ -65,13 +64,9 @@ LogsServiceTesterWidget::LogsServiceTesterWidget(QGraphicsItem *parent ) :
     mEditor = new HbLineEdit();
     mEditor->setInputMethodHints(Qt::ImhPreferNumbers);
     
-    HbPushButton* newService = new HbPushButton("Start Dialer via new service name");
+    HbPushButton* newService = new HbPushButton("Start Dialer via service name");
     newService->setPreferredHeight(60);
-    connect(newService, SIGNAL(clicked()), this, SLOT(startNewService()));
-
-    HbPushButton* oldService = new HbPushButton("Start Dialer via old service name");
-    oldService->setPreferredHeight(60);
-    connect(oldService, SIGNAL(clicked()), this, SLOT(startOldService()));
+    connect(newService, SIGNAL(clicked()), this, SLOT(startService()));
 
     HbPushButton* killDialer = new HbPushButton("Kill Dialer");
     killDialer->setPreferredHeight(60);
@@ -88,7 +83,6 @@ LogsServiceTesterWidget::LogsServiceTesterWidget(QGraphicsItem *parent ) :
     layout->addItem(editorLabel);
     layout->addItem(mEditor);
     layout->addItem(newService);
-    layout->addItem(oldService);
     layout->addItem(killDialer);
     layout->addItem(startAtBg);
     setLayout(layout);
@@ -125,9 +119,9 @@ void LogsServiceTesterWidget::fetchData()
 //
 // -----------------------------------------------------------------------------
 //
-void LogsServiceTesterWidget::startNewService()
+void LogsServiceTesterWidget::startService()
 {
-    qDebug() << "[LOGS_TESTER] -> LogsServiceTesterWidget::startNewService()";
+    qDebug() << "[LOGS_TESTER] -> LogsServiceTesterWidget::startService()";
     fetchData();
 
     XQApplicationManager appMgr;
@@ -147,19 +141,7 @@ void LogsServiceTesterWidget::startNewService()
         
         request->send(ret);
     }
-    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterWidget::startNewService()";
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-//
-void LogsServiceTesterWidget::startOldService()
-{
-    qDebug() << "[LOGS_TESTER] -> LogsServiceTesterWidget::startOldService()";
-    fetchData();
-    LogsServices::start( (LogsServices::LogsView)mViewIndex, mShowDialpad, mDialpadText );
-    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterWidget::startOldService()";
+    qDebug() << "[LOGS_TESTER] <- LogsServiceTesterWidget::startService()";
 }
 
 // -----------------------------------------------------------------------------

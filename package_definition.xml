@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SystemDefinition schema="3.0.0" xmlns:qt="http://www.nokia.com/qt">
    <package id="recents" name="Recent Events" levels="engine support ui api">
+  <collection id="recents_test" name="Recents Unit Tests" level="support">
+   <component id="recents_test_build" filter="s60,test,qt_unit_test" name="Recents Unit Tests Build" purpose="development" introduced="^4">
+   		<unit bldFile="tsrc" qt:proFile="tsrc.pro"/> 
+	 </component>
+	</collection>        
   <collection id="recents_plat" name="Recent Events Platform Interfaces" level="api">
    <component id="logs_services_api" name="Logs Services API" class="api" filter="s60" introduced="^4">
     <unit base="recents_plat/logs_services_api"/>
@@ -33,5 +38,5 @@
     <unit bldFile="logsui" qt:proFile="logsui.pro"/>
    </component>
   </collection>
-   </package>
+  </package>
 </SystemDefinition>

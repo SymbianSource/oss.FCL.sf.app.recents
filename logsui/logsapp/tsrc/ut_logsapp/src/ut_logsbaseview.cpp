@@ -27,6 +27,8 @@
 #include "logsmodel.h"
 #include "logsdetailsmodel.h"
 #include "logsmainwindow.h"
+#include "logsrecentcallsview.h"
+#include "af_stub_helper.h"
 
 //SYSTEM
 #include <QtTest/QtTest>
@@ -40,7 +42,10 @@
 #include <hbmessagebox.h>
 #include <QStringListModel>
 #include <hbapplication.h>
-#include <hbactivitymanager.h>
+#include <afactivitystorage.h>
+#include <hblistwidget.h>
+#include <hblistwidgetitem.h>
+#include <hbtoolbar.h>
 
 void UT_LogsBaseView::initTestCase()
 {
@@ -72,9 +77,8 @@ void UT_LogsBaseView::cleanup()
 void UT_LogsBaseView::testConstructor()
 {
     QVERIFY( mBaseView );
-    QVERIFY( !mBaseView->mShowFilterMenu );
+    QVERIFY( !mBaseView->mViewSwitchList );
     QVERIFY( !mBaseView->mInitialized );
-    QVERIFY( mBaseView->mActionMap.isEmpty() );
     QVERIFY( mBaseView->viewId() == LogsRecentViewId );
     QVERIFY( mBaseView->mDialpad );
     QVERIFY( !mBaseView->mCall );
@@ -86,13 +90,12 @@ void UT_LogsBaseView::testConstructor()
 
 void UT_LogsBaseView::testActivated()
 {
-    mBaseView->activated(false, QVariant());
+    mBaseView->activated(false, QVariant(), mBaseView->mDialpad->editor().text());
     QVERIFY( !mBaseView->mDialpad->isVisible() );
     QVERIFY( mBaseView->mInitialized );
-    QVERIFY( !mBaseView->mShowFilterMenu );
-    QVERIFY( mBaseView->mActionMap.count() == 4 );
+    QVERIFY( !mBaseView->mViewSwitchList );
 
-    mBaseView->activated(true, QVariant());
+    mBaseView->activated(true, QVariant(), mBaseView->mDialpad->editor().text());
     QVERIFY( mBaseView->mDialpad->isOpen() );
 }
 
@@ -106,34 +109,42 @@ void UT_LogsBaseView::testResetView()
     mBaseView->resetView(); // NOP
 }
 
-void UT_LogsBaseView::testShowFilterMenu()
+void UT_LogsBaseView::testInitToolbarExtension()
 {
-    HbStubHelper::reset();
-    mBaseView->setLayoutDirection(Qt::LeftToRight);
+    //1. List with check icon as toolbar extension
+    mBaseView->mViewId = LogsRecentViewId;
+    //1.1. No logsDialerActionId action, extension can't be added
+    mBaseView->initToolbarExtension();
+    QVERIFY( !mBaseView->mViewSwitchList );
+    QVERIFY( mBaseView->toolBar()->actions().count() == 0 );
     
-    //no context menu
-    QVERIFY( !mBaseView->mShowFilterMenu );
-    mBaseView->showFilterMenu();
-    QVERIFY( !HbStubHelper::menuShown() );
+    //1.2. logsDialerActionId action exists, extension added
+    LogsRecentCallsView* view = mRepository->recentCallsView(); 
     
-    //contect menu exists
-    mBaseView->mShowFilterMenu = new HbMenu();
-    QVERIFY( mBaseView->mShowFilterMenu );
-    mBaseView->showFilterMenu();
-    QVERIFY( HbStubHelper::menuShown() ); 
-    QVERIFY( HbStubHelper::menuShownPlacement() == HbPopup::BottomRightCorner );
+    mBaseView->initToolbarExtension();
+    QVERIFY( mBaseView->mViewSwitchList );
+    QVERIFY( mBaseView->mViewSwitchList->selectionMode() == 
+             HbAbstractItemView::SingleSelection );
     
-    // RTL layout dir
-    HbStubHelper::reset();
-    mBaseView->setLayoutDirection(Qt::RightToLeft);
-    mBaseView->showFilterMenu();
-    QVERIFY( HbStubHelper::menuShown() );
-    QVERIFY( HbStubHelper::menuShownPlacement() == HbPopup::BottomLeftCorner );
-    
-    delete mBaseView->mShowFilterMenu;
-    mBaseView->mShowFilterMenu = 0;
-    
+    //list without check icon as toolbar extension
+    mBaseView->mViewId = LogsDetailsViewId;
+    mBaseView->setToolBar(0);
+    mBaseView->mViewSwitchList = 0;
+    mBaseView->initToolbarExtension();
+    QVERIFY( mBaseView->mViewSwitchList );
+    QVERIFY( mBaseView->mViewSwitchList->selectionMode() == 
+             HbAbstractItemView::NoSelection );
+    delete view;    
 }
+
+void UT_LogsBaseView::testPopulateViewSwitchList()
+{
+    HbListWidget* list = new HbListWidget();    
+    QVERIFY( mBaseView->populateViewSwitchList(*list) > 0 );
+    QVERIFY( list->count() == 4 );
+    delete list;
+}
+
 
 void  UT_LogsBaseView::testOpenDialpad()
 {
@@ -161,7 +172,7 @@ void  UT_LogsBaseView::testDialpadClosed()
 {
     mBaseView->mDialpad->editor().setText( QString("hello") );
     mBaseView->dialpadClosed();
-    QVERIFY( !mBaseView->mDialpad->editor().text().isEmpty() );
+    QVERIFY( !mBaseView->currDialpadText().isEmpty() );
 }
 
 void  UT_LogsBaseView::testDialpadOpened()
@@ -195,13 +206,20 @@ void  UT_LogsBaseView::testDialpadEditorTextChanged()
     QVERIFY( mBaseView->mDialpad->mIsCallButtonEnabled );
 }
 
-void  UT_LogsBaseView::testChangeFilter()
+void  UT_LogsBaseView::testHandleViewSwitchSelected()
 {
     QVERIFY( mViewManager->mViewId == LogsUnknownViewId );
-    HbAction*  action = new HbAction();
-    action->setObjectName(logsShowFilterMissedMenuActionId);
-    mBaseView->changeFilter(action);
+    mBaseView->mViewSwitchList = new HbListWidget();
+    HbListWidgetItem* item = new HbListWidgetItem();
+    item->setData(QVariant(XQService::LogsViewReceived), Qt::UserRole);
+    mBaseView->mViewSwitchList->addItem(item);
+    
+    mBaseView->handleViewSwitchSelected(item);
+    
     QVERIFY( mViewManager->mViewId == LogsRecentViewId );
+    QVERIFY( mViewManager->mArgs.toInt() == (int)XQService::LogsViewReceived );
+    delete mBaseView->mViewSwitchList;
+    mBaseView->mViewSwitchList = 0;
 }
 
 void UT_LogsBaseView::testModel()
@@ -256,7 +274,7 @@ void UT_LogsBaseView::testShowListItemMenu()
     QVERIFY( !HbStubHelper::menuShown() );
     //check that dialpad has closed
     QVERIFY( !mBaseView->mDialpad->isVisible() );
-    
+    delete item;
     //menu has actions and can be executed should be tested in derived class
  }
 
@@ -534,6 +552,7 @@ void UT_LogsBaseView::testSendMessageToCurrentNum()
     mBaseView->sendMessageToCurrentNum();
     QVERIFY( LogsMessage::isMessageSent() );
     QCOMPARE( LogsMessage::sentToNumber(), QString("conv") + number );
+    QVERIFY( mBaseView->mMessage );
 }
 
 void UT_LogsBaseView::testSaveNumberInDialpadToContacts()
@@ -620,13 +639,14 @@ void UT_LogsBaseView::testLoadActivity()
 
 void UT_LogsBaseView::testClearActivity()
 {
-    HbStubHelper::reset();
-    HbActivityManager* manager = static_cast<HbApplication*>(qApp)->activityManager();
-    manager->addActivity("someact", QVariant(), QVariantHash());
-    QCOMPARE( manager->activities().count(), 1 );
+    AfStubHelper::reset();
+    AfActivityStorage manager;
+    
+    manager.saveActivity("testActivity1", QVariant(), QVariantHash());
+    QCOMPARE( manager.allActivities().count(), 1 );
     mBaseView->mActivities.append( "testActivity1" );
-    mBaseView->clearActivity(*manager);
-    QCOMPARE( manager->activities().count(), 0 );
+    mBaseView->clearActivity(manager);
+    QCOMPARE( manager.allActivities().count(), 0 );
 }
 
 void UT_LogsBaseView::testEnsureListPositioning()
@@ -653,7 +673,7 @@ void UT_LogsBaseView::testEnsureListPositioning()
     
     // Content found, no visible items, nop
     mRepository->recentCallsView();
-    mBaseView->activated(false, QVariant());
+    mBaseView->activated(false, QVariant(), mBaseView->mDialpad->editor().text());
     mBaseView->ensureListPositioning(list, false);
     QVERIFY( !HbStubHelper::listEnsureVisibleCalled() );
     QVERIFY( !HbStubHelper::listScrollBarPolicySet() );

@@ -54,13 +54,14 @@ private slots: //test methods
     void testActivated();
     void testDeactivated();
     void testResetView();
-    void testShowFilterMenu();
+    void testInitToolbarExtension();
+    void testPopulateViewSwitchList();
     void testOpenDialpad();
     void testSetDialpadPostion();
     void testDialpadClosed();
     void testDialpadOpened();
     void testDialpadEditorTextChanged();
-    void testChangeFilter();
+    void testHandleViewSwitchSelected();
     void testOpenContactsApp();
     void testModel();
     void testInitiateCall();

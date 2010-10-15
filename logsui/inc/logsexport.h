@@ -27,13 +27,4 @@
 #endif
 #endif
 
-#if !defined(LOGSSERVICES_EXPORT)
-#if defined(LOGSSERVICES_LIB)
-#define LOGSSERVICES_EXPORT Q_DECL_EXPORT
-#else
-#define LOGSSERVICES_EXPORT Q_DECL_IMPORT
-#endif
-#endif
-
-
 #endif // LOGSEXPORT_H

@@ -25,8 +25,6 @@
 #include "logspredictive12keytranslator.h"
 #include "logslogger.h"
 
-const QChar ZeroSepar('0');
-const int NotAssigned = -1;
 
 // -----------------------------------------------------------------------------
 // LogsPredictive12KeyTranslator::LogsPredictive12KeyTranslator()
@@ -56,117 +54,114 @@ LogsPredictive12KeyTranslator::~LogsPredictive12KeyTranslator()
     
 }
 
-// -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::patternTokens()
-// -----------------------------------------------------------------------------
-//
-QStringList LogsPredictive12KeyTranslator::patternTokens( const QString& pattern ) const
-{
-        
-    LOGS_QDEBUG( "logs [FINDER] -> LogsPredictive12KeyTranslator::\
-patternTokens()" )
-    LOGS_QDEBUG_2( "logs [FINDER] pattern ", pattern );
-    QString car;
-    QString cdr;
-    
-    QStringList target;
-    splitPattern( pattern, car, cdr );
-    if ( car.length() ) {
-        target.append( car );
-        if ( cdr.length() ) {
-            target.append( cdr );
-        }
-    }
-    LOGS_QDEBUG( "logs [FINDER] <- LogsPredictive12KeyTranslator::\
-patternTokens()" )
-    return target;
-}
-
-// -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::splitPattern()
-// -----------------------------------------------------------------------------
-//
-void LogsPredictive12KeyTranslator::splitPattern( const QString& pattern, 
-                                                  QString& car, QString& cdr ) const
-{
-    car = "";
-    cdr = "";
-    
-    QChar current;
-    QChar previous;
-    int splitStart = NotAssigned;
-    int splitEnd = NotAssigned;
-    int index = 0;
-    while( splitEnd == NotAssigned && index < pattern.length() ) {
-        current = pattern[index];
-        splitStart = splitStart == NotAssigned &&
-                    ( previous != ZeroSepar && previous != QChar() ) && 
-                    current == ZeroSepar ? 
-                        index : splitStart;
-        splitEnd = splitStart != NotAssigned && 
-                   previous == ZeroSepar && 
-                   current != ZeroSepar ?
-                      index : splitEnd;
-        previous = current;
-        index++;
-    }
-    
-    if ( splitStart != NotAssigned && splitEnd != NotAssigned ) {
-        car = pattern.left( splitStart );
-        cdr = pattern.right( pattern.length() - splitEnd );  
-    } else {
-        car = pattern; 
-    }
-}
-
-// -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::trimPattern()
-// -----------------------------------------------------------------------------
-//
-QString& LogsPredictive12KeyTranslator::trimPattern( QString& pattern, 
-                                                     bool tailOnly ) const
-{
-    QRegExp lead("^0*");//remove leading zeros
-    QRegExp trail("0*$");//remove trailing zeros
-    
-    if ( pattern.length() ) {
-        if ( !tailOnly ) {
-            pattern.remove( lead );
-        }
-        
-        pattern.remove( trail );
-        
-        if( !pattern.length() ) {
-            pattern += ZeroSepar;
-        }
-    }
-    return pattern;
-}
-
-
-// -----------------------------------------------------------------------------
-// LogsPredictive12KeyTranslator::hasPatternSeparators()
-// -----------------------------------------------------------------------------
-//
-int LogsPredictive12KeyTranslator::hasPatternSeparators( 
-        const QString& pattern ) const
-{
-    return pattern.count( ZeroSepar );
-
-}
 
 // -----------------------------------------------------------------------------
 // LogsPredictive12KeyTranslator::translateChar()
 // -----------------------------------------------------------------------------
 //
-const QChar LogsPredictive12KeyTranslator::translateChar( 
+const QString LogsPredictive12KeyTranslator::translateChar( 
         const QChar character ) const
 {
     const HbMappedKey* mappedKey = 0;
     if ( mKeyMap ) {
         mappedKey = mKeyMap->keyForCharacter( HbKeyboardVirtual12Key, character );
+        if ( !mappedKey ) {
+            mappedKey = mKeyMap->keyForCharacter( HbKeyboardSctPortrait, character );
+            return mappedKey ? QString( StarKey ) : QString();
+        }
     }
-    return mappedKey ? mappedKey->keycode : QChar();
+    return mappedKey ? QString( mappedKey->keycode ) : QString();
 }
 
+// -----------------------------------------------------------------------------
+// LogsPredictive12KeyTranslator::match()
+// -----------------------------------------------------------------------------
+//
+bool LogsPredictive12KeyTranslator::match( 
+        const QString& pattern, 
+        LogsCntTokenIterator& names ) const
+{
+    QString modifiedPattern = pattern;
+    modifiedPattern = trimPattern( modifiedPattern, true );
+    
+    bool match = doSimpleMatch( modifiedPattern, names ); 
+        
+    if (!match && hasPatternSeparators( modifiedPattern ) ) {
+        QStringList patternArray = patternTokens( modifiedPattern );
+        match = doComplexMatch( patternArray, names );
+        if (!match ) {
+            for(int i=0;i<patternArray.length();i++ ) {
+                trimPattern( patternArray[i] );
+            }
+            match = doComplexMatch( patternArray, names );
+        }
+    }
+    
+    return match;
+}
+
+// -----------------------------------------------------------------------------
+// LogsPredictive12KeyTranslator::doSimpleMatch()
+// -----------------------------------------------------------------------------
+//
+bool LogsPredictive12KeyTranslator::doSimpleMatch( 
+                        const QString& pattern,
+                        LogsCntTokenIterator& names ) const
+{
+    int matchCount = 0;
+    names.toFront();
+    
+    while( names.hasNext() && !matchCount ) {
+        matchCount = (int)names.next().translation().startsWith( pattern );
+    }
+
+    return matchCount > 0;
+}
+
+
+// -----------------------------------------------------------------------------
+// LogsPredictive12KeyTranslator::doComplexMatch()
+// -----------------------------------------------------------------------------
+//
+bool LogsPredictive12KeyTranslator::doComplexMatch( 
+                        const QStringList& patternArray,
+                        LogsCntTokenIterator& names ) const
+{
+    const bool zero = false;
+    names.toFront();
+
+    int targetMatchCount = patternArray.count();
+    int namesCount = names.count();
+
+    //if pattern has more tokens than name(s), it is a missmatch
+    if ( namesCount < targetMatchCount ) {
+        return false;
+    }
+
+    QListIterator<QString> patterns( patternArray );
+    QVector<bool> matchVector(targetMatchCount, zero );
+    int currentPattern = 0;
+    int matchCount = 0;
+    bool match = false;
+    
+    while( names.hasNext() && matchCount < targetMatchCount ) {
+        LogsCntToken name = names.next();
+        currentPattern = 0;
+        patterns.toFront();
+        match = false;
+        while ( !name.text().isEmpty() && 
+                 patterns.hasNext() && !match ) {
+            QString pattern = patterns.next();
+            //unique match check
+            if ( !matchVector.at( currentPattern ) ) {
+                match = matchVector[ currentPattern ] 
+                      = name.translation().startsWith( pattern );
+                matchCount = match ? matchCount+1 : matchCount;
+            }
+            currentPattern++;
+        }
+    }
+    return matchCount >= targetMatchCount;
+
+    }
 

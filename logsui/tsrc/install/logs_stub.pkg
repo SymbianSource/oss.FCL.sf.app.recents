@@ -34,7 +34,6 @@
 ; User interface
 ""-"z:\sys\bin\logs.exe"
 ""-"z:\sys\bin\logsengine.dll"
-""-"z:\sys\bin\logsservices.dll"
 ""-"z:\sys\bin\logscntfinder.dll"
 ""-"z:\resource\apps\logs.rsc"
 ""-"z:\private\10003a3f\import\apps\logs_reg.rsc"
